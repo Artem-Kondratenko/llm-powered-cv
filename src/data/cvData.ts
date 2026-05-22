@@ -15,7 +15,7 @@ export const cvData: CvData = {
       "AI Prototyping",
     ],
     pitch: [
-      "Game Designer Generalist, который умеет не только описывать идеи, но и доводить их до работающей фичи. Основной опыт — мобильные и Telegram-игры: lvl-design, FTUE, core/meta loop, PvP/PvE, LiveOps, офферы, награды, прогрессия и, как результат, монетизация.",
+      "Game Designer Generalist, который умеет не только описывать идеи, но и доводить их до работающей фичи. Основной опыт - мобильные и Telegram-игры: lvl-design, FTUE, core/meta loop, PvP/PvE, LiveOps, офферы, награды, прогрессия и, как результат, монетизация.",
       "Работал с A/B-тестами, аналитикой и доработками после релиза: менял туториалы, кривую сложности, магазин, внедрил систему босс/бонусных уровней. Хорошо чувствую первые сессии и короткие игровые циклы.",
       "Активно использую AI-инструменты для прототипирования: самостоятельно сделал TG-бота MeowMeals и разрабатываю CombuchAI для поиска точек органического трафика.",
     ],
@@ -166,7 +166,7 @@ export const cvData: CvData = {
       description:
         "Участвовал в подготовке gamedev-themed Telegram-проекта до beta stage: документация, события, фичи, награды, прогрессия, взаимодействие с dev/art-командами.",
       link: {
-        label: "Telegram bot",
+        label: "TMA",
         href: "https://t.me/hamster_kombat_bot?profile",
       },
     },
@@ -240,9 +240,9 @@ export const cvData: CvData = {
     {
       title: "Engines & Configs",
       items: [
-        "Unity — basic",
-        "Cocos — basic",
-        "NerveEngine — deep production experience",
+        "Unity - basic",
+        "Cocos - basic",
+        "NerveEngine - deep production experience",
         "Google Sheets/Excel configs",
       ],
     },
