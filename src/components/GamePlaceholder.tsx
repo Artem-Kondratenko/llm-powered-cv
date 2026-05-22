@@ -7,19 +7,19 @@ type GamePlaceholderProps = {
 
 export function GamePlaceholder({ game }: GamePlaceholderProps) {
   return (
-    <div className="rounded-lg border border-dashed border-neutral-300 bg-white p-6 shadow-sm sm:p-8">
+    <div className="rounded-lg border border-dashed border-teal-300/30 bg-slate-900/65 p-7 shadow-soft sm:p-9">
       <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
         <div className="max-w-3xl">
-          <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-lg bg-cyan-50 text-cyan-800">
+          <div className="mb-5 flex h-11 w-11 items-center justify-center rounded-lg border border-teal-300/20 bg-teal-300/10 text-teal-200">
             <Lock className="h-5 w-5" aria-hidden="true" />
           </div>
-          <h3 className="text-xl font-semibold text-neutral-950">{game.title}</h3>
-          <p className="mt-3 text-base leading-7 text-neutral-700">{game.teaser}</p>
+          <h3 className="text-2xl font-semibold text-slate-50">{game.title}</h3>
+          <p className="mt-4 text-[17px] leading-8 text-slate-300">{game.teaser}</p>
         </div>
         <button
           type="button"
           disabled
-          className="inline-flex min-h-11 w-fit items-center justify-center rounded-lg border border-neutral-200 bg-neutral-100 px-5 py-2 text-sm font-semibold text-neutral-500"
+          className="inline-flex min-h-11 w-fit items-center justify-center rounded-lg border border-white/10 bg-white/5 px-5 py-2 text-sm font-semibold text-slate-400"
         >
           {game.ctaLabel}
         </button>

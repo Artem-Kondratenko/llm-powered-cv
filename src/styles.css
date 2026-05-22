@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 :root {
-  color-scheme: light;
+  color-scheme: dark;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -12,21 +12,33 @@
 
 html {
   scroll-behavior: smooth;
+  background: #020617;
 }
 
 body {
   margin: 0;
   min-width: 320px;
-  background: #f8faf9;
+  background:
+    radial-gradient(circle at 18% 0%, rgba(45, 212, 191, 0.1), transparent 34rem),
+    radial-gradient(circle at 88% 14%, rgba(129, 140, 248, 0.08), transparent 30rem),
+    #020617;
 }
 
 ::selection {
-  background: #bbf7d0;
-  color: #052e16;
+  background: rgba(94, 234, 212, 0.35);
+  color: #f8fafc;
 }
 
 button,
 a,
 input {
   font: inherit;
+}
+
+.no-scrollbar {
+  scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
 }

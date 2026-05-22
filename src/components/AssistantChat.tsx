@@ -57,25 +57,25 @@ export function AssistantChat({ data }: AssistantChatProps) {
   }
 
   return (
-    <div className="grid gap-5 lg:grid-cols-[0.9fr_1.1fr]">
-      <div className="rounded-lg border border-neutral-200 bg-white p-4 shadow-sm sm:p-5">
+    <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
+      <div className="rounded-lg border border-white/10 bg-slate-900/70 p-6 shadow-soft sm:p-7">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-50 text-emerald-800">
+          <div className="flex h-11 w-11 items-center justify-center rounded-lg border border-teal-300/20 bg-teal-300/10 text-teal-200">
             <Bot className="h-5 w-5" aria-hidden="true" />
           </div>
           <div>
-            <h3 className="text-base font-semibold text-neutral-950">CV-ассистент v1</h3>
-            <p className="text-sm text-neutral-500">Scripted FAQ, без выдумывания опыта</p>
+            <h3 className="text-xl font-semibold text-slate-50">CV-ассистент v1</h3>
+            <p className="text-sm text-slate-400">Scripted FAQ, без выдумывания опыта</p>
           </div>
         </div>
 
-        <div className="mt-5 flex flex-wrap gap-2">
+        <div className="mt-6 flex flex-wrap gap-2.5">
           {data.quickQuestions.map((question) => (
             <button
               key={question.id}
               type="button"
               onClick={() => answerQuestion(question.id, question.label)}
-              className="rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2 text-left text-sm font-medium leading-5 text-neutral-700 transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-950"
+              className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-left text-sm font-medium leading-6 text-slate-300 transition hover:border-teal-300/40 hover:bg-teal-300/10 hover:text-white"
             >
               {question.label}
             </button>
@@ -83,29 +83,29 @@ export function AssistantChat({ data }: AssistantChatProps) {
         </div>
       </div>
 
-      <div className="flex min-h-[520px] flex-col rounded-lg border border-neutral-200 bg-white shadow-sm">
-        <div className="flex-1 space-y-4 overflow-y-auto p-4 sm:p-5">
+      <div className="flex min-h-[560px] flex-col rounded-lg border border-white/10 bg-slate-900/70 shadow-soft">
+        <div className="flex-1 space-y-4 overflow-y-auto p-5 sm:p-6">
           {messages.map((message, index) => (
             <div
               key={`${message.role}-${index}`}
               className={`flex gap-3 ${message.role === "user" ? "justify-end" : "justify-start"}`}
             >
               {message.role === "assistant" ? (
-                <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-800">
+                <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-teal-300/20 bg-teal-300/10 text-teal-200">
                   <Bot className="h-4 w-4" aria-hidden="true" />
                 </div>
               ) : null}
               <p
-                className={`max-w-[85%] rounded-lg px-4 py-3 text-sm leading-6 ${
+                className={`max-w-[85%] rounded-lg px-4 py-3 text-[16px] leading-7 ${
                   message.role === "user"
-                    ? "bg-neutral-950 text-white"
-                    : "border border-neutral-200 bg-neutral-50 text-neutral-700"
+                    ? "bg-teal-300 text-slate-950"
+                    : "border border-white/10 bg-white/5 text-slate-300"
                 }`}
               >
                 {message.text}
               </p>
               {message.role === "user" ? (
-                <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-neutral-100 text-neutral-700">
+                <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-slate-300">
                   <UserRound className="h-4 w-4" aria-hidden="true" />
                 </div>
               ) : null}
@@ -113,17 +113,17 @@ export function AssistantChat({ data }: AssistantChatProps) {
           ))}
         </div>
 
-        <form onSubmit={handleSubmit} className="border-t border-neutral-200 p-3 sm:p-4">
+        <form onSubmit={handleSubmit} className="border-t border-white/10 p-4 sm:p-5">
           <div className="flex gap-2">
             <input
               value={input}
               onChange={(event) => setInput(event.target.value)}
-              className="min-h-11 min-w-0 flex-1 rounded-lg border border-neutral-200 px-4 py-2 text-sm text-neutral-900 outline-none transition placeholder:text-neutral-400 focus:border-emerald-300 focus:ring-4 focus:ring-emerald-100"
+              className="min-h-12 min-w-0 flex-1 rounded-lg border border-white/10 bg-slate-950/70 px-4 py-2 text-[16px] text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-teal-300/60 focus:ring-4 focus:ring-teal-300/10"
               placeholder="Спросите про опыт, проекты или стек"
             />
             <button
               type="submit"
-              className="inline-flex min-h-11 items-center justify-center rounded-lg bg-neutral-950 px-4 text-sm font-semibold text-white transition hover:bg-neutral-800"
+              className="inline-flex min-h-12 items-center justify-center rounded-lg bg-teal-300 px-4 text-sm font-semibold text-slate-950 transition hover:bg-teal-200"
               aria-label="Отправить вопрос"
             >
               <Send className="h-4 w-4" aria-hidden="true" />
