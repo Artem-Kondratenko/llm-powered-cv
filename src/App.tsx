@@ -37,7 +37,7 @@ export function App() {
           title="CV-ассистент"
           description="Быстрый scripted-chat по опыту, проектам, стеку и pet-проектам."
         >
-          <AssistantChat data={assistantData} />
+          <AssistantChat data={assistantData} contacts={cvData.contacts} />
         </Section>
 
         <Section

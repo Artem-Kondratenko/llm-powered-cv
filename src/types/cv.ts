@@ -81,3 +81,22 @@ export type AssistantData = {
   answers: Record<string, string>;
   fallbackAnswer: string;
 };
+
+export type AssistantMessageRole = "assistant" | "user";
+
+export type AssistantChatMessage = {
+  role: AssistantMessageRole;
+  content: string;
+};
+
+export type AssistantSuggestedCta = "telegram" | "linkedin" | "email" | null;
+
+export type AssistantChatRequest = {
+  message: string;
+  history: AssistantChatMessage[];
+};
+
+export type AssistantChatResponse = {
+  answer: string;
+  suggestedCta: AssistantSuggestedCta;
+};

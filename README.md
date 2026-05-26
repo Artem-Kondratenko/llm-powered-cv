@@ -257,14 +257,28 @@ LANDING_CONTENT_SPEC.md
 
 ## Что зарезервировано под настоящего LLM-ассистента
 
-Сейчас `src/components/AssistantChat.tsx` работает как scripted FAQ-chat.
+`src/components/AssistantChat.tsx` умеет обращаться к настоящему backend endpoint, если при сборке задан `VITE_CV_ASSISTANT_API_URL`.
 
-В будущем можно заменить внутреннюю логику ответа на запрос к backend/API, например на DigitalOcean. UI чата при этом можно оставить тем же, а `assistantData.ts` использовать как базу знаний или fallback.
+Если endpoint не задан или backend недоступен, чат остается scripted FAQ-chat и использует fallback из:
+
+```txt
+src/data/assistantData.ts
+```
+
+Backend живет отдельно в:
+
+```txt
+backend/
+```
+
+Gemini API key хранится только в backend env как `GEMINI_API_KEY` и не должен попадать во frontend. Подробные инструкции по локальному запуску, DigitalOcean App Platform и GitHub Pages variable лежат в:
+
+```txt
+ASSISTANT_SETUP.md
+```
 
 ## Что специально оставлено простым в v1
 
-- Нет backend.
-- Нет настоящей LLM.
 - Нет мини-игры.
 - Нет сложного роутинга.
 - Нет CMS.
