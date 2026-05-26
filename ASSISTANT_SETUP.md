@@ -58,13 +58,15 @@ npm run dev
 PORT=8080
 ALLOWED_ORIGIN=http://localhost:5173
 GEMINI_API_KEY=<real-gemini-key>
-LLM_MODEL=gemini-2.0-flash
+LLM_MODEL=gemini-2.5-flash-lite
 MAX_INPUT_CHARS=1000
 MAX_HISTORY_MESSAGES=8
 MAX_OUTPUT_TOKENS=600
 ```
 
 Реальное значение `GEMINI_API_KEY` нельзя добавлять в frontend, README, `.env.example` или tracked files.
+
+Рекомендуемая модель для MVP: `gemini-2.5-flash-lite`. Альтернатива, если нужен более сильный ответ и подходит квота: `gemini-2.5-flash`. Значение `LLM_MODEL` из `.env` имеет приоритет над backend default.
 
 ## Backend API
 
@@ -111,11 +113,13 @@ Response:
 ```txt
 ALLOWED_ORIGIN=https://<github-user>.github.io
 GEMINI_API_KEY=<real-gemini-key>
-LLM_MODEL=gemini-2.0-flash
+LLM_MODEL=gemini-2.5-flash-lite
 MAX_INPUT_CHARS=1000
 MAX_HISTORY_MESSAGES=8
 MAX_OUTPUT_TOKENS=600
 ```
+
+Рекомендуемая модель для MVP: `gemini-2.5-flash-lite`. Альтернативная модель: `gemini-2.5-flash`.
 
 Если GitHub Pages сайт находится под project path, например `https://<github-user>.github.io/llm-powered-cv/`, в `ALLOWED_ORIGIN` все равно нужен только origin без path: `https://<github-user>.github.io`.
 
