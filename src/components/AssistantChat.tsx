@@ -1,6 +1,7 @@
 import { Bot, Download, Linkedin, Mail, Send, UserRound } from "lucide-react";
 import { FormEvent, useMemo, useState } from "react";
 import { isAssistantApiEnabled, sendAssistantMessage } from "../lib/assistantApi";
+import { findAssistantFallbackAnswer } from "../lib/assistantFallback";
 import type {
   AssistantChatMessage,
   AssistantData,
@@ -19,6 +20,13 @@ type Message = {
 type AssistantChatProps = {
   data: AssistantData;
   contacts: ContactLinks;
+};
+
+type AssistantMode = "idle" | "llm" | "fallback";
+
+type ScriptedAnswer = {
+  answer: string;
+  suggestedCta: AssistantSuggestedCta;
 };
 
 function normalize(value: string) {
@@ -62,6 +70,7 @@ export function AssistantChat({ data, contacts }: AssistantChatProps) {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [fallbackNotice, setFallbackNotice] = useState("");
+  const [assistantMode, setAssistantMode] = useState<AssistantMode>("idle");
   const [messages, setMessages] = useState<Message[]>([
     {
       role: "assistant",
@@ -74,14 +83,36 @@ export function AssistantChat({ data, contacts }: AssistantChatProps) {
   }, [data.quickQuestions]);
 
   const apiEnabled = isAssistantApiEnabled();
+  const isDevMode = import.meta.env.DEV;
 
-  function getScriptedAnswer(question: string, questionId?: string) {
+  function getScriptedAnswer(question: string, questionId?: string): ScriptedAnswer {
+    const fallbackAnswer = findAssistantFallbackAnswer(question);
+
+    if (fallbackAnswer) {
+      return fallbackAnswer;
+    }
+
     if (questionId) {
-      return data.answers[questionId] ?? data.fallbackAnswer;
+      return {
+        answer: data.answers[questionId] ?? data.fallbackAnswer,
+        suggestedCta: questionId === "contact" || questionId === "mobile-f2p" ? "telegram" : null,
+      };
     }
 
     const quickQuestion = questionByLabel.get(normalize(question));
-    return quickQuestion ? data.answers[quickQuestion.id] ?? data.fallbackAnswer : data.fallbackAnswer;
+
+    if (quickQuestion) {
+      return {
+        answer: data.answers[quickQuestion.id] ?? data.fallbackAnswer,
+        suggestedCta:
+          quickQuestion.id === "contact" || quickQuestion.id === "mobile-f2p" ? "telegram" : null,
+      };
+    }
+
+    return {
+      answer: data.fallbackAnswer,
+      suggestedCta: "telegram",
+    };
   }
 
   async function askAssistant(question: string, questionId?: string) {
@@ -104,6 +135,7 @@ export function AssistantChat({ data, contacts }: AssistantChatProps) {
       }
 
       const response = await sendAssistantMessage(trimmedQuestion, history);
+      setAssistantMode("llm");
 
       setMessages((current) => [
         ...current,
@@ -115,17 +147,15 @@ export function AssistantChat({ data, contacts }: AssistantChatProps) {
       ]);
     } catch {
       const scriptedAnswer = getScriptedAnswer(trimmedQuestion, questionId);
+      setAssistantMode("fallback");
 
-      setFallbackNotice(
-        apiEnabled
-          ? "LLM endpoint сейчас недоступен, поэтому включён scripted fallback."
-          : "LLM endpoint не настроен, поэтому работает scripted fallback.",
-      );
+      setFallbackNotice("Сейчас отвечаю в базовом режиме по CV. Если вопрос требует деталей, лучше написать Артёму напрямую.");
       setMessages((current) => [
         ...current,
         {
           role: "assistant",
-          text: scriptedAnswer,
+          text: scriptedAnswer.answer,
+          suggestedCta: scriptedAnswer.suggestedCta,
           usedFallback: true,
         },
       ]);
@@ -155,7 +185,7 @@ export function AssistantChat({ data, contacts }: AssistantChatProps) {
           </div>
           <div>
             <h3 className="text-xl font-semibold text-slate-50">CV-ассистент v1</h3>
-            <p className="text-sm text-slate-400">Scripted FAQ, без выдумывания опыта</p>
+            <p className="text-sm text-slate-400">LLM при доступном backend, fallback без выдумывания опыта</p>
           </div>
         </div>
 
@@ -201,6 +231,12 @@ export function AssistantChat({ data, contacts }: AssistantChatProps) {
             PDF
           </a>
         </div>
+
+        {isDevMode ? (
+          <p className="mt-4 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs leading-5 text-slate-500">
+            dev: endpoint configured: {apiEnabled ? "yes" : "no"}; mode: {assistantMode}
+          </p>
+        ) : null}
       </div>
 
       <div className="flex min-h-[560px] flex-col rounded-lg border border-white/10 bg-slate-900/70 shadow-soft">
@@ -228,7 +264,7 @@ export function AssistantChat({ data, contacts }: AssistantChatProps) {
                 >
                   <p>{message.text}</p>
                   {message.usedFallback ? (
-                    <p className="mt-2 text-sm leading-6 text-slate-500">Scripted fallback</p>
+                    <p className="mt-2 text-sm leading-6 text-slate-500">Ответ из fallback-базы</p>
                   ) : null}
                   {ctaLabel && ctaHref ? (
                     <a

@@ -10,7 +10,8 @@
 - Healthcheck: `GET /health`.
 - Gemini API key хранится только в backend env.
 - Frontend знает только публичный URL endpoint через `VITE_CV_ASSISTANT_API_URL`.
-- Если backend не настроен или недоступен, `AssistantChat` использует scripted fallback из `src/data/assistantData.ts`.
+- Production endpoint сейчас: `https://cv-api-209-38-212-226.sslip.io/api/cv-assistant/chat`.
+- Если backend не настроен или недоступен, `AssistantChat` использует scripted fallback из `src/data/assistantData.ts` и `src/lib/assistantFallback.ts`.
 
 ## Frontend local
 
@@ -20,6 +21,12 @@ npm run dev
 ```
 
 Без `VITE_CV_ASSISTANT_API_URL` чат работает как scripted assistant.
+
+Чтобы проверить frontend с production backend:
+
+```bash
+VITE_CV_ASSISTANT_API_URL=https://cv-api-209-38-212-226.sslip.io/api/cv-assistant/chat npm run dev
+```
 
 Чтобы проверить frontend с локальным backend:
 
@@ -31,6 +38,13 @@ VITE_CV_ASSISTANT_API_URL=http://localhost:8080/api/cv-assistant/chat npm run de
 
 ```powershell
 $env:VITE_CV_ASSISTANT_API_URL="http://localhost:8080/api/cv-assistant/chat"
+npm run dev
+```
+
+Чтобы проверить fallback без endpoint в PowerShell:
+
+```powershell
+Remove-Item Env:VITE_CV_ASSISTANT_API_URL -ErrorAction SilentlyContinue
 npm run dev
 ```
 
@@ -125,21 +139,23 @@ MAX_OUTPUT_TOKENS=600
 
 ## Connect GitHub Pages to backend
 
-1. После деплоя backend скопируйте публичный URL endpoint:
+Production build уже получает публичный endpoint из `.env.production`:
 
 ```txt
-https://<digitalocean-app-domain>/api/cv-assistant/chat
+VITE_CV_ASSISTANT_API_URL=https://cv-api-209-38-212-226.sslip.io/api/cv-assistant/chat
 ```
 
-2. В GitHub repository settings добавьте variable:
+Это безопасно, потому что это только публичный URL backend. `GEMINI_API_KEY` нельзя хранить во frontend env: любые `VITE_*` переменные встраиваются в JS bundle и видны пользователю.
+
+Если нужно переопределить endpoint без изменения файла, в GitHub repository settings добавьте Actions variable:
 
 ```txt
 VITE_CV_ASSISTANT_API_URL=https://<digitalocean-app-domain>/api/cv-assistant/chat
 ```
 
-3. Запустите GitHub Pages workflow заново.
+GitHub Actions workflow передает эту variable в `npm run build`, а если variable пустая, использует текущий production endpoint как fallback. После изменения variable запустите GitHub Pages workflow заново.
 
-Если variable не задана, GitHub Pages build остается рабочим, а чат работает в scripted fallback.
+Если `VITE_CV_ASSISTANT_API_URL` намеренно не задан в локальной dev-среде, чат остается рабочим и отвечает из fallback-базы.
 
 ## Checks
 
@@ -177,3 +193,14 @@ Production:
 - GitHub Pages чат отвечает через LLM при доступном backend.
 - При выключенном backend чат не падает и показывает scripted fallback.
 - В frontend bundle и репозитории нет реального `GEMINI_API_KEY`.
+- В dev mode под quick questions виден диагностический статус `endpoint configured: yes/no; mode: ...`.
+- В production технический статус не показывается; понять, что frontend подключен к backend, можно по ответу LLM без подписи `Ответ из fallback-базы`.
+
+Проверить production backend:
+
+```bash
+curl https://cv-api-209-38-212-226.sslip.io/health
+curl -X POST https://cv-api-209-38-212-226.sslip.io/api/cv-assistant/chat \
+  -H "Content-Type: application/json" \
+  -d "{\"message\":\"Что Артем делал в Chameleon 42?\",\"history\":[]}"
+```

@@ -95,7 +95,7 @@ src/data/cvData.ts
 
 ## Где менять вопросы и ответы ассистента
 
-Scripted CV-ассистент v1 настроен здесь:
+Базовые scripted quick questions CV-ассистента настроены здесь:
 
 ```txt
 src/data/assistantData.ts
@@ -108,7 +108,13 @@ src/data/assistantData.ts
 - готовые ответы;
 - fallback-ответ для неизвестных вопросов.
 
-В первой версии ассистент не использует настоящую LLM и не генерирует ответы сам.
+Дополнительный fallback по ключевым темам, например Chameleon 42, MeowMeals, английский и ограничения по метрикам/программированию, лежит здесь:
+
+```txt
+src/lib/assistantFallback.ts
+```
+
+Если при сборке задан `VITE_CV_ASSISTANT_API_URL`, ассистент сначала обращается к backend. Если endpoint не задан или недоступен, UI остается рабочим и отвечает из fallback-базы.
 
 ## Куда класть PDF
 
@@ -259,10 +265,23 @@ LANDING_CONTENT_SPEC.md
 
 `src/components/AssistantChat.tsx` умеет обращаться к настоящему backend endpoint, если при сборке задан `VITE_CV_ASSISTANT_API_URL`.
 
+Production endpoint сейчас задан в:
+
+```txt
+.env.production
+```
+
+Текущее значение:
+
+```txt
+VITE_CV_ASSISTANT_API_URL=https://cv-api-209-38-212-226.sslip.io/api/cv-assistant/chat
+```
+
 Если endpoint не задан или backend недоступен, чат остается scripted FAQ-chat и использует fallback из:
 
 ```txt
 src/data/assistantData.ts
+src/lib/assistantFallback.ts
 ```
 
 Backend живет отдельно в:
@@ -271,7 +290,7 @@ Backend живет отдельно в:
 backend/
 ```
 
-Gemini API key хранится только в backend env как `GEMINI_API_KEY` и не должен попадать во frontend. Подробные инструкции по локальному запуску, DigitalOcean App Platform и GitHub Pages variable лежат в:
+Gemini API key хранится только в backend env как `GEMINI_API_KEY` и не должен попадать во frontend. Во frontend можно хранить только публичный `VITE_CV_ASSISTANT_API_URL`, потому что `VITE_*` переменные встраиваются в JS bundle. Подробные инструкции по локальному запуску, DigitalOcean App Platform и GitHub Pages variable лежат в:
 
 ```txt
 ASSISTANT_SETUP.md

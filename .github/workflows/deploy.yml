@@ -39,7 +39,7 @@ jobs:
       - name: Build
         run: npm run build
         env:
-          VITE_CV_ASSISTANT_API_URL: ${{ vars.VITE_CV_ASSISTANT_API_URL }}
+          VITE_CV_ASSISTANT_API_URL: ${{ vars.VITE_CV_ASSISTANT_API_URL || 'https://cv-api-209-38-212-226.sslip.io/api/cv-assistant/chat' }}
 
       - name: Setup Pages
         uses: actions/configure-pages@v6
