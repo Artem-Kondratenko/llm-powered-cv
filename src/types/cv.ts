@@ -18,6 +18,12 @@ export type NamedLink = {
   href: string;
 };
 
+export type ProjectImage = {
+  src: string;
+  thumbSrc: string;
+  alt: string;
+};
+
 export type Skill = {
   title: string;
   description: string;
@@ -38,6 +44,7 @@ export type Project = {
   focus?: string;
   description: string;
   link?: NamedLink;
+  images?: ProjectImage[];
   demonstrates?: string[];
   analyticsNote?: string;
 };

@@ -1,5 +1,74 @@
 import type { CvData } from "../types/cv";
 
+const catchTheCandyImages = [
+  {
+    src: "/images/projects/catch-the-candy/01.webp",
+    thumbSrc: "/images/projects/catch-the-candy/thumbs/01.webp",
+    alt: "Catch The Candy gameplay screenshot 1",
+  },
+  {
+    src: "/images/projects/catch-the-candy/02.webp",
+    thumbSrc: "/images/projects/catch-the-candy/thumbs/02.webp",
+    alt: "Catch The Candy gameplay screenshot 2",
+  },
+  {
+    src: "/images/projects/catch-the-candy/03.webp",
+    thumbSrc: "/images/projects/catch-the-candy/thumbs/03.webp",
+    alt: "Catch The Candy gameplay screenshot 3",
+  },
+  {
+    src: "/images/projects/catch-the-candy/04.webp",
+    thumbSrc: "/images/projects/catch-the-candy/thumbs/04.webp",
+    alt: "Catch The Candy gameplay screenshot 4",
+  },
+];
+
+const gameToThinkImages = [
+  {
+    src: "/images/projects/game-to-think/01.webp",
+    thumbSrc: "/images/projects/game-to-think/thumbs/01.webp",
+    alt: "Game To Think gameplay screenshot 1",
+  },
+  {
+    src: "/images/projects/game-to-think/02.webp",
+    thumbSrc: "/images/projects/game-to-think/thumbs/02.webp",
+    alt: "Game To Think gameplay screenshot 2",
+  },
+  {
+    src: "/images/projects/game-to-think/03.webp",
+    thumbSrc: "/images/projects/game-to-think/thumbs/03.webp",
+    alt: "Game To Think gameplay screenshot 3",
+  },
+  {
+    src: "/images/projects/game-to-think/04.webp",
+    thumbSrc: "/images/projects/game-to-think/thumbs/04.webp",
+    alt: "Game To Think gameplay screenshot 4",
+  },
+];
+
+const hamsterCombatImages = [
+  {
+    src: "/images/projects/hamster-combat/01.webp",
+    thumbSrc: "/images/projects/hamster-combat/thumbs/01.webp",
+    alt: "Hamster Combat Gamedev Heroes screenshot 1",
+  },
+  {
+    src: "/images/projects/hamster-combat/02.webp",
+    thumbSrc: "/images/projects/hamster-combat/thumbs/02.webp",
+    alt: "Hamster Combat Gamedev Heroes screenshot 2",
+  },
+  {
+    src: "/images/projects/hamster-combat/03.webp",
+    thumbSrc: "/images/projects/hamster-combat/thumbs/03.webp",
+    alt: "Hamster Combat Gamedev Heroes screenshot 3",
+  },
+  {
+    src: "/images/projects/hamster-combat/04.webp",
+    thumbSrc: "/images/projects/hamster-combat/thumbs/04.webp",
+    alt: "Hamster Combat Gamedev Heroes screenshot 4",
+  },
+];
+
 export const cvData: CvData = {
   profile: {
     name: "Артём Кондратенко",
@@ -147,6 +216,7 @@ export const cvData: CvData = {
         label: "Google Play",
         href: "https://play.google.com/store/apps/details?id=com.hc.cut.arcade.catchthecandy",
       },
+      images: catchTheCandyImages,
     },
     {
       title: "Game To Think",
@@ -158,6 +228,7 @@ export const cvData: CvData = {
         label: "Google Play",
         href: "https://play.google.com/store/apps/details?id=com.nerve.gametothink",
       },
+      images: gameToThinkImages,
     },
     {
       title: "Hamster Combat Gamedev Heroes",
@@ -169,6 +240,7 @@ export const cvData: CvData = {
         label: "TMA",
         href: "https://t.me/hamster_kombat_bot?profile",
       },
+      images: hamsterCombatImages,
     },
     {
       title: "MeowMeals",

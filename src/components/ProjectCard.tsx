@@ -1,5 +1,6 @@
 import { ExternalLink } from "lucide-react";
 import type { Project } from "../types/cv";
+import { ProjectImageGallery } from "./ProjectImageGallery";
 
 type ProjectCardProps = {
   project: Project;
@@ -7,11 +8,16 @@ type ProjectCardProps = {
 
 export function ProjectCard({ project }: ProjectCardProps) {
   return (
-    <article className="flex h-full flex-col rounded-lg border border-white/10 bg-slate-900/70 p-6 shadow-soft sm:p-7">
+    <article className="group flex h-full flex-col rounded-xl border border-white/10 bg-slate-900/70 p-6 shadow-soft transition hover:border-teal-300/25 hover:bg-slate-900/85 sm:p-7">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
+          <p className="mb-3 w-fit rounded-full border border-teal-300/20 bg-teal-300/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-teal-200">
+            Project
+          </p>
           <h3 className="text-2xl font-semibold text-slate-50">{project.title}</h3>
-          <p className="mt-2 text-base font-medium text-teal-300">{project.type}</p>
+          <p className="mt-2 max-w-xl text-base font-medium leading-7 text-teal-300">
+            {project.type}
+          </p>
         </div>
         {project.link ? (
           <a
@@ -25,6 +31,8 @@ export function ProjectCard({ project }: ProjectCardProps) {
           </a>
         ) : null}
       </div>
+
+      <ProjectImageGallery images={project.images} projectTitle={project.title} />
 
       {project.focus ? (
         <p className="mt-5 text-[15px] leading-7 text-slate-400">

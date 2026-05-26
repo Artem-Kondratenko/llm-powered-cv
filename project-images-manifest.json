@@ -1,0 +1,176 @@
+{
+  "catch-the-candy": [
+    {
+      "src": "/llm-powered-cv/images/projects/catch-the-candy/01.webp",
+      "thumbSrc": "/llm-powered-cv/images/projects/catch-the-candy/thumbs/01.webp",
+      "alt": "Catch The Candy screenshot 1",
+      "originalName": "unnamed.webp",
+      "fullSize": [
+        1600,
+        900
+      ],
+      "thumbSize": [
+        640,
+        360
+      ]
+    },
+    {
+      "src": "/llm-powered-cv/images/projects/catch-the-candy/02.webp",
+      "thumbSrc": "/llm-powered-cv/images/projects/catch-the-candy/thumbs/02.webp",
+      "alt": "Catch The Candy screenshot 2",
+      "originalName": "unnamed (1).webp",
+      "fullSize": [
+        1600,
+        900
+      ],
+      "thumbSize": [
+        640,
+        360
+      ]
+    },
+    {
+      "src": "/llm-powered-cv/images/projects/catch-the-candy/03.webp",
+      "thumbSrc": "/llm-powered-cv/images/projects/catch-the-candy/thumbs/03.webp",
+      "alt": "Catch The Candy screenshot 3",
+      "originalName": "unnamed (2).webp",
+      "fullSize": [
+        1600,
+        900
+      ],
+      "thumbSize": [
+        640,
+        360
+      ]
+    },
+    {
+      "src": "/llm-powered-cv/images/projects/catch-the-candy/04.webp",
+      "thumbSrc": "/llm-powered-cv/images/projects/catch-the-candy/thumbs/04.webp",
+      "alt": "Catch The Candy screenshot 4",
+      "originalName": "unnamed (3).webp",
+      "fullSize": [
+        1600,
+        900
+      ],
+      "thumbSize": [
+        640,
+        360
+      ]
+    }
+  ],
+  "game-to-think": [
+    {
+      "src": "/llm-powered-cv/images/projects/game-to-think/01.webp",
+      "thumbSrc": "/llm-powered-cv/images/projects/game-to-think/thumbs/01.webp",
+      "alt": "Game To Think screenshot 1",
+      "originalName": "unnamed.webp",
+      "fullSize": [
+        663,
+        1440
+      ],
+      "thumbSize": [
+        193,
+        420
+      ]
+    },
+    {
+      "src": "/llm-powered-cv/images/projects/game-to-think/02.webp",
+      "thumbSrc": "/llm-powered-cv/images/projects/game-to-think/thumbs/02.webp",
+      "alt": "Game To Think screenshot 2",
+      "originalName": "unnamed (1).webp",
+      "fullSize": [
+        663,
+        1440
+      ],
+      "thumbSize": [
+        193,
+        420
+      ]
+    },
+    {
+      "src": "/llm-powered-cv/images/projects/game-to-think/03.webp",
+      "thumbSrc": "/llm-powered-cv/images/projects/game-to-think/thumbs/03.webp",
+      "alt": "Game To Think screenshot 3",
+      "originalName": "unnamed (2).webp",
+      "fullSize": [
+        663,
+        1440
+      ],
+      "thumbSize": [
+        193,
+        420
+      ]
+    },
+    {
+      "src": "/llm-powered-cv/images/projects/game-to-think/04.webp",
+      "thumbSrc": "/llm-powered-cv/images/projects/game-to-think/thumbs/04.webp",
+      "alt": "Game To Think screenshot 4",
+      "originalName": "unnamed (4).webp",
+      "fullSize": [
+        663,
+        1440
+      ],
+      "thumbSize": [
+        193,
+        420
+      ]
+    }
+  ],
+  "hamster-combat": [
+    {
+      "src": "/llm-powered-cv/images/projects/hamster-combat/01.webp",
+      "thumbSrc": "/llm-powered-cv/images/projects/hamster-combat/thumbs/01.webp",
+      "alt": "Hamster Combat Gamedev Heroes screenshot 1",
+      "originalName": "photo_1_2026-05-25_13-17-21.jpg",
+      "fullSize": [
+        738,
+        1600
+      ],
+      "thumbSize": [
+        194,
+        420
+      ]
+    },
+    {
+      "src": "/llm-powered-cv/images/projects/hamster-combat/02.webp",
+      "thumbSrc": "/llm-powered-cv/images/projects/hamster-combat/thumbs/02.webp",
+      "alt": "Hamster Combat Gamedev Heroes screenshot 2",
+      "originalName": "photo_2_2026-05-25_13-17-21.jpg",
+      "fullSize": [
+        738,
+        1600
+      ],
+      "thumbSize": [
+        194,
+        420
+      ]
+    },
+    {
+      "src": "/llm-powered-cv/images/projects/hamster-combat/03.webp",
+      "thumbSrc": "/llm-powered-cv/images/projects/hamster-combat/thumbs/03.webp",
+      "alt": "Hamster Combat Gamedev Heroes screenshot 3",
+      "originalName": "photo_3_2026-05-25_13-17-21.jpg",
+      "fullSize": [
+        738,
+        1600
+      ],
+      "thumbSize": [
+        194,
+        420
+      ]
+    },
+    {
+      "src": "/llm-powered-cv/images/projects/hamster-combat/04.webp",
+      "thumbSrc": "/llm-powered-cv/images/projects/hamster-combat/thumbs/04.webp",
+      "alt": "Hamster Combat Gamedev Heroes screenshot 4",
+      "originalName": "photo_4_2026-05-25_13-17-21.jpg",
+      "fullSize": [
+        738,
+        1600
+      ],
+      "thumbSize": [
+        194,
+        420
+      ]
+    }
+  ]
+}
