@@ -43,7 +43,7 @@ export function Hero({ profile, contacts }: HeroProps) {
 
           <div className="mt-9 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
             <a
-              href="#assistant"
+              href="#assistant-chat"
               className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-teal-300 px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-teal-200"
             >
               <MessageCircle className="h-4 w-4" aria-hidden="true" />

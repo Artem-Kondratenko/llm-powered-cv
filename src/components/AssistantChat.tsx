@@ -244,7 +244,10 @@ export function AssistantChat({ data, contacts }: AssistantChatProps) {
         ) : null}
       </div>
 
-      <div className="flex min-h-[560px] flex-col rounded-lg border border-white/10 bg-slate-900/70 shadow-soft">
+      <div
+        id="assistant-chat"
+        className="flex min-h-[560px] scroll-mt-40 flex-col rounded-lg border border-white/10 bg-slate-900/70 shadow-soft lg:scroll-mt-32"
+      >
         <div className="flex-1 space-y-4 overflow-y-auto p-5 sm:p-6">
           {messages.map((message, index) => {
             const ctaLabel = getCtaLabel(message.suggestedCta ?? null);

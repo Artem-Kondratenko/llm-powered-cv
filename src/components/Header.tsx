@@ -8,8 +8,6 @@ type HeaderProps = {
   contacts: ContactLinks;
 };
 
-const mobileNavLinks = headerLinks.filter((link) => link.href !== "#assistant");
-
 export function Header({ profile, contacts }: HeaderProps) {
   const navLinkClass =
     "inline-flex min-h-10 shrink-0 items-center justify-center rounded-lg px-3 py-2 text-sm font-medium text-slate-300 transition hover:bg-white/10 hover:text-slate-50 focus:outline-none focus:ring-4 focus:ring-teal-300/15";
@@ -58,7 +56,7 @@ export function Header({ profile, contacts }: HeaderProps) {
               <Linkedin className="h-4 w-4" aria-hidden="true" />
               LinkedIn
             </a>
-            <a href="#assistant" className={assistantActionClass}>
+            <a href="#assistant-chat" className={assistantActionClass}>
               <MessageCircle className="h-4 w-4" aria-hidden="true" />
               CV-ассистент
             </a>
@@ -82,7 +80,7 @@ export function Header({ profile, contacts }: HeaderProps) {
               <Linkedin className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
               <span>LinkedIn</span>
             </a>
-            <a href="#assistant" className={mobileAssistantActionClass}>
+            <a href="#assistant-chat" className={mobileAssistantActionClass}>
               <MessageCircle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
               <span>CV-ассистент</span>
             </a>
@@ -91,7 +89,7 @@ export function Header({ profile, contacts }: HeaderProps) {
             className="grid grid-cols-5 gap-1.5 border-t border-white/10 px-2 py-2"
             aria-label="Навигация по секциям"
           >
-            {mobileNavLinks.map((link) => (
+            {headerLinks.map((link) => (
               <a key={link.href} href={link.href} className={mobileNavLinkClass}>
                 {link.label}
               </a>
@@ -113,7 +111,7 @@ export function Header({ profile, contacts }: HeaderProps) {
               <Linkedin className="h-4 w-4" aria-hidden="true" />
               LinkedIn
             </a>
-            <a href="#assistant" className={assistantActionClass}>
+            <a href="#assistant-chat" className={assistantActionClass}>
               <MessageCircle className="h-4 w-4" aria-hidden="true" />
               CV-ассистент
             </a>

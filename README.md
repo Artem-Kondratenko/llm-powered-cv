@@ -86,7 +86,9 @@ UI-компоненты в `src/components/` лучше менять тольк�
 src/data/navigationData.ts
 ```
 
-Там можно поменять названия пунктов и anchor-ссылки, например `#experience`, `#projects`, `#assistant`.
+Там можно поменять названия пунктов и anchor-ссылки, например `#experience`, `#projects`, `#stack`.
+
+CTA `CV-ассистент` не дублируется в nav-списке и ведёт на `#assistant-chat`, то есть сразу к окну диалога.
 
 CTA в header используют контакты и PDF из:
 
