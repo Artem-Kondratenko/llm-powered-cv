@@ -66,6 +66,8 @@ function getCtaHref(suggestedCta: AssistantSuggestedCta, contacts: ContactLinks)
   }
 }
 
+const telegramCtaQuestionIds = new Set(["contact", "mobile-f2p", "salary", "work-format"]);
+
 export function AssistantChat({ data, contacts }: AssistantChatProps) {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -95,7 +97,7 @@ export function AssistantChat({ data, contacts }: AssistantChatProps) {
     if (questionId) {
       return {
         answer: data.answers[questionId] ?? data.fallbackAnswer,
-        suggestedCta: questionId === "contact" || questionId === "mobile-f2p" ? "telegram" : null,
+        suggestedCta: telegramCtaQuestionIds.has(questionId) ? "telegram" : null,
       };
     }
 
@@ -104,8 +106,7 @@ export function AssistantChat({ data, contacts }: AssistantChatProps) {
     if (quickQuestion) {
       return {
         answer: data.answers[quickQuestion.id] ?? data.fallbackAnswer,
-        suggestedCta:
-          quickQuestion.id === "contact" || quickQuestion.id === "mobile-f2p" ? "telegram" : null,
+        suggestedCta: telegramCtaQuestionIds.has(quickQuestion.id) ? "telegram" : null,
       };
     }
 
@@ -149,7 +150,9 @@ export function AssistantChat({ data, contacts }: AssistantChatProps) {
       const scriptedAnswer = getScriptedAnswer(trimmedQuestion, questionId);
       setAssistantMode("fallback");
 
-      setFallbackNotice("Сейчас отвечаю в базовом режиме по CV. Если вопрос требует деталей, лучше написать Артёму напрямую.");
+      setFallbackNotice(
+        "Сейчас отвечаю в базовом режиме по CV. Для деталей лучше написать Артёму напрямую.",
+      );
       setMessages((current) => [
         ...current,
         {
@@ -184,8 +187,10 @@ export function AssistantChat({ data, contacts }: AssistantChatProps) {
             <Bot className="h-5 w-5" aria-hidden="true" />
           </div>
           <div>
-            <h3 className="text-xl font-semibold text-slate-50">CV-ассистент v1</h3>
-            <p className="text-sm text-slate-400">LLM при доступном backend, fallback без выдумывания опыта</p>
+            <h3 className="text-xl font-semibold text-slate-50">CV-ассистент</h3>
+            <p className="text-sm text-slate-400">
+              Отвечает по базе CV: опыт, проекты, стек и контакты
+            </p>
           </div>
         </div>
 
@@ -225,7 +230,7 @@ export function AssistantChat({ data, contacts }: AssistantChatProps) {
           <a
             href={publicAsset(contacts.pdfPath)}
             download
-            className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm font-semibold text-slate-100 transition hover:border-teal-300/40 hover:bg-teal-300/10 hover:text-white"
+            className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-teal-200/50 bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-950 transition hover:border-teal-100 hover:bg-teal-100"
           >
             <Download className="h-4 w-4" aria-hidden="true" />
             PDF
@@ -264,7 +269,7 @@ export function AssistantChat({ data, contacts }: AssistantChatProps) {
                 >
                   <p>{message.text}</p>
                   {message.usedFallback ? (
-                    <p className="mt-2 text-sm leading-6 text-slate-500">Ответ из fallback-базы</p>
+                    <p className="mt-2 text-sm leading-6 text-slate-500">Базовый ответ по CV</p>
                   ) : null}
                   {ctaLabel && ctaHref ? (
                     <a

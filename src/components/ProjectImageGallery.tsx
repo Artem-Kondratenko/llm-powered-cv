@@ -73,23 +73,26 @@ export function ProjectImageGallery({ images, projectTitle }: ProjectImageGaller
 
   return (
     <>
-      <div className="mt-6">
-        <div className="no-scrollbar flex gap-3 overflow-x-auto pb-1" aria-label={`${projectTitle} screenshots`}>
+      <div className="mt-5 rounded-xl border border-white/10 bg-slate-950/35 p-2">
+        <div
+          className="no-scrollbar flex gap-2 overflow-x-auto"
+          aria-label={`${projectTitle} screenshots`}
+        >
           {images.map((image, index) => (
             <button
               key={`${image.src}-${index}`}
               type="button"
               onClick={() => setSelectedIndex(index)}
-              className="group relative h-28 w-40 shrink-0 overflow-hidden rounded-lg border border-white/10 bg-slate-950/60 transition hover:-translate-y-0.5 hover:border-teal-300/45 hover:brightness-110 focus:outline-none focus:ring-4 focus:ring-teal-300/20 sm:h-32 sm:w-48"
+              className="group relative h-20 w-28 shrink-0 overflow-hidden rounded-md border border-white/10 bg-slate-950/70 transition hover:-translate-y-0.5 hover:border-teal-300/45 hover:bg-slate-900 focus:outline-none focus:ring-4 focus:ring-teal-300/20 sm:h-24 sm:w-36"
               aria-label={`Открыть ${image.alt}`}
             >
               <img
                 src={publicAsset(image.thumbSrc)}
                 alt={image.alt}
                 loading="lazy"
-                className="h-full w-full object-cover transition duration-200 group-hover:scale-[1.03]"
+                className="h-full w-full object-cover transition duration-200 group-hover:scale-[1.025]"
               />
-              <span className="pointer-events-none absolute inset-0 bg-gradient-to-t from-slate-950/35 to-transparent opacity-70" />
+              <span className="pointer-events-none absolute inset-0 bg-gradient-to-t from-slate-950/25 to-transparent opacity-60" />
             </button>
           ))}
         </div>

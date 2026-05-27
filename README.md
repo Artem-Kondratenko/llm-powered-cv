@@ -53,7 +53,10 @@ npm run preview
 3. Залить репозиторий на GitHub.
 4. Настроить GitHub Pages на публикацию собранной папки `dist/` через GitHub Actions или другой удобный способ.
 
-Если используете GitHub Actions, workflow должен запускать `npm install`, затем `npm run build`, а потом публиковать `dist/`.
+Текущий workflow `.github/workflows/deploy.yml` запускает `npm ci`, затем `npm run build`, а потом публикует `dist/`.
+В build передается `VITE_CV_ASSISTANT_API_URL`: сначала из GitHub Actions variable, а если variable пустая — текущий production endpoint `https://cv-api-209-38-212-226.sslip.io/api/cv-assistant/chat`.
+
+Файл `.env.production` уже находится в репозитории и содержит только публичный backend URL. Если в другой копии проекта `.env.production` окажется под `.gitignore`, его нужно добавить явно через `git add -f .env.production` или вместо файла настроить GitHub Actions variable `VITE_CV_ASSISTANT_API_URL`.
 
 ## Где редактировать тексты лендинга
 
@@ -93,6 +96,13 @@ src/data/cvData.ts
 
 Если меняется путь к PDF, Telegram или LinkedIn, правьте их в `contacts`.
 
+На mobile header устроен в два ряда:
+
+- быстрые действия: `Скачать PDF`, `Telegram`, `LinkedIn`, `CV-ассистент`;
+- навигация: `Главная`, `Опыт`, `Проекты`, `Стек`, `Мини игра`.
+
+Desktop header остается цельным. Для якорей используется `scroll-mt-*` в `Section` и `Hero`, чтобы sticky header не перекрывал начало секций.
+
 ## Где менять вопросы и ответы ассистента
 
 Базовые scripted quick questions CV-ассистента настроены здесь:
@@ -115,6 +125,19 @@ src/lib/assistantFallback.ts
 ```
 
 Если при сборке задан `VITE_CV_ASSISTANT_API_URL`, ассистент сначала обращается к backend. Если endpoint не задан или недоступен, UI остается рабочим и отвечает из fallback-базы.
+
+Backend LLM knowledge base лежит здесь:
+
+```txt
+backend/src/assistant/knowledgeBase.ts
+```
+
+При изменении фактов о CV синхронизируйте:
+
+- `src/data/cvData.ts` — видимый контент лендинга;
+- `src/data/assistantData.ts` — quick questions и базовые ответы;
+- `src/lib/assistantFallback.ts` — scripted fallback для HR-вопросов;
+- `backend/src/assistant/knowledgeBase.ts` — база для Gemini backend.
 
 ## Куда класть PDF
 
@@ -149,6 +172,19 @@ photoPath: "/images/artem-photo.jpg"
 ```
 
 Если фото временно удалить, Hero-блок останется читаемым, просто без портрета.
+
+Из этого же фото подготовлены site icons:
+
+```txt
+public/favicon.ico
+public/favicon-32x32.png
+public/apple-touch-icon.png
+public/icon-192x192.png
+public/icon-512x512.png
+public/site.webmanifest
+```
+
+Подключение находится в `index.html`. Пути относительные (`./...`), чтобы иконки корректно работали на GitHub Pages при `base: './'`.
 
 ## Куда класть изображения проектов
 
@@ -209,6 +245,7 @@ src/components/ProjectImageGallery.tsx
 Что умеет галерея:
 
 - показывает горизонтальную ленту превью;
+- держит превью компактными и единообразными, в стиле плотной media preview-ленты;
 - открывает изображение в full-size lightbox;
 - листает изображения Previous / Next только внутри текущего проекта;
 - поддерживает клавиши `ArrowLeft`, `ArrowRight` и `Escape`;
@@ -238,6 +275,21 @@ src/components/
 tailwind.config.ts
 ```
 
+## Как проверить frontend UI
+
+После изменений запускайте dev server:
+
+```bash
+npm run dev
+```
+
+Проверьте desktop и mobile viewport:
+
+- mobile header состоит из двух понятных рядов и не перекрывает якорные секции;
+- `Скачать PDF` визуально заметнее Telegram/LinkedIn и ведет на `public/files/Artem_Kondratenko_GameDesigner_CV.pdf`;
+- project preview-лента компактная, а full-size lightbox открывается по клику;
+- favicon отображается во вкладке браузера и manifest подтягивает `192x192`/`512x512` icons.
+
 ## Для чего нужен LANDING_CONTENT_SPEC.md
 
 Файл:
@@ -265,6 +317,12 @@ LANDING_CONTENT_SPEC.md
 
 `src/components/AssistantChat.tsx` умеет обращаться к настоящему backend endpoint, если при сборке задан `VITE_CV_ASSISTANT_API_URL`.
 
+Flow:
+
+```txt
+Frontend AssistantChat -> VITE_CV_ASSISTANT_API_URL -> backend /api/cv-assistant/chat -> Gemini
+```
+
 Production endpoint сейчас задан в:
 
 ```txt
@@ -290,7 +348,18 @@ Backend живет отдельно в:
 backend/
 ```
 
-Gemini API key хранится только в backend env как `GEMINI_API_KEY` и не должен попадать во frontend. Во frontend можно хранить только публичный `VITE_CV_ASSISTANT_API_URL`, потому что `VITE_*` переменные встраиваются в JS bundle. Подробные инструкции по локальному запуску, DigitalOcean App Platform и GitHub Pages variable лежат в:
+В production технические предупреждения не показываются: пользователь видит нейтральный текст “Сейчас отвечаю в базовом режиме по CV. Для деталей лучше написать Артёму напрямую.” и подпись ответа “Базовый ответ по CV”. В dev mode под quick questions остается диагностика `endpoint configured: yes/no; mode: ...`.
+
+Gemini API key хранится только в backend env как `GEMINI_API_KEY` и не должен попадать во frontend. Во frontend можно хранить только публичный `VITE_CV_ASSISTANT_API_URL`, потому что `VITE_*` переменные встраиваются в JS bundle. Никогда не добавляйте `VITE_GEMINI_API_KEY`.
+
+Проверить, что key не попал в `dist`:
+
+```bash
+npm run build
+rg "AIza|GEMINI_API_KEY|VITE_GEMINI_API_KEY" dist
+```
+
+Допустимо, что `dist` содержит публичный endpoint URL. Подробные инструкции по локальному запуску, DigitalOcean App Platform и GitHub Pages variable лежат в:
 
 ```txt
 ASSISTANT_SETUP.md

@@ -15,6 +15,8 @@ export function ContactBar({ contacts, variant = "footer" }: ContactBarProps) {
 
   const linkClass =
     "inline-flex min-h-12 items-center justify-center gap-2 rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-slate-100 transition hover:border-teal-300/40 hover:bg-teal-300/10 hover:text-white";
+  const pdfLinkClass =
+    "inline-flex min-h-12 items-center justify-center gap-2 rounded-lg border border-teal-200/50 bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:border-teal-100 hover:bg-teal-100";
 
   return (
     <div className={className}>
@@ -30,7 +32,7 @@ export function ContactBar({ contacts, variant = "footer" }: ContactBarProps) {
         <Mail className="h-4 w-4" aria-hidden="true" />
         Email
       </a>
-      <a className={linkClass} href={publicAsset(contacts.pdfPath)} download>
+      <a className={pdfLinkClass} href={publicAsset(contacts.pdfPath)} download>
         <Download className="h-4 w-4" aria-hidden="true" />
         Скачать PDF
       </a>

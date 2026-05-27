@@ -11,7 +11,9 @@
 - Gemini API key хранится только в backend env.
 - Frontend знает только публичный URL endpoint через `VITE_CV_ASSISTANT_API_URL`.
 - Production endpoint сейчас: `https://cv-api-209-38-212-226.sslip.io/api/cv-assistant/chat`.
+- Flow: `Frontend AssistantChat -> VITE_CV_ASSISTANT_API_URL -> backend /api/cv-assistant/chat -> Gemini`.
 - Если backend не настроен или недоступен, `AssistantChat` использует scripted fallback из `src/data/assistantData.ts` и `src/lib/assistantFallback.ts`.
+- В production fallback выглядит нейтрально для HR: “Сейчас отвечаю в базовом режиме по CV. Для деталей лучше написать Артёму напрямую.” Ответы помечаются как “Базовый ответ по CV”.
 
 ## Frontend local
 
@@ -20,7 +22,7 @@ npm install
 npm run dev
 ```
 
-Без `VITE_CV_ASSISTANT_API_URL` чат работает как scripted assistant.
+Без `VITE_CV_ASSISTANT_API_URL` чат работает как scripted assistant. Это нормальный режим для проверки fallback.
 
 Чтобы проверить frontend с production backend:
 
@@ -46,6 +48,24 @@ npm run dev
 ```powershell
 Remove-Item Env:VITE_CV_ASSISTANT_API_URL -ErrorAction SilentlyContinue
 npm run dev
+```
+
+Fallback test questions:
+
+```txt
+Что Артём делал в Chameleon 42?
+Чем Артём полезен как Game Designer Generalist?
+Какие точные проценты роста retention были после A/B-тестов?
+Артём умеет программировать на Python/C#/SQL?
+Подходит ли он для mobile F2P вакансии?
+Какой у него английский?
+Что такое MeowMeals?
+Можно ли обсудить вакансию?
+Какая зарплата?
+Где находится Артём?
+Какие форматы работы рассматривает?
+Что он делал в Hamster Kombat?
+Что такое CombuchAI?
 ```
 
 ## Backend local
@@ -111,8 +131,9 @@ Response:
 
 - Knowledge base: `backend/src/assistant/knowledgeBase.ts`.
 - System prompt: `backend/src/assistant/systemPrompt.ts`.
-- При изменении CV-контента в `src/data/cvData.ts` нужно синхронно обновлять backend knowledge base.
-- Prompt запрещает выдумывать проценты роста метрик, уверенное программирование на Python/C#/SQL, неуказанный коммерческий опыт, доступность, зарплату, сроки выхода и уровень английского сверх базы.
+- При изменении CV-контента в `src/data/cvData.ts` нужно синхронно обновлять backend knowledge base, `src/data/assistantData.ts` и `src/lib/assistantFallback.ts`.
+- Prompt запрещает выдумывать проценты роста метрик, уверенное программирование на Python/C#/SQL, неуказанный коммерческий опыт, доступность, сроки выхода, NDA-детали и уровень английского сверх базы.
+- По условиям работы можно говорить только факты из базы: full-time/project-based/contract/remote/офис Минск, ориентир от $2000/мес. с зависимостью от формата и задач. Нельзя обещать финальные условия от лица Артёма.
 
 ## DigitalOcean App Platform
 
@@ -147,6 +168,10 @@ VITE_CV_ASSISTANT_API_URL=https://cv-api-209-38-212-226.sslip.io/api/cv-assistan
 
 Это безопасно, потому что это только публичный URL backend. `GEMINI_API_KEY` нельзя хранить во frontend env: любые `VITE_*` переменные встраиваются в JS bundle и видны пользователю.
 
+`.env.production` в текущем репозитории уже tracked и содержит только `VITE_CV_ASSISTANT_API_URL`. Если файл случайно попал под ignore в другой копии, используйте `git add -f .env.production` или настройте GitHub Actions variable вместо файла.
+
+Нельзя использовать `VITE_GEMINI_API_KEY`: все `VITE_*` значения попадут во frontend bundle.
+
 Если нужно переопределить endpoint без изменения файла, в GitHub repository settings добавьте Actions variable:
 
 ```txt
@@ -164,6 +189,14 @@ Frontend:
 ```bash
 npm run build
 ```
+
+Security после build:
+
+```bash
+rg "AIza|GEMINI_API_KEY|VITE_GEMINI_API_KEY" dist
+```
+
+Ожидаемо: совпадений по ключам нет. Публичный URL `https://cv-api-209-38-212-226.sslip.io/api/cv-assistant/chat` в `dist` допустим.
 
 Backend:
 
@@ -194,7 +227,10 @@ Production:
 - При выключенном backend чат не падает и показывает scripted fallback.
 - В frontend bundle и репозитории нет реального `GEMINI_API_KEY`.
 - В dev mode под quick questions виден диагностический статус `endpoint configured: yes/no; mode: ...`.
-- В production технический статус не показывается; понять, что frontend подключен к backend, можно по ответу LLM без подписи `Ответ из fallback-базы`.
+- В production технический статус не показывается; понять, что frontend подключен к backend, можно по ответу LLM без подписи `Базовый ответ по CV`.
+- Mobile header: два ряда, быстрые действия сверху, навигация снизу; якоря не уходят под sticky header.
+- Favicon: во вкладке отображается фото Артёма; `index.html` подключает `favicon.ico`, `favicon-32x32.png`, `apple-touch-icon.png` и `site.webmanifest`.
+- Project gallery: превью компактные; full-size lightbox открывается и листается.
 
 Проверить production backend:
 

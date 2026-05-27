@@ -13,7 +13,7 @@ import { cvData } from "./data/cvData";
 
 export function App() {
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100">
+    <div className="min-h-screen overflow-x-hidden bg-slate-950 text-slate-100">
       <Header profile={cvData.profile} contacts={cvData.contacts} />
       <Hero profile={cvData.profile} contacts={cvData.contacts} />
 
@@ -35,7 +35,7 @@ export function App() {
           id="assistant"
           eyebrow="Interactive CV"
           title="CV-ассистент"
-          description="Быстрый scripted-chat по опыту, проектам, стеку и pet-проектам."
+          description="Быстрый чат по опыту, проектам, стеку и pet-проектам."
         >
           <AssistantChat data={assistantData} contacts={cvData.contacts} />
         </Section>

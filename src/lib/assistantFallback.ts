@@ -28,8 +28,16 @@ const fallbackRules: FallbackRule[] = [
   {
     match: (question) => hasAny(question, ["chameleon", "хамелеон", "42"]),
     answer:
-      "В Chameleon 42 Артем собрал документацию с нуля, описывал core/meta loop, сценарии, фичи и LiveOps-события. Также он проектировал PvP/PvE-логику вместе с баланс-геймдизайнером, выступал game/product owner по части фич, подготовил карту экранов в Figma и довел проект до согласованного milestone.",
+      "В Chameleon 42 Артем работал project-based над Telegram strategy battler / auto-battler. Он собрал документацию с нуля, проектировал PvP/PvE-логику вместе с баланс-геймдизайнером, описывал core/meta loop, фичи и LiveOps-события, подготовил карту экранов в Figma и довел проект до согласованного milestone. Остальные детали под NDA до релиза.",
     suggestedCta: "telegram",
+  },
+  {
+    match: (question) =>
+      hasAny(question, ["hamster", "хамстер", "combat", "kombat", "комбат", "game dev", "gamedev", "gamedev masters", "heroes", "геро"]) ||
+      hasAny(question, ["playducky", "плейдаки"]),
+    answer:
+      "В 2024 году Артем работал Game Designer / Геймдизайнером в Playducky над под-проектом GameDev Masters в экосистеме Hamster Kombat. Он участвовал в подготовке до beta stage, писал документацию вместе с продюсером, работал с dev- и art-командами до запуска, а после запуска участвовал в LiveOps и описывал фичи, события, награды и прогрессию.",
+    suggestedCta: null,
   },
   {
     match: (question) =>
@@ -42,20 +50,26 @@ const fallbackRules: FallbackRule[] = [
   {
     match: (question) => hasAny(question, ["python", "c#", "c sharp", "csharp", "sql", "программ"]),
     answer:
-      "В CV-базе нет подтверждения уверенного коммерческого программирования на Python, C# или SQL. Есть опыт vibe-coding, AI-assisted prototyping, Telegram-ботов, rapid MVP, basic Unity/Cocos, NerveEngine и работы с конфигами в Google Sheets/Excel.",
+      "В CV-базе нет подтверждения, что Артем является уверенным Python/C#/SQL developer. Unity и Cocos у него на базовом уровне: он может читать структуру проекта и делать простые правки или прототипы через AI. Корректная формулировка — AI-assisted prototyping / vibe-coding, а не classic software engineering.",
     suggestedCta: "telegram",
   },
   {
     match: (question) => hasAny(question, ["англий", "english", "язык"]),
     answer:
-      "По CV-базе Артем уверенно читает документацию и статьи по теме. Разговорный английский слабый, поэтому не стоит заявлять уровень выше этого.",
-    suggestedCta: "telegram",
+      "По CV-базе Артем уверенно читает документацию и статьи по теме. Разговорный английский — базовый; не стоит приукрашивать его до fluent или intermediate speaking.",
+    suggestedCta: null,
   },
   {
     match: (question) => hasAny(question, ["meowmeals", "meow meals", "meow", "мяу", "бот для контроля веса"]),
     answer:
-      "MeowMeals - pet-проект Артема: Telegram-бот для контроля веса с быстрым логом еды, шагов и тренировок, AI-оценкой еды по тексту/фото, ежедневными рекомендациями и недельными отчетами. В проекте также заложены Telegram Stars, onboarding, уведомления, Pro-функции и аналитическая обвязка на базе LLM.",
-    suggestedCta: "telegram",
+      "MeowMeals - pet-проект Артема: Telegram-бот для контроля веса с быстрым логом еды, шагов и тренировок, AI-оценкой еды по тексту/фото, ежедневными рекомендациями и недельными отчетами. Артем проектировал продуктовую логику, AI-интеграцию, onboarding, уведомления, Pro-функции, монетизацию через Telegram Stars и LLM-аналитику проекта.",
+    suggestedCta: null,
+  },
+  {
+    match: (question) => hasAny(question, ["combuchai", "комбуч", "organic", "органическ", "traffic", "трафик", "saas"]),
+    answer:
+      "CombuchAI - pet-проект / AI tool для поиска и анализа органического трафика для SaaS-проектов. В нем есть AI workflows, поиск organic traffic entry points, LLM-assisted content generation и работа с контекстом площадок, болями аудитории и нативными CTA.",
+    suggestedCta: null,
   },
   {
     match: (question) =>
@@ -69,7 +83,26 @@ const fallbackRules: FallbackRule[] = [
     match: (question) => hasAny(question, ["generalist", "полез", "закрывает", "сильн", "чем артем полезен"]),
     answer:
       "Как Game Designer Generalist Артем закрывает документацию, FTUE, first sessions, level design, LiveOps, F2P systems, аналитику, A/B tests и AI-assisted prototyping. Если нужно быстро сопоставить его опыт с ролью, лучше написать Артему в Telegram.",
+    suggestedCta: null,
+  },
+  {
+    match: (question) => hasAny(question, ["зарплат", "salary", "ставк", "rate", "$", "2000", "деньг", "гонорар"]),
+    answer:
+      "Зарплата зависит от формата и задач. В CV-базе указан ориентир от $2000 в месяц, но это не финальные условия от лица Артема — детали лучше обсудить напрямую.",
     suggestedCta: "telegram",
+  },
+  {
+    match: (question) =>
+      hasAny(question, ["формат", "full time", "full-time", "contract", "контракт", "project based", "project-based", "remote", "ремоут", "офис"]),
+    answer:
+      "Артем открыт к full-time, project-based/contract и remote. Также можно обсуждать работу в офисе Минска; остальные условия лучше согласовать напрямую.",
+    suggestedCta: "telegram",
+  },
+  {
+    match: (question) => hasAny(question, ["где находится", "локац", "город", "минск", "беларус", "географ", "рынк"]),
+    answer:
+      "Артем находится в Минске, Беларусь. Приоритетные рынки — СНГ/русскоязычные команды и Европа/remote.",
+    suggestedCta: null,
   },
   {
     match: (question) => hasAny(question, ["обсудить", "ваканси", "нанять", "найм", "интервью", "связаться", "контакт"]),

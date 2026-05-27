@@ -12,7 +12,7 @@ export function Hero({ profile, contacts }: HeroProps) {
   const [showPhoto, setShowPhoto] = useState(Boolean(profile.photoPath));
 
   return (
-    <section id="home" className="relative scroll-mt-36 overflow-hidden border-b border-white/10 bg-slate-950">
+    <section id="home" className="relative scroll-mt-32 overflow-hidden border-b border-white/10 bg-slate-950 sm:scroll-mt-36 lg:scroll-mt-32">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_8%,rgba(45,212,191,0.16),transparent_32%),radial-gradient(circle_at_80%_20%,rgba(129,140,248,0.12),transparent_34%)]" />
       <div className="absolute inset-x-0 top-0 h-48 bg-gradient-to-b from-white/10 to-transparent" />
       <div className="relative mx-auto grid min-h-screen w-full max-w-6xl items-center gap-12 px-5 pb-20 pt-40 sm:px-6 sm:pt-44 lg:grid-cols-[1.2fr_0.8fr] lg:px-8">
@@ -52,7 +52,7 @@ export function Hero({ profile, contacts }: HeroProps) {
             <a
               href={publicAsset(contacts.pdfPath)}
               download
-              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg border border-white/10 bg-white/10 px-5 py-3 text-sm font-semibold text-slate-100 transition hover:border-teal-300/40 hover:bg-teal-300/10 hover:text-white"
+              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg border border-teal-200/50 bg-slate-100 px-5 py-3 text-sm font-semibold text-slate-950 transition hover:border-teal-100 hover:bg-teal-100 focus:outline-none focus:ring-4 focus:ring-teal-300/20"
             >
               <Download className="h-4 w-4" aria-hidden="true" />
               Скачать PDF

@@ -50,22 +50,22 @@ const hamsterCombatImages = [
   {
     src: "/images/projects/hamster-combat/01.webp",
     thumbSrc: "/images/projects/hamster-combat/thumbs/01.webp",
-    alt: "Hamster Combat Gamedev Heroes screenshot 1",
+    alt: "Hamster Kombat GameDev Masters screenshot 1",
   },
   {
     src: "/images/projects/hamster-combat/02.webp",
     thumbSrc: "/images/projects/hamster-combat/thumbs/02.webp",
-    alt: "Hamster Combat Gamedev Heroes screenshot 2",
+    alt: "Hamster Kombat GameDev Masters screenshot 2",
   },
   {
     src: "/images/projects/hamster-combat/03.webp",
     thumbSrc: "/images/projects/hamster-combat/thumbs/03.webp",
-    alt: "Hamster Combat Gamedev Heroes screenshot 3",
+    alt: "Hamster Kombat GameDev Masters screenshot 3",
   },
   {
     src: "/images/projects/hamster-combat/04.webp",
     thumbSrc: "/images/projects/hamster-combat/thumbs/04.webp",
-    alt: "Hamster Combat Gamedev Heroes screenshot 4",
+    alt: "Hamster Kombat GameDev Masters screenshot 4",
   },
 ];
 
@@ -84,9 +84,9 @@ export const cvData: CvData = {
       "AI Prototyping",
     ],
     pitch: [
-      "Game Designer Generalist, который умеет не только описывать идеи, но и доводить их до работающей фичи. Основной опыт - мобильные и Telegram-игры: lvl-design, FTUE, core/meta loop, PvP/PvE, LiveOps, офферы, награды, прогрессия и, как результат, монетизация.",
-      "Работал с A/B-тестами, аналитикой и доработками после релиза: менял туториалы, кривую сложности, магазин, внедрил систему босс/бонусных уровней. Хорошо чувствую первые сессии и короткие игровые циклы.",
-      "Активно использую AI-инструменты для прототипирования: самостоятельно сделал TG-бота MeowMeals и разрабатываю CombuchAI для поиска точек органического трафика.",
+      "Game Designer Generalist для mobile F2P и Telegram games, который умеет не только описывать идеи, но и доводить их до работающей фичи. Основной опыт - lvl-design, FTUE, core/meta loop, PvP/PvE, LiveOps, офферы, награды, прогрессия и монетизация.",
+      "Работал с A/B-тестами, аналитикой и доработками после релиза: менял туториалы, кривую сложности, магазин, внедрил систему босс/бонусных уровней. Хорошо чувствует первые сессии и короткие игровые циклы.",
+      "Сейчас делает основной упор на LLM, AI-assisted prototyping и vibe-coding: самостоятельно сделал TG-бота MeowMeals и разрабатывает CombuchAI для поиска точек органического трафика.",
     ],
   },
   contacts: {
@@ -173,11 +173,12 @@ export const cvData: CvData = {
       ],
     },
     {
-      company: "Hamster Combat Gamedev Heroes",
-      role: "Game Designer",
-      period: "project-based",
-      project: "Telegram game / gamedev-themed season.",
+      company: "Playducky",
+      role: "Game Designer / Геймдизайнер",
+      period: "2024",
+      project: "Проект в экосистеме Hamster Kombat: GameDev Masters / Gamedev Heroes.",
       bullets: [
+        "На Артёме была разработка под-проекта GameDev Masters.",
         "Участвовал в подготовке проекта до beta stage.",
         "Писал документацию совместно с продюсером.",
         "Работал с dev- и art-командами до запуска.",
@@ -231,11 +232,11 @@ export const cvData: CvData = {
       images: gameToThinkImages,
     },
     {
-      title: "Hamster Combat Gamedev Heroes",
+      title: "Hamster Kombat: GameDev Masters",
       type: "Telegram game",
-      focus: "documentation, events, progression, rewards, beta stage, partial LiveOps.",
+      focus: "documentation, features, events, rewards, progression, beta stage, LiveOps.",
       description:
-        "Участвовал в подготовке gamedev-themed Telegram-проекта до beta stage: документация, события, фичи, награды, прогрессия, взаимодействие с dev/art-командами.",
+        "Участвовал в подготовке под-проекта GameDev Masters в экосистеме Hamster Kombat до beta stage: документация, события, фичи, награды, прогрессия, взаимодействие с dev/art-командами и LiveOps после запуска.",
       link: {
         label: "TMA",
         href: "https://t.me/hamster_kombat_bot?profile",
@@ -258,6 +259,7 @@ export const cvData: CvData = {
         "монетизация через Telegram Stars",
         "проектирование onboarding, уведомлений и Pro-функций",
         "аналитическая обвязка проекта",
+        "AI-assisted product building / vibe-coding без позиционирования как классическая backend/frontend-разработка",
       ],
       analyticsNote:
         "Создана система аналитики, которая на базе LLM обрабатывает данные проекта и предоставляет готовые отчёты по нужным метрикам. Это помогает быстрее видеть поведение пользователей, проблемные места и точки для продуктовых итераций.",
@@ -266,7 +268,7 @@ export const cvData: CvData = {
       title: "CombuchAI",
       type: "Pet-проект · AI tool · organic traffic research",
       description:
-        "AI-инструмент для поиска точек органического трафика и подготовки нативных входов в обсуждения.",
+        "SaaS-like AI-инструмент для поиска и анализа органического трафика для SaaS-проектов.",
       demonstrates: [
         "AI workflows",
         "поиск organic traffic entry points",
@@ -314,7 +316,7 @@ export const cvData: CvData = {
       items: [
         "Unity - basic",
         "Cocos - basic",
-        "NerveEngine - deep production experience",
+        "NerveEngine - deep production experience: engine improvements, levels, game entities",
         "Google Sheets/Excel configs",
       ],
     },
