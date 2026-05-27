@@ -84,9 +84,9 @@ export const cvData: CvData = {
       "AI Prototyping",
     ],
     pitch: [
-      "Game Designer Generalist для mobile F2P и Telegram games, который умеет не только описывать идеи, но и доводить их до работающей фичи. Основной опыт - lvl-design, FTUE, core/meta loop, PvP/PvE, LiveOps, офферы, награды, прогрессия и монетизация.",
-      "Работал с A/B-тестами, аналитикой и доработками после релиза: менял туториалы, кривую сложности, магазин, внедрил систему босс/бонусных уровней. Хорошо чувствует первые сессии и короткие игровые циклы.",
-      "Сейчас делает основной упор на LLM, AI-assisted prototyping и vibe-coding: самостоятельно сделал TG-бота MeowMeals и разрабатывает CombuchAI для поиска точек органического трафика.",
+      "Game Designer Generalist для mobile F2P и Telegram games, который умеет не только описывать идеи, но и доводить их до работающей фичи. Основной опыт - мобильные и Telegram-игры: геймдизайн документация полного цикла, lvl-design, FTUE, core/meta loop, PvP/PvE, LiveOps, офферы, награды, прогрессия и, как результат, монетизация.",
+      "Работал с A/B-тестами, аналитикой и доработками на пост-релизе: усиливал туториалы, менял кривую сложности уровней, модернизировал магазин, создавал дополнительные системы для увеличения вовлечения и удержания игрока.",
+      "Активно использую AI-инструменты для прототипирования и быстрой проверки гипотез. Самостоятельно сделал и развиваю умного TG-бота MeowMeals и разрабатываю CombuchAI для поиска точек органического трафика.",
     ],
   },
   contacts: {
@@ -136,7 +136,7 @@ export const cvData: CvData = {
     {
       company: "Chameleon 42",
       role: "Game Designer Generalist / Game & Product Owner по фичам",
-      period: "2025 · project-based",
+      period: "2025 · проектная занятость",
       project: "Telegram-баттлер в духе Disciples 2.",
       bullets: [
         "Собрал проектную документацию с нуля.",
@@ -187,7 +187,7 @@ export const cvData: CvData = {
       ],
       links: [
         {
-          label: "Telegram bot",
+          label: "TMA",
           href: "https://t.me/hamster_kombat_bot?profile",
         },
       ],
@@ -316,7 +316,7 @@ export const cvData: CvData = {
       items: [
         "Unity - basic",
         "Cocos - basic",
-        "NerveEngine - deep production experience: engine improvements, levels, game entities",
+        "NerveEngine - разработка движка совместно с Dev командой. Создание и настройка уровней и внутриигровых сущностей",
         "Google Sheets/Excel configs",
       ],
     },
@@ -349,6 +349,6 @@ export const cvData: CvData = {
     title: "Proof-of-work: мини-игра",
     teaser:
       "Здесь появится короткая карточная мини-игра про геймдев: soft launch, дедлайны, фичекрип, retention и попытку выжить до LiveOps. Да, первый забег, скорее всего, будет больно знакомым.",
-    ctaLabel: "Скоро",
+    ctaLabel: "Coming Soon",
   },
 };
