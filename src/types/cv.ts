@@ -54,12 +54,6 @@ export type StackGroup = {
   items: string[];
 };
 
-export type GamePlaceholder = {
-  title: string;
-  teaser: string;
-  ctaLabel: string;
-};
-
 export type CvData = {
   profile: Profile;
   contacts: ContactLinks;
@@ -67,7 +61,6 @@ export type CvData = {
   experience: Experience[];
   projects: Project[];
   stackGroups: StackGroup[];
-  gamePlaceholder: GamePlaceholder;
 };
 
 export type QuickQuestion = {

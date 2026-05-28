@@ -1,7 +1,7 @@
 import { AssistantChat } from "./components/AssistantChat";
 import { ContactBar } from "./components/ContactBar";
 import { ExperienceCard } from "./components/ExperienceCard";
-import { GamePlaceholder } from "./components/GamePlaceholder";
+import { GamePrototypeHub } from "./components/GamePrototypeHub";
 import { Header } from "./components/Header";
 import { Hero } from "./components/Hero";
 import { ProjectCard } from "./components/ProjectCard";
@@ -81,11 +81,11 @@ export function App() {
 
         <Section
           id="proof-game"
-          eyebrow="Future slot"
+          eyebrow="Prototype slots"
           title="Proof-of-work"
-          description="Место под будущую мини-игру, не связанное с основным CV-сценарием."
+          description="Здесь будут появляться небольшие игровые прототипы и интерактивные идеи."
         >
-          <GamePlaceholder game={cvData.gamePlaceholder} />
+          <GamePrototypeHub />
         </Section>
       </main>
 

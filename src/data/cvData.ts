@@ -345,10 +345,4 @@ export const cvData: CvData = {
       ],
     },
   ],
-  gamePlaceholder: {
-    title: "Proof-of-work: мини-игра",
-    teaser:
-      "Здесь появится короткая карточная мини-игра про геймдев: soft launch, дедлайны, фичекрип, retention и попытку выжить до LiveOps. Да, первый забег, скорее всего, будет больно знакомым.",
-    ctaLabel: "Coming Soon",
-  },
 };
