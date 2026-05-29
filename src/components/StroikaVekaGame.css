@@ -298,7 +298,7 @@
   display: grid;
   grid-template-columns: repeat(var(--stroika-cols), minmax(0, 1fr));
   grid-template-rows: repeat(var(--stroika-rows), minmax(0, 1fr));
-  gap: 6px;
+  gap: var(--stroika-board-gap, 6px);
   border: 3px solid #2c322d;
   border-radius: 7px;
   background:
@@ -307,9 +307,16 @@
     repeating-linear-gradient(45deg, rgba(24, 27, 24, 0.12) 0 1px, transparent 1px 13px),
     var(--stroika-road);
   background-size: 34px 34px, 34px 34px, 100% 100%, 100% 100%;
-  padding: 6px;
+  padding: var(--stroika-board-padding, 6px);
   touch-action: none;
   user-select: none;
+}
+
+.stroika-board-viewport {
+  min-width: 0;
+  min-height: 0;
+  display: grid;
+  place-items: center;
 }
 
 .stroika-cell {
@@ -323,6 +330,20 @@
     linear-gradient(135deg, rgba(255, 255, 255, 0.17), transparent 44%),
     radial-gradient(circle at 70% 28%, rgba(85, 91, 78, 0.12), transparent 38%),
     #c2b99f;
+  pointer-events: none;
+}
+
+.stroika-cell *,
+.stroika-building,
+.stroika-building *,
+.stroika-selection,
+.stroika-selection *,
+.stroika-failed-selection,
+.stroika-blocked-overlay,
+.stroika-blocked-overlay *,
+.stroika-tutorial-ghost,
+.stroika-tutorial-ghost * {
+  pointer-events: none;
 }
 
 .stroika-cell::after {
@@ -1305,6 +1326,7 @@
     repeating-linear-gradient(135deg, rgba(238, 227, 199, 0.1) 0 2px, transparent 2px 10px),
     rgba(31, 35, 31, 0.48);
   backdrop-filter: blur(1px);
+  pointer-events: auto;
 }
 
 .stroika-end-card {
@@ -1323,6 +1345,11 @@
   text-align: center;
   box-shadow: 8px 10px 0 rgba(22, 25, 22, 0.26);
   transform: rotate(-1deg);
+  pointer-events: auto;
+}
+
+.stroika-end-card * {
+  pointer-events: auto;
 }
 
 .stroika-end-overlay--danger .stroika-end-card {
@@ -1777,5 +1804,288 @@
 
   .stroika-plan-card span {
     display: none;
+  }
+}
+
+@media (max-width: 720px) {
+  .stroika-game {
+    height: 100%;
+    min-height: 0;
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+    overflow: hidden;
+    border: 0;
+    border-radius: 7px;
+    box-shadow: none;
+  }
+
+  .stroika-game__header {
+    display: none;
+  }
+
+  .stroika-mobile-status {
+    display: grid;
+    grid-template-columns: auto auto minmax(0, 1fr) auto;
+    gap: 4px;
+    padding: 6px 0;
+  }
+
+  .stroika-mobile-status span {
+    min-height: 28px;
+    padding: 4px 6px;
+    border-radius: 5px;
+    font-size: 10px;
+    white-space: nowrap;
+  }
+
+  .stroika-mobile-status strong {
+    font-size: 13px;
+  }
+
+  .stroika-mobile-threat strong {
+    min-width: 36px;
+    color: var(--stroika-red-dark);
+    font-family: inherit;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+  }
+
+  .stroika-game__layout {
+    min-height: 0;
+    height: 100%;
+    display: grid;
+    grid-template-rows: auto auto;
+    align-content: start;
+    gap: 6px;
+    padding: 0 0 calc(10px + env(safe-area-inset-bottom));
+  }
+
+  .stroika-board-shell {
+    min-height: 0;
+    height: auto;
+    display: grid;
+    grid-template-rows: auto auto;
+    gap: 5px;
+    padding: 5px;
+    overflow: hidden;
+  }
+
+  .stroika-board-meta,
+  .stroika-tutorial {
+    display: none;
+  }
+
+  .stroika-progress {
+    gap: 3px;
+    padding: 5px 6px;
+  }
+
+  .stroika-progress__top {
+    font-size: 8px;
+  }
+
+  .stroika-progress__top strong {
+    font-size: 13px;
+  }
+
+  .stroika-progress__track {
+    height: 7px;
+  }
+
+  .stroika-progress__marks {
+    display: none;
+  }
+
+  .stroika-board-viewport {
+    align-self: stretch;
+    width: 100%;
+    height: auto;
+    overflow: hidden;
+    place-items: start center;
+  }
+
+  .stroika-board {
+    width: var(--stroika-board-width, 100%);
+    height: var(--stroika-board-height, auto);
+    max-width: 100%;
+    max-height: 100%;
+    aspect-ratio: var(--stroika-board-aspect);
+    grid-template-columns: repeat(var(--stroika-cols), var(--stroika-cell-size, minmax(0, 1fr)));
+    grid-template-rows: repeat(var(--stroika-rows), var(--stroika-cell-size, minmax(0, 1fr)));
+    gap: var(--stroika-board-gap, 4px);
+    padding: var(--stroika-board-padding, 4px);
+    border-width: 2px;
+  }
+
+  .stroika-cell {
+    border-radius: 3px;
+  }
+
+  .stroika-cell::after {
+    inset: 4px;
+  }
+
+  .stroika-building {
+    overflow: hidden;
+    margin: 0;
+    border-radius: 4px;
+  }
+
+  .stroika-building::before {
+    display: none;
+  }
+
+  .stroika-building__slab,
+  .stroika-building--surface-concrete .stroika-building__slab,
+  .stroika-building--surface-mint .stroika-building__slab,
+  .stroika-building--surface-ochre .stroika-building__slab,
+  .stroika-building--surface-graphite .stroika-building__slab {
+    inset: 2px;
+    box-shadow: inset -3px -3px 0 rgba(54, 58, 52, 0.2);
+  }
+
+  .stroika-building__roof {
+    inset: 17% 13%;
+    box-shadow: none;
+  }
+
+  .stroika-building__label {
+    left: 4px;
+    top: 4px;
+    min-width: 20px;
+    padding: 1px 4px;
+  }
+
+  .stroika-building__flag {
+    right: 5px;
+    top: 5px;
+  }
+
+  .stroika-panel {
+    min-height: 0;
+    display: grid;
+    grid-template-rows: auto auto;
+    gap: 6px;
+  }
+
+  .stroika-panel .stroika-stats,
+  .stroika-threat {
+    display: none;
+  }
+
+  .stroika-actions {
+    order: 1;
+    grid-row: 1;
+    gap: 6px;
+  }
+
+  .stroika-game button {
+    min-height: 38px;
+    border-radius: 6px;
+    font-size: 12px;
+  }
+
+  .stroika-button-icon {
+    width: 15px;
+    height: 15px;
+  }
+
+  .stroika-plan {
+    order: 2;
+    grid-row: 2;
+    overflow: hidden;
+    padding: 6px;
+  }
+
+  .stroika-panel__title {
+    align-items: center;
+    margin-bottom: 5px;
+  }
+
+  .stroika-panel__title span {
+    font-size: 11px;
+  }
+
+  .stroika-panel__title small {
+    font-size: 9px;
+  }
+
+  .stroika-plan__list {
+    display: flex;
+    grid-template-columns: none;
+    gap: 5px;
+    overflow-x: auto;
+    padding: 1px 2px 4px;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .stroika-plan__list::-webkit-scrollbar {
+    display: none;
+  }
+
+  .stroika-plan-card {
+    flex: 0 0 54px;
+    min-width: 54px;
+    min-height: 42px;
+    max-height: 46px;
+    padding: 5px 6px;
+  }
+
+  .stroika-plan-card strong {
+    font-size: 17px;
+  }
+
+  .stroika-plan-card span {
+    display: none;
+  }
+
+  .stroika-plan-card small {
+    margin-top: 3px;
+    font-size: 7px;
+    line-height: 1;
+  }
+
+  .stroika-plan-card--built::after {
+    content: "✓";
+    right: 4px;
+    top: 4px;
+    font-size: 8px;
+  }
+
+  .stroika-tutorial-ghost {
+    border-width: 2px;
+  }
+
+  .stroika-tutorial-ghost__start,
+  .stroika-tutorial-ghost__end {
+    max-width: 48px;
+    padding: 2px 4px;
+    font-size: 7px;
+  }
+
+  .stroika-selection span {
+    min-width: min(94px, calc(100% - 8px));
+    min-height: 30px;
+    padding: 3px 5px;
+  }
+
+  .stroika-selection strong {
+    font-size: clamp(14px, 4vw, 20px);
+  }
+
+  .stroika-selection small {
+    font-size: 8px;
+  }
+
+  .stroika-end-overlay {
+    inset: 5px;
+    padding: 8px;
+  }
+
+  .stroika-end-card {
+    max-width: 310px;
+    gap: 7px;
+    padding: 14px 12px;
   }
 }

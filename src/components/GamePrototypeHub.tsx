@@ -1,6 +1,6 @@
 import { Construction, Lock, Play, X } from "lucide-react";
 import type { ReactNode } from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { gamePrototypeSlots } from "../data/gamePrototypeSlots";
 import type { GamePrototypeSlot } from "../data/gamePrototypeSlots";
 import { StroikaVekaGame } from "./StroikaVekaGame";
@@ -75,10 +75,13 @@ function GamePrototypeCard({
       {expanded ? (
         <div className="prototype-card__expanded">
           <div className="prototype-card__expanded-header">
-            <span>Playable prototype</span>
+            <div className="prototype-card__expanded-title">
+              <span>Playable prototype</span>
+              <strong>{slot.title}</strong>
+            </div>
             <button type="button" onClick={onClose} className="prototype-card__close">
               <X className="h-4 w-4" aria-hidden="true" />
-              Свернуть
+              Закрыть
             </button>
           </div>
           {children}
@@ -90,6 +93,53 @@ function GamePrototypeCard({
 
 export function GamePrototypeHub() {
   const [expandedPrototypeId, setExpandedPrototypeId] = useState<string | null>(null);
+  const [isMobileShellOpen, setIsMobileShellOpen] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return undefined;
+    }
+
+    const mediaQuery = window.matchMedia("(max-width: 720px)");
+    const syncMobileShell = () => setIsMobileShellOpen(Boolean(expandedPrototypeId) && mediaQuery.matches);
+
+    syncMobileShell();
+    mediaQuery.addEventListener("change", syncMobileShell);
+
+    return () => mediaQuery.removeEventListener("change", syncMobileShell);
+  }, [expandedPrototypeId]);
+
+  useEffect(() => {
+    if (!isMobileShellOpen) {
+      return undefined;
+    }
+
+    const { body, documentElement } = document;
+    const scrollY = window.scrollY;
+    const previousBodyOverflow = body.style.overflow;
+    const previousBodyPosition = body.style.position;
+    const previousBodyTop = body.style.top;
+    const previousBodyWidth = body.style.width;
+    const previousBodyTouchAction = body.style.touchAction;
+    const previousHtmlOverflow = documentElement.style.overflow;
+
+    body.style.overflow = "hidden";
+    body.style.position = "fixed";
+    body.style.top = `-${scrollY}px`;
+    body.style.width = "100%";
+    body.style.touchAction = "none";
+    documentElement.style.overflow = "hidden";
+
+    return () => {
+      body.style.overflow = previousBodyOverflow;
+      body.style.position = previousBodyPosition;
+      body.style.top = previousBodyTop;
+      body.style.width = previousBodyWidth;
+      body.style.touchAction = previousBodyTouchAction;
+      documentElement.style.overflow = previousHtmlOverflow;
+      window.scrollTo(0, scrollY);
+    };
+  }, [isMobileShellOpen]);
 
   return (
     <div className="prototype-hub">

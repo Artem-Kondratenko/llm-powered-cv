@@ -64,6 +64,14 @@ type FailedSelection = {
   tone: "warning" | "danger";
 };
 
+type BoardMetrics = {
+  cellSize: number;
+  gap: number;
+  padding: number;
+  width: number;
+  height: number;
+};
+
 type SelectionAnalysis = {
   rect: Rect;
   area: number;
@@ -605,6 +613,8 @@ export function StroikaVekaGame() {
   const [elapsed, setElapsed] = useState(0);
   const [result, setResult] = useState<LevelResult | null>(null);
   const [gameOver, setGameOver] = useState(false);
+  const [boardMetrics, setBoardMetrics] = useState<BoardMetrics | null>(null);
+  const boardViewportRef = useRef<HTMLDivElement | null>(null);
   const boardRef = useRef<HTMLDivElement | null>(null);
   const failureTimerRef = useRef<number | null>(null);
 
@@ -628,6 +638,71 @@ export function StroikaVekaGame() {
     },
     [],
   );
+
+  useEffect(() => {
+    const viewport = boardViewportRef.current;
+
+    if (!viewport || typeof window === "undefined" || typeof ResizeObserver === "undefined") {
+      return undefined;
+    }
+
+    let animationFrameId = 0;
+    const mobileQuery = window.matchMedia("(max-width: 720px)");
+
+    const updateBoardMetrics = () => {
+      window.cancelAnimationFrame(animationFrameId);
+      animationFrameId = window.requestAnimationFrame(() => {
+        if (!mobileQuery.matches) {
+          setBoardMetrics(null);
+          return;
+        }
+
+        const bounds = viewport.getBoundingClientRect();
+
+        if (bounds.width <= 0 || bounds.height <= 0) {
+          return;
+        }
+
+        const gap = level.width >= 7 ? 3 : 4;
+        const padding = 4;
+        const availableWidth = bounds.width - padding * 2 - gap * (level.width - 1);
+        const availableHeight = bounds.height - padding * 2 - gap * (level.height - 1);
+        const rawCellSize = Math.floor(Math.min(availableWidth / level.width, availableHeight / level.height));
+        const cellSize = clamp(rawCellSize, 28, 76);
+        const width = cellSize * level.width + gap * (level.width - 1) + padding * 2;
+        const height = cellSize * level.height + gap * (level.height - 1) + padding * 2;
+
+        setBoardMetrics((current) => {
+          if (
+            current?.cellSize === cellSize &&
+            current.gap === gap &&
+            current.padding === padding &&
+            current.width === width &&
+            current.height === height
+          ) {
+            return current;
+          }
+
+          return { cellSize, gap, padding, width, height };
+        });
+      });
+    };
+
+    const resizeObserver = new ResizeObserver(updateBoardMetrics);
+    resizeObserver.observe(viewport);
+    mobileQuery.addEventListener("change", updateBoardMetrics);
+    window.addEventListener("orientationchange", updateBoardMetrics);
+    window.addEventListener("resize", updateBoardMetrics);
+    updateBoardMetrics();
+
+    return () => {
+      window.cancelAnimationFrame(animationFrameId);
+      resizeObserver.disconnect();
+      mobileQuery.removeEventListener("change", updateBoardMetrics);
+      window.removeEventListener("orientationchange", updateBoardMetrics);
+      window.removeEventListener("resize", updateBoardMetrics);
+    };
+  }, [level.height, level.width]);
 
   const blockedCells = useMemo(() => new Set(level.blocked.map(cellKey)), [level.blocked]);
   const placedPlanIds = useMemo(() => new Set(placements.map((building) => building.planId)), [placements]);
@@ -882,6 +957,16 @@ export function StroikaVekaGame() {
   const boardStyle = {
     "--stroika-cols": level.width,
     "--stroika-rows": level.height,
+    "--stroika-board-aspect": `${level.width} / ${level.height}`,
+    ...(boardMetrics
+      ? {
+          "--stroika-cell-size": `${boardMetrics.cellSize}px`,
+          "--stroika-board-gap": `${boardMetrics.gap}px`,
+          "--stroika-board-padding": `${boardMetrics.padding}px`,
+          "--stroika-board-width": `${boardMetrics.width}px`,
+          "--stroika-board-height": `${boardMetrics.height}px`,
+        }
+      : {}),
     aspectRatio: `${level.width} / ${level.height}`,
   } as CSSProperties;
   const progressStyle = {
@@ -914,13 +999,18 @@ export function StroikaVekaGame() {
 
       <div className="stroika-mobile-status" aria-label="Короткая сводка уровня">
         <span>
-          Уровень <strong>{levelNumber}</strong>
+          Ур. <strong>{levelNumber}</strong>
         </span>
         <span>
           План <strong>{builtCount}/{level.plan.length}</strong>
         </span>
         <span className={`stroika-mobile-threat stroika-mobile-threat--${threatTone}`}>
-          Долгострои <strong>{Math.min(longBuilds, MAX_LONG_BUILDS)}/{MAX_LONG_BUILDS}</strong>
+          Долг.{" "}
+          <strong>
+            {Array.from({ length: MAX_LONG_BUILDS })
+              .map((_, index) => (index < longBuilds ? "●" : "○"))
+              .join("")}
+          </strong>
         </span>
         <span>
           {formatTime(elapsed)} · {errors} ош.
@@ -954,138 +1044,142 @@ export function StroikaVekaGame() {
               <span>Повтори образец: зажми старт и протяни фундамент 2x2. IV = 4 клетки.</span>
             </div>
           ) : null}
-          <div
-            ref={boardRef}
-            className="stroika-board"
-            style={boardStyle}
-            role="grid"
-            aria-label={`Генплан ${level.width} на ${level.height}`}
-            onPointerDown={handlePointerDown}
-            onPointerMove={handlePointerMove}
-            onPointerUp={handlePointerUp}
-            onPointerCancel={handlePointerCancel}
-            onLostPointerCapture={handleLostPointerCapture}
-          >
-            {Array.from({ length: level.height }).flatMap((_, y) =>
-              Array.from({ length: level.width }).map((__, x) => {
-                const key = cellKey({ x, y });
-                const hint = hintByCell.get(key);
-                const isBlocked = blockedCells.has(key);
+          <div ref={boardViewportRef} className="stroika-board-viewport">
+            <div
+              ref={boardRef}
+              className="stroika-board"
+              style={boardStyle}
+              role="grid"
+              aria-label={`Генплан ${level.width} на ${level.height}`}
+              onPointerDown={handlePointerDown}
+              onPointerMove={handlePointerMove}
+              onPointerUp={handlePointerUp}
+              onPointerCancel={handlePointerCancel}
+              onLostPointerCapture={handleLostPointerCapture}
+            >
+              {Array.from({ length: level.height }).flatMap((_, y) =>
+                Array.from({ length: level.width }).map((__, x) => {
+                  const key = cellKey({ x, y });
+                  const hint = hintByCell.get(key);
+                  const isBlocked = blockedCells.has(key);
+
+                  return (
+                    <div
+                      key={key}
+                      className={`stroika-cell${isBlocked ? " stroika-cell--blocked" : ""}`}
+                      role="gridcell"
+                      aria-label={
+                        isBlocked ? "Пустырь" : hint ? `Подсказка ${romanize(hint.area)}` : "Свободная клетка"
+                      }
+                    >
+                      {hint && !isBlocked ? (
+                        <span className="stroika-cell__hint" aria-hidden="true">
+                          <strong>{romanize(hint.area)}</strong>
+                          <small>проект</small>
+                        </span>
+                      ) : null}
+                    </div>
+                  );
+                }),
+              )}
+
+              {shouldShowTutorial ? (
+                <div
+                  className="stroika-tutorial-ghost"
+                  style={{
+                    gridColumn: "1 / span 2",
+                    gridRow: "1 / span 2",
+                  }}
+                  aria-hidden="true"
+                >
+                  <span className="stroika-tutorial-ghost__label">IV</span>
+                  <span className="stroika-tutorial-ghost__start">Зажми</span>
+                  <span className="stroika-tutorial-ghost__end">Протяни</span>
+                </div>
+              ) : null}
+
+              {placements.map((building) => {
+                const isMarkedForDemolition =
+                  Boolean(liveSelection?.availablePlan) &&
+                  !liveSelection?.hasBlockedCell &&
+                  (liveSelection?.overlappedIds.has(building.id) ?? false);
+                const detailCount = Math.min(10, Math.max(3, Math.ceil(building.area / 2)));
 
                 return (
                   <div
-                    key={key}
-                    className={`stroika-cell${isBlocked ? " stroika-cell--blocked" : ""}`}
-                    role="gridcell"
-                    aria-label={isBlocked ? "Пустырь" : hint ? `Подсказка ${romanize(hint.area)}` : "Свободная клетка"}
+                    key={building.id}
+                    className={`stroika-building stroika-building--${building.visualType} stroika-building--roof-${building.roofVariant} stroika-building--surface-${building.surfaceVariant}${
+                      isMarkedForDemolition ? " stroika-building--demolition" : ""
+                    }`}
+                    style={{
+                      gridColumn: `${building.x + 1} / span ${building.width}`,
+                      gridRow: `${building.y + 1} / span ${building.height}`,
+                    }}
                   >
-                    {hint && !isBlocked ? (
-                      <span className="stroika-cell__hint" aria-hidden="true">
-                        <strong>{romanize(hint.area)}</strong>
-                        <small>проект</small>
+                    <span className="stroika-building__slab" aria-hidden="true" />
+                    <span className="stroika-building__label">{romanize(building.area)}</span>
+                    <span className="stroika-building__flag" aria-hidden="true" />
+                    <span className="stroika-building__roof" aria-hidden="true">
+                      <span className="stroika-building__core" />
+                      <span className="stroika-building__antenna" />
+                      <span className="stroika-building__dish" />
+                      <span className="stroika-building__pipes" />
+                      <span className="stroika-building__roof-grid">
+                        {Array.from({ length: detailCount }).map((_, index) => (
+                          <span key={index} />
+                        ))}
                       </span>
-                    ) : null}
-                  </div>
-                );
-              }),
-            )}
-
-            {shouldShowTutorial ? (
-              <div
-                className="stroika-tutorial-ghost"
-                style={{
-                  gridColumn: "1 / span 2",
-                  gridRow: "1 / span 2",
-                }}
-                aria-hidden="true"
-              >
-                <span className="stroika-tutorial-ghost__label">IV</span>
-                <span className="stroika-tutorial-ghost__start">Зажми здесь</span>
-                <span className="stroika-tutorial-ghost__end">Протяни сюда</span>
-              </div>
-            ) : null}
-
-            {placements.map((building) => {
-              const isMarkedForDemolition =
-                Boolean(liveSelection?.availablePlan) &&
-                !liveSelection?.hasBlockedCell &&
-                (liveSelection?.overlappedIds.has(building.id) ?? false);
-              const detailCount = Math.min(10, Math.max(3, Math.ceil(building.area / 2)));
-
-              return (
-                <div
-                  key={building.id}
-                  className={`stroika-building stroika-building--${building.visualType} stroika-building--roof-${building.roofVariant} stroika-building--surface-${building.surfaceVariant}${
-                    isMarkedForDemolition ? " stroika-building--demolition" : ""
-                  }`}
-                  style={{
-                    gridColumn: `${building.x + 1} / span ${building.width}`,
-                    gridRow: `${building.y + 1} / span ${building.height}`,
-                  }}
-                >
-                  <span className="stroika-building__slab" aria-hidden="true" />
-                  <span className="stroika-building__label">{romanize(building.area)}</span>
-                  <span className="stroika-building__flag" aria-hidden="true" />
-                  <span className="stroika-building__roof" aria-hidden="true">
-                    <span className="stroika-building__core" />
-                    <span className="stroika-building__antenna" />
-                    <span className="stroika-building__dish" />
-                    <span className="stroika-building__pipes" />
-                    <span className="stroika-building__roof-grid">
-                      {Array.from({ length: detailCount }).map((_, index) => (
+                    </span>
+                    <span className="stroika-building__edge-lights" aria-hidden="true">
+                      {Array.from({ length: 5 }).map((_, index) => (
                         <span key={index} />
                       ))}
                     </span>
-                  </span>
-                  <span className="stroika-building__edge-lights" aria-hidden="true">
-                    {Array.from({ length: 5 }).map((_, index) => (
-                      <span key={index} />
-                    ))}
+                  </div>
+                );
+              })}
+
+              {level.blocked.map((cell) => (
+                <div
+                  key={`blocked-${cellKey(cell)}`}
+                  className="stroika-blocked-overlay"
+                  style={{
+                    gridColumn: `${cell.x + 1} / span 1`,
+                    gridRow: `${cell.y + 1} / span 1`,
+                  }}
+                  aria-hidden="true"
+                >
+                  <span>ПУСТЫРЬ</span>
+                </div>
+              ))}
+
+              {liveSelection ? (
+                <div
+                  className={`stroika-selection stroika-selection--${liveSelection.tone}${
+                    liveSelection.hasBlockedCell ? " stroika-selection--blocked" : ""
+                  }`}
+                  style={{
+                    gridColumn: `${liveSelection.rect.x + 1} / span ${liveSelection.rect.width}`,
+                    gridRow: `${liveSelection.rect.y + 1} / span ${liveSelection.rect.height}`,
+                  }}
+                >
+                  <span>
+                    <strong>{liveSelection.marker}</strong>
+                    <small>{liveSelection.label}</small>
                   </span>
                 </div>
-              );
-            })}
+              ) : null}
 
-            {level.blocked.map((cell) => (
-              <div
-                key={`blocked-${cellKey(cell)}`}
-                className="stroika-blocked-overlay"
-                style={{
-                  gridColumn: `${cell.x + 1} / span 1`,
-                  gridRow: `${cell.y + 1} / span 1`,
-                }}
-                aria-hidden="true"
-              >
-                <span>ПУСТЫРЬ</span>
-              </div>
-            ))}
-
-            {liveSelection ? (
-              <div
-                className={`stroika-selection stroika-selection--${liveSelection.tone}${
-                  liveSelection.hasBlockedCell ? " stroika-selection--blocked" : ""
-                }`}
-                style={{
-                  gridColumn: `${liveSelection.rect.x + 1} / span ${liveSelection.rect.width}`,
-                  gridRow: `${liveSelection.rect.y + 1} / span ${liveSelection.rect.height}`,
-                }}
-              >
-                <span>
-                  <strong>{liveSelection.marker}</strong>
-                  <small>{liveSelection.label}</small>
-                </span>
-              </div>
-            ) : null}
-
-            {failedSelection ? (
-              <div
-                className={`stroika-failed-selection stroika-failed-selection--${failedSelection.tone}`}
-                style={{
-                  gridColumn: `${failedSelection.rect.x + 1} / span ${failedSelection.rect.width}`,
-                  gridRow: `${failedSelection.rect.y + 1} / span ${failedSelection.rect.height}`,
-                }}
-              />
-            ) : null}
+              {failedSelection ? (
+                <div
+                  className={`stroika-failed-selection stroika-failed-selection--${failedSelection.tone}`}
+                  style={{
+                    gridColumn: `${failedSelection.rect.x + 1} / span ${failedSelection.rect.width}`,
+                    gridRow: `${failedSelection.rect.y + 1} / span ${failedSelection.rect.height}`,
+                  }}
+                />
+              ) : null}
+            </div>
           </div>
 
           {result ? (

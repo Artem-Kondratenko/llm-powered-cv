@@ -277,7 +277,13 @@
   margin-bottom: 12px;
 }
 
-.prototype-card__expanded-header span {
+.prototype-card__expanded-title {
+  min-width: 0;
+  display: grid;
+  gap: 5px;
+}
+
+.prototype-card__expanded-title span {
   color: #5eead4;
   font-size: 12px;
   font-weight: 800;
@@ -286,12 +292,72 @@
   text-transform: uppercase;
 }
 
+.prototype-card__expanded-title strong {
+  color: #f8fafc;
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
 .prototype-card__close {
   min-height: 38px;
   padding: 0 12px;
   border-color: rgba(255, 255, 255, 0.12);
   background: rgba(255, 255, 255, 0.08);
   color: #e2e8f0;
+}
+
+@media (max-width: 720px) {
+  .prototype-card--expanded .prototype-card__expanded {
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+    gap: 0;
+    width: 100vw;
+    height: 100dvh;
+    overflow: hidden;
+    padding: calc(8px + env(safe-area-inset-top)) 8px calc(14px + env(safe-area-inset-bottom));
+    border: 0;
+    background:
+      radial-gradient(circle at 20% 0%, rgba(94, 234, 212, 0.14), transparent 18rem),
+      #07111d;
+  }
+
+  .prototype-card--expanded .prototype-card__expanded-header {
+    position: relative;
+    z-index: 2;
+    min-height: 44px;
+    align-items: center;
+    margin: 0;
+    padding: 0 0 7px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  }
+
+  .prototype-card--expanded .prototype-card__expanded-title {
+    gap: 3px;
+  }
+
+  .prototype-card--expanded .prototype-card__expanded-title span {
+    color: #fde68a;
+    font-size: 9px;
+    letter-spacing: 0.12em;
+  }
+
+  .prototype-card--expanded .prototype-card__expanded-title strong {
+    font-size: 16px;
+  }
+
+  .prototype-card--expanded .prototype-card__close {
+    width: auto;
+    min-height: 36px;
+    flex: 0 0 auto;
+    padding: 0 10px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.1);
+    font-size: 12px;
+  }
 }
 
 @media (max-width: 840px) {
@@ -308,18 +374,5 @@
 @media (max-width: 520px) {
   .prototype-card__preview {
     min-height: 180px;
-  }
-
-  .prototype-card__expanded {
-    padding: 10px;
-  }
-
-  .prototype-card__expanded-header {
-    align-items: stretch;
-    flex-direction: column;
-  }
-
-  .prototype-card__close {
-    width: 100%;
   }
 }
