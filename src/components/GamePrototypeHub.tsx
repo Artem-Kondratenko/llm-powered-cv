@@ -1,7 +1,10 @@
-import { Construction, Lock } from "lucide-react";
+import { Construction, Lock, Play, X } from "lucide-react";
+import type { ReactNode } from "react";
+import { useState } from "react";
 import { gamePrototypeSlots } from "../data/gamePrototypeSlots";
 import type { GamePrototypeSlot } from "../data/gamePrototypeSlots";
 import { StroikaVekaGame } from "./StroikaVekaGame";
+import "./GamePrototypeHub.css";
 
 function getSlotIcon(slot: GamePrototypeSlot) {
   if (slot.status === "prototype") {
@@ -11,53 +14,100 @@ function getSlotIcon(slot: GamePrototypeSlot) {
   return <Lock className="h-5 w-5" aria-hidden="true" />;
 }
 
-function getStatusClass(slot: GamePrototypeSlot) {
-  if (slot.status === "prototype") {
-    return "border-amber-300/25 bg-amber-300/10 text-amber-100";
+function PrototypePreview({ kind }: { kind: GamePrototypeSlot["previewKind"] }) {
+  if (kind !== "stroika") {
+    return (
+      <div className="prototype-card__preview prototype-card__preview--placeholder" aria-hidden="true">
+        <span />
+        <span />
+        <span />
+      </div>
+    );
   }
 
-  return "border-white/10 bg-white/5 text-slate-300";
+  return (
+    <div className="prototype-card__preview prototype-card__preview--stroika" aria-hidden="true">
+      <div className="prototype-preview__stamp">ПРОТОТИП</div>
+      <div className="prototype-preview__label">ГЕНПЛАН</div>
+      <div className="prototype-preview__road prototype-preview__road--main" />
+      <div className="prototype-preview__road prototype-preview__road--cross" />
+      <div className="prototype-preview__building prototype-preview__building--tower" />
+      <div className="prototype-preview__building prototype-preview__building--block" />
+      <div className="prototype-preview__building prototype-preview__building--palace" />
+      <div className="prototype-preview__marker">СТРОЙКА ВЕКА</div>
+    </div>
+  );
+}
+
+function GamePrototypeCard({
+  slot,
+  expanded,
+  onOpen,
+  onClose,
+  children,
+}: {
+  slot: GamePrototypeSlot;
+  expanded: boolean;
+  onOpen: () => void;
+  onClose: () => void;
+  children?: ReactNode;
+}) {
+  const isPlayable = slot.status === "prototype";
+
+  return (
+    <article className={`prototype-card${expanded ? " prototype-card--expanded" : ""}`}>
+      <div className="prototype-card__body">
+        <div className="prototype-card__content">
+          <div className="prototype-card__topline">
+            <div className="prototype-card__icon">{getSlotIcon(slot)}</div>
+            <span className={`prototype-card__status prototype-card__status--${slot.status}`}>{slot.statusLabel}</span>
+          </div>
+          <h3>{slot.title}</h3>
+          <p>{slot.description}</p>
+          <button type="button" onClick={onOpen} disabled={!isPlayable} className="prototype-card__cta">
+            <Play className="h-4 w-4" aria-hidden="true" />
+            {slot.ctaLabel}
+          </button>
+        </div>
+        <PrototypePreview kind={slot.previewKind} />
+      </div>
+
+      {expanded ? (
+        <div className="prototype-card__expanded">
+          <div className="prototype-card__expanded-header">
+            <span>Playable prototype</span>
+            <button type="button" onClick={onClose} className="prototype-card__close">
+              <X className="h-4 w-4" aria-hidden="true" />
+              Свернуть
+            </button>
+          </div>
+          {children}
+        </div>
+      ) : null}
+    </article>
+  );
 }
 
 export function GamePrototypeHub() {
-  const reservedSlots = gamePrototypeSlots.filter((slot) => slot.status === "reserved");
+  const [expandedPrototypeId, setExpandedPrototypeId] = useState<string | null>(null);
 
   return (
-    <div className="grid gap-6">
-      <StroikaVekaGame />
+    <div className="prototype-hub">
+      {gamePrototypeSlots.map((slot) => {
+        const expanded = expandedPrototypeId === slot.id;
 
-      {reservedSlots.length > 0 ? (
-        <div className="grid gap-4 md:grid-cols-2">
-          {reservedSlots.map((slot) => (
-            <article
-              key={slot.title}
-              className="flex h-full flex-col rounded-lg border border-white/10 bg-slate-900/70 p-6 shadow-soft transition hover:-translate-y-0.5 hover:border-teal-300/25 hover:bg-slate-900 sm:p-7"
-            >
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-teal-300/20 bg-teal-300/10 text-teal-200">
-                  {getSlotIcon(slot)}
-                </div>
-                <span
-                  className={`rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] ${getStatusClass(slot)}`}
-                >
-                  {slot.statusLabel}
-                </span>
-              </div>
-
-              <h3 className="mt-5 text-xl font-semibold text-slate-50">{slot.title}</h3>
-              <p className="mt-3 flex-1 text-[16px] leading-7 text-slate-300">{slot.description}</p>
-
-              <button
-                type="button"
-                disabled
-                className="mt-5 inline-flex min-h-11 w-fit items-center justify-center rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-slate-400"
-              >
-                {slot.ctaLabel}
-              </button>
-            </article>
-          ))}
-        </div>
-      ) : null}
+        return (
+          <GamePrototypeCard
+            key={slot.id}
+            slot={slot}
+            expanded={expanded}
+            onOpen={() => setExpandedPrototypeId(slot.id)}
+            onClose={() => setExpandedPrototypeId(null)}
+          >
+            {expanded && slot.id === "stroika-veka" ? <StroikaVekaGame /> : null}
+          </GamePrototypeCard>
+        );
+      })}
     </div>
   );
 }

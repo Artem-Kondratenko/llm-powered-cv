@@ -1,28 +1,34 @@
 export type GamePrototypeSlotStatus = "prototype" | "reserved";
 
 export type GamePrototypeSlot = {
+  id: string;
   title: string;
   status: GamePrototypeSlotStatus;
   statusLabel: string;
   description: string;
   ctaLabel: string;
+  previewKind?: "stroika" | "placeholder";
 };
 
 export const gamePrototypeSlots: GamePrototypeSlot[] = [
   {
+    id: "stroika-veka",
     title: "Стройка века",
     status: "prototype",
     statusLabel: "Прототип",
     description:
       "Короткая puzzle-игра про строительство города будущего по плану пятилетки.",
     ctaLabel: "Играть",
+    previewKind: "stroika",
   },
   {
+    id: "next-prototype",
     title: "Следующий прототип",
     status: "reserved",
     statusLabel: "Зарезервировано",
     description:
       "Место для следующей небольшой игры или интерактивной идеи, которая дополнит CV-лендинг.",
     ctaLabel: "Скоро",
+    previewKind: "placeholder",
   },
 ];

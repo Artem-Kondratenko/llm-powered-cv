@@ -572,11 +572,23 @@ function getVerdictText(result: LevelResult) {
 }
 
 function getPlanStatus(item: PlanItem, placedPlanIds: Set<string>) {
-  return placedPlanIds.has(item.id) ? "Построено" : "В плане";
+  return placedPlanIds.has(item.id) ? "ПРИНЯТО" : "В ПЛАНЕ";
 }
 
 function getPlanCardLabel(item: PlanItem) {
   return `${romanize(item.area)} · ${item.area} ${getCellWord(item.area)}`;
+}
+
+function getThreatTone(longBuilds: number) {
+  if (longBuilds >= 2) {
+    return "danger";
+  }
+
+  if (longBuilds === 1) {
+    return "warning";
+  }
+
+  return "calm";
 }
 
 export function StroikaVekaGame() {
@@ -647,6 +659,7 @@ export function StroikaVekaGame() {
 
   const builtCount = placedPlanIds.size;
   const readiness = Math.round((occupiedCellCount / getAccessibleCellCount(level)) * 100);
+  const threatTone = getThreatTone(longBuilds);
 
   function analyzeSelection(activeSelection: Selection): SelectionAnalysis {
     const rect = normalizeSelection(activeSelection.start, activeSelection.end);
@@ -871,19 +884,31 @@ export function StroikaVekaGame() {
     "--stroika-rows": level.height,
     aspectRatio: `${level.width} / ${level.height}`,
   } as CSSProperties;
+  const progressStyle = {
+    "--stroika-progress": `${readiness}%`,
+  } as CSSProperties;
   const shouldReserveTutorial = levelNumber === 1 && !result && !gameOver;
   const shouldShowTutorial = shouldReserveTutorial && placements.length === 0;
+  const tutorialTargetPlan = shouldShowTutorial
+    ? (level.plan.find((item) => item.area === 4 && item.hint.x === 0 && item.hint.y === 0) ??
+      level.plan.find((item) => item.area === 4) ??
+      level.plan[0])
+    : null;
 
   return (
     <section className="stroika-game" aria-label="Игровой прототип Стройка века">
       <div className="stroika-game__header">
-        <div>
-          <p className="stroika-game__eyebrow">Playable prototype</p>
+        <span className="stroika-game__ribbon" aria-hidden="true" />
+        <div className="stroika-game__header-copy">
+          <p className="stroika-game__eyebrow">Проектный институт будущего</p>
           <h3>Стройка века</h3>
           <p>Разметь участки, заложи фундамент и построй город будущего.</p>
         </div>
-        <div className={`stroika-stamp stroika-stamp--${feedback.tone}`} role="status" aria-live="polite">
-          {feedback.text}
+        <div className="stroika-game__header-stamps">
+          <span className="stroika-game__approval">ГЕНПЛАН УТВЕРЖДЕН</span>
+          <div className={`stroika-stamp stroika-stamp--${feedback.tone}`} role="status" aria-live="polite">
+            {feedback.text}
+          </div>
         </div>
       </div>
 
@@ -894,7 +919,7 @@ export function StroikaVekaGame() {
         <span>
           План <strong>{builtCount}/{level.plan.length}</strong>
         </span>
-        <span>
+        <span className={`stroika-mobile-threat stroika-mobile-threat--${threatTone}`}>
           Долгострои <strong>{Math.min(longBuilds, MAX_LONG_BUILDS)}/{MAX_LONG_BUILDS}</strong>
         </span>
         <span>
@@ -908,10 +933,25 @@ export function StroikaVekaGame() {
             <span>ГЕНПЛАН</span>
             <span>ГОРОД ГОТОВ НА {readiness}%</span>
           </div>
+          <div className="stroika-progress" style={progressStyle} aria-label={`Выполнение генплана ${readiness}%`}>
+            <div className="stroika-progress__top">
+              <span>Выполнение генплана</span>
+              <strong>{readiness}%</strong>
+            </div>
+            <div className="stroika-progress__track">
+              <span />
+            </div>
+            <div className="stroika-progress__marks" aria-hidden="true">
+              <span>25</span>
+              <span>50</span>
+              <span>75</span>
+              <span>100</span>
+            </div>
+          </div>
           {shouldReserveTutorial ? (
             <div className={`stroika-tutorial${shouldShowTutorial ? "" : " stroika-tutorial--hidden"}`} role="note">
               <strong>Первый приказ</strong>
-              <span>Зажми клетку и протяни прямоугольник. Площадь должна совпасть с планом: IV = 4 клетки.</span>
+              <span>Повтори образец: зажми старт и протяни фундамент 2x2. IV = 4 клетки.</span>
             </div>
           ) : null}
           <div
@@ -949,6 +989,21 @@ export function StroikaVekaGame() {
                 );
               }),
             )}
+
+            {shouldShowTutorial ? (
+              <div
+                className="stroika-tutorial-ghost"
+                style={{
+                  gridColumn: "1 / span 2",
+                  gridRow: "1 / span 2",
+                }}
+                aria-hidden="true"
+              >
+                <span className="stroika-tutorial-ghost__label">IV</span>
+                <span className="stroika-tutorial-ghost__start">Зажми здесь</span>
+                <span className="stroika-tutorial-ghost__end">Протяни сюда</span>
+              </div>
+            ) : null}
 
             {placements.map((building) => {
               const isMarkedForDemolition =
@@ -991,6 +1046,20 @@ export function StroikaVekaGame() {
               );
             })}
 
+            {level.blocked.map((cell) => (
+              <div
+                key={`blocked-${cellKey(cell)}`}
+                className="stroika-blocked-overlay"
+                style={{
+                  gridColumn: `${cell.x + 1} / span 1`,
+                  gridRow: `${cell.y + 1} / span 1`,
+                }}
+                aria-hidden="true"
+              >
+                <span>ПУСТЫРЬ</span>
+              </div>
+            ))}
+
             {liveSelection ? (
               <div
                 className={`stroika-selection stroika-selection--${liveSelection.tone}${
@@ -1018,6 +1087,37 @@ export function StroikaVekaGame() {
               />
             ) : null}
           </div>
+
+          {result ? (
+            <div className="stroika-end-overlay" role="status" aria-live="polite">
+              <div className="stroika-end-card">
+                <CheckCircle2 className="stroika-result__icon" aria-hidden="true" />
+                <strong>Пятилетка выполнена</strong>
+                <span>
+                  {formatTime(result.seconds)}, ошибок: {result.errors}. {getVerdictText(result)}. Сложность{" "}
+                  {result.previousDifficulty}
+                  {" -> "}
+                  {result.nextDifficulty}.
+                </span>
+                <button type="button" onClick={handleNextLevel}>
+                  Следующий генплан
+                </button>
+              </div>
+            </div>
+          ) : null}
+
+          {gameOver ? (
+            <div className="stroika-end-overlay stroika-end-overlay--danger" role="status" aria-live="assertive">
+              <div className="stroika-end-card">
+                <AlertTriangle className="stroika-result__icon" aria-hidden="true" />
+                <strong>Пятилетка провалена</strong>
+                <span>Три долгостроя за сессию. Комиссия требует новый старт.</span>
+                <button type="button" onClick={resetSession}>
+                  Начать заново
+                </button>
+              </div>
+            </div>
+          ) : null}
         </div>
 
         <aside className="stroika-panel" aria-label="Панель плана">
@@ -1045,19 +1145,35 @@ export function StroikaVekaGame() {
             </div>
           </div>
 
+          <div className={`stroika-threat stroika-threat--${threatTone}`}>
+            <div className="stroika-threat__top">
+              <span>Риск провала пятилетки</span>
+              <strong>{Math.min(longBuilds, MAX_LONG_BUILDS)}/{MAX_LONG_BUILDS}</strong>
+            </div>
+            <div className="stroika-threat__segments" aria-hidden="true">
+              {Array.from({ length: MAX_LONG_BUILDS }).map((_, index) => (
+                <span key={index} className={index < longBuilds ? "is-filled" : ""} />
+              ))}
+            </div>
+            <small>{longBuilds >= 2 ? "Комиссия близко" : "До провала пятилетки"}</small>
+          </div>
+
           <div className="stroika-plan">
             <div className="stroika-panel__title">
               <span>План пятилетки</span>
-              <small>
-                Долгострои {Math.min(longBuilds, MAX_LONG_BUILDS)}/{MAX_LONG_BUILDS}
-              </small>
+              <small>План: {builtCount}/{level.plan.length} корпусов</small>
             </div>
             <div className="stroika-plan__list">
               {level.plan.map((item) => {
                 const isBuilt = placedPlanIds.has(item.id);
 
                 return (
-                  <div key={item.id} className={`stroika-plan-card${isBuilt ? " stroika-plan-card--built" : ""}`}>
+                  <div
+                    key={item.id}
+                    className={`stroika-plan-card${isBuilt ? " stroika-plan-card--built" : ""}${
+                      tutorialTargetPlan?.id === item.id ? " stroika-plan-card--tutorial" : ""
+                    }`}
+                  >
                     <strong>{romanize(item.area)}</strong>
                     <span>{getPlanCardLabel(item)}</span>
                     <small>{getPlanStatus(item, placedPlanIds)}</small>
@@ -1068,48 +1184,22 @@ export function StroikaVekaGame() {
           </div>
 
           <div className="stroika-actions">
-            <button type="button" onClick={handleResetLevel} disabled={gameOver}>
+            <button type="button" onClick={handleResetLevel} disabled={Boolean(result || gameOver)}>
               <RotateCcw className="stroika-button-icon" aria-hidden="true" />
               Сбросить
             </button>
-            <button type="button" className="stroika-actions__danger" onClick={handleLongBuild} disabled={gameOver}>
+            <button
+              type="button"
+              className="stroika-actions__danger"
+              onClick={handleLongBuild}
+              disabled={Boolean(result || gameOver)}
+            >
               <TimerReset className="stroika-button-icon" aria-hidden="true" />
               Долгострой
             </button>
           </div>
         </aside>
       </div>
-
-      {result ? (
-        <div className="stroika-result" role="status" aria-live="polite">
-          <CheckCircle2 className="stroika-result__icon" aria-hidden="true" />
-          <div>
-            <strong>Пятилетка выполнена</strong>
-            <span>
-              {formatTime(result.seconds)}, ошибок: {result.errors}. {getVerdictText(result)}. Сложность{" "}
-              {result.previousDifficulty}
-              {" -> "}
-              {result.nextDifficulty}.
-            </span>
-          </div>
-          <button type="button" onClick={handleNextLevel}>
-            Следующий генплан
-          </button>
-        </div>
-      ) : null}
-
-      {gameOver ? (
-        <div className="stroika-result stroika-result--danger" role="status" aria-live="assertive">
-          <AlertTriangle className="stroika-result__icon" aria-hidden="true" />
-          <div>
-            <strong>Пятилетка провалена</strong>
-            <span>Три долгостроя за сессию. Комиссия требует новый старт.</span>
-          </div>
-          <button type="button" onClick={resetSession}>
-            Начать заново
-          </button>
-        </div>
-      ) : null}
     </section>
   );
 }

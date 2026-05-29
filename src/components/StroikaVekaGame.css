@@ -13,6 +13,11 @@
   --stroika-concrete-top: #c1c3b4;
   --stroika-concrete-side: #777d73;
   --stroika-warning: #b2742f;
+  --stroika-texture-concrete: none;
+  --stroika-texture-road: none;
+  --stroika-texture-blocked: none;
+  --stroika-texture-foundation: none;
+  --stroika-texture-paper: none;
   width: 100%;
   max-width: 100%;
   isolation: isolate;
@@ -36,12 +41,56 @@
 }
 
 .stroika-game__header {
+  position: relative;
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 18px;
+  overflow: hidden;
   padding: 22px;
   border-bottom: 1px solid rgba(77, 73, 57, 0.24);
+  background:
+    linear-gradient(90deg, rgba(111, 36, 30, 0.14), transparent 44%),
+    repeating-linear-gradient(135deg, rgba(29, 33, 29, 0.04) 0 2px, transparent 2px 12px);
+}
+
+.stroika-game__ribbon {
+  position: absolute;
+  right: -70px;
+  top: 18px;
+  width: 270px;
+  height: 34px;
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.12), transparent),
+    var(--stroika-red);
+  box-shadow: 0 5px 0 rgba(63, 26, 23, 0.24);
+  transform: rotate(28deg);
+}
+
+.stroika-game__header-copy,
+.stroika-game__header-stamps {
+  position: relative;
+  z-index: 1;
+}
+
+.stroika-game__header-stamps {
+  flex: 0 0 auto;
+  display: grid;
+  justify-items: end;
+  gap: 10px;
+}
+
+.stroika-game__approval {
+  display: inline-flex;
+  padding: 5px 9px;
+  border: 1px solid rgba(111, 36, 30, 0.58);
+  background: rgba(238, 227, 199, 0.58);
+  color: var(--stroika-red-dark);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  line-height: 1;
+  text-transform: uppercase;
 }
 
 .stroika-game__eyebrow {
@@ -61,6 +110,7 @@
   font-size: clamp(30px, 4vw, 48px);
   font-weight: 900;
   line-height: 0.96;
+  text-transform: uppercase;
 }
 
 .stroika-game__header p:last-child {
@@ -115,6 +165,7 @@
 }
 
 .stroika-board-shell {
+  position: relative;
   min-width: 0;
   display: grid;
   gap: 9px;
@@ -137,6 +188,72 @@
   font-weight: 900;
   letter-spacing: 0.08em;
   line-height: 1.2;
+}
+
+.stroika-progress {
+  display: grid;
+  gap: 5px;
+  padding: 8px 9px;
+  border: 1px solid rgba(44, 42, 33, 0.18);
+  border-radius: 6px;
+  background:
+    linear-gradient(90deg, rgba(164, 57, 46, 0.08), transparent 58%),
+    rgba(238, 227, 199, 0.58);
+}
+
+.stroika-progress__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--stroika-muted);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.stroika-progress__top strong {
+  color: var(--stroika-red-dark);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.stroika-progress__track {
+  position: relative;
+  height: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(32, 37, 33, 0.42);
+  border-radius: 999px;
+  background:
+    linear-gradient(90deg, transparent 24%, rgba(32, 37, 33, 0.26) 24% 25%, transparent 25% 49%, rgba(32, 37, 33, 0.26) 49% 50%, transparent 50% 74%, rgba(32, 37, 33, 0.26) 74% 75%, transparent 75%),
+    rgba(87, 90, 79, 0.22);
+}
+
+.stroika-progress__track span {
+  display: block;
+  width: var(--stroika-progress);
+  height: 100%;
+  border-radius: inherit;
+  background:
+    repeating-linear-gradient(45deg, rgba(238, 227, 199, 0.22) 0 5px, transparent 5px 10px),
+    linear-gradient(90deg, var(--stroika-warning), var(--stroika-red), var(--stroika-green));
+  transition: width 180ms ease;
+}
+
+.stroika-progress__marks {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  color: rgba(49, 53, 46, 0.58);
+  font-size: 9px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.stroika-progress__marks span {
+  text-align: right;
 }
 
 .stroika-tutorial {
@@ -268,6 +385,91 @@
   letter-spacing: 0.05em;
   line-height: 1;
   text-transform: uppercase;
+}
+
+.stroika-tutorial-ghost {
+  position: relative;
+  z-index: 4;
+  pointer-events: none;
+  display: grid;
+  place-items: center;
+  border: 2px dashed rgba(164, 57, 46, 0.82);
+  border-radius: 6px;
+  background:
+    linear-gradient(135deg, rgba(240, 199, 90, 0.2), transparent 42%),
+    repeating-linear-gradient(45deg, rgba(178, 116, 47, 0.22) 0 8px, rgba(238, 227, 199, 0.18) 8px 16px),
+    rgba(238, 227, 199, 0.2);
+  box-shadow:
+    inset 0 0 0 5px rgba(238, 227, 199, 0.2),
+    0 0 0 2px rgba(164, 57, 46, 0.18);
+  animation: stroika-tutorial-pulse 1100ms ease-in-out infinite;
+}
+
+.stroika-tutorial-ghost::before {
+  content: "";
+  position: absolute;
+  left: 26%;
+  top: 29%;
+  width: 42%;
+  height: 3px;
+  border-radius: 999px;
+  background: rgba(111, 36, 30, 0.78);
+  transform: rotate(37deg);
+  transform-origin: left center;
+}
+
+.stroika-tutorial-ghost::after {
+  content: "";
+  position: absolute;
+  right: 25%;
+  bottom: 24%;
+  width: 11px;
+  height: 11px;
+  border-right: 3px solid rgba(111, 36, 30, 0.78);
+  border-bottom: 3px solid rgba(111, 36, 30, 0.78);
+  transform: rotate(-8deg);
+}
+
+.stroika-tutorial-ghost__label {
+  display: inline-flex;
+  min-width: 44px;
+  justify-content: center;
+  padding: 5px 8px;
+  border: 2px solid rgba(111, 36, 30, 0.72);
+  border-radius: 4px;
+  background: rgba(238, 227, 199, 0.94);
+  color: var(--stroika-red-dark);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(18px, 4vw, 28px);
+  font-weight: 900;
+  line-height: 1;
+  box-shadow: 3px 4px 0 rgba(35, 38, 33, 0.18);
+}
+
+.stroika-tutorial-ghost__start,
+.stroika-tutorial-ghost__end {
+  position: absolute;
+  max-width: 80px;
+  padding: 3px 5px;
+  border: 1px solid rgba(32, 37, 33, 0.38);
+  border-radius: 3px;
+  background: rgba(238, 227, 199, 0.9);
+  color: var(--stroika-muted);
+  font-size: 9px;
+  font-weight: 900;
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+
+.stroika-tutorial-ghost__start {
+  left: 8px;
+  top: 8px;
+}
+
+.stroika-tutorial-ghost__end {
+  right: 8px;
+  bottom: 8px;
+  text-align: right;
 }
 
 .stroika-building {
@@ -630,6 +832,62 @@
   color: #fff2dc;
 }
 
+.stroika-blocked-overlay {
+  position: relative;
+  z-index: 8;
+  pointer-events: none;
+  display: grid;
+  place-items: center;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  border: 2px solid rgba(111, 36, 30, 0.86);
+  border-radius: 5px;
+  background:
+    radial-gradient(circle at 50% 50%, rgba(238, 227, 199, 0.32), transparent 30%),
+    repeating-linear-gradient(45deg, rgba(111, 36, 30, 0.42) 0 6px, rgba(35, 37, 34, 0.34) 6px 12px),
+    #7c7564;
+  box-shadow:
+    inset 0 0 0 3px rgba(238, 227, 199, 0.16),
+    0 0 0 2px rgba(32, 37, 33, 0.22);
+}
+
+.stroika-blocked-overlay::before,
+.stroika-blocked-overlay::after {
+  content: "";
+  position: absolute;
+  background: rgba(238, 227, 199, 0.58);
+}
+
+.stroika-blocked-overlay::before {
+  width: 72%;
+  height: 3px;
+  transform: rotate(45deg);
+}
+
+.stroika-blocked-overlay::after {
+  width: 3px;
+  height: 72%;
+  transform: rotate(45deg);
+}
+
+.stroika-blocked-overlay span {
+  position: relative;
+  z-index: 1;
+  max-width: calc(100% - 8px);
+  padding: 3px 5px;
+  border: 1px solid rgba(111, 36, 30, 0.72);
+  border-radius: 3px;
+  background: rgba(238, 227, 199, 0.9);
+  color: var(--stroika-red-dark);
+  font-size: clamp(7px, 1.8vw, 11px);
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  text-align: center;
+  text-transform: uppercase;
+}
+
 .stroika-selection,
 .stroika-failed-selection {
   z-index: 6;
@@ -766,6 +1024,7 @@
 
 .stroika-stats div,
 .stroika-plan,
+.stroika-threat,
 .stroika-result {
   border: 1px solid rgba(44, 42, 33, 0.24);
   border-radius: 8px;
@@ -807,6 +1066,75 @@
   margin-right: 8px;
 }
 
+.stroika-threat {
+  display: grid;
+  gap: 9px;
+  padding: 11px;
+}
+
+.stroika-threat__top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.stroika-threat__top span {
+  color: #171b18;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  line-height: 1.25;
+  text-transform: uppercase;
+}
+
+.stroika-threat__top strong {
+  color: var(--stroika-red-dark);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 22px;
+  line-height: 1;
+}
+
+.stroika-threat__segments {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.stroika-threat__segments span {
+  height: 14px;
+  border: 1px solid rgba(32, 37, 33, 0.32);
+  border-radius: 999px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.16), transparent),
+    rgba(87, 90, 79, 0.18);
+}
+
+.stroika-threat__segments span.is-filled {
+  background:
+    repeating-linear-gradient(45deg, rgba(238, 227, 199, 0.22) 0 4px, transparent 4px 8px),
+    var(--stroika-warning);
+}
+
+.stroika-threat--danger .stroika-threat__segments span.is-filled {
+  background:
+    repeating-linear-gradient(45deg, rgba(238, 227, 199, 0.2) 0 4px, transparent 4px 8px),
+    var(--stroika-red);
+}
+
+.stroika-threat small {
+  color: var(--stroika-muted);
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.stroika-threat--danger small,
+.stroika-threat--danger .stroika-threat__top strong {
+  color: var(--stroika-red);
+}
+
 .stroika-plan {
   padding: 12px;
 }
@@ -841,11 +1169,13 @@
   position: relative;
   min-height: 74px;
   padding: 9px;
-  border: 1px solid rgba(32, 37, 33, 0.24);
+  border: 1px solid rgba(111, 36, 30, 0.38);
   border-radius: 6px;
   background:
-    linear-gradient(90deg, rgba(164, 57, 46, 0.16) 0 4px, transparent 4px),
-    rgba(216, 207, 181, 0.78);
+    linear-gradient(90deg, rgba(164, 57, 46, 0.42) 0 5px, transparent 5px),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.16), transparent 44%),
+    rgba(230, 218, 188, 0.9);
+  box-shadow: 2px 3px 0 rgba(31, 35, 31, 0.08);
   transition:
     transform 150ms ease,
     border-color 150ms ease,
@@ -868,19 +1198,33 @@
   line-height: 1.2;
 }
 
+.stroika-plan-card small {
+  margin-top: 8px;
+  color: var(--stroika-red-dark);
+  font-weight: 900;
+  letter-spacing: 0.05em;
+}
+
 .stroika-plan-card--built {
-  transform: translateY(-1px);
+  opacity: 0.7;
   border-color: rgba(63, 101, 88, 0.58);
   background:
-    linear-gradient(90deg, rgba(63, 101, 88, 0.26) 0 4px, transparent 4px),
-    rgba(194, 208, 187, 0.82);
+    linear-gradient(90deg, rgba(63, 101, 88, 0.32) 0 5px, transparent 5px),
+    repeating-linear-gradient(135deg, rgba(63, 101, 88, 0.08) 0 4px, transparent 4px 10px),
+    rgba(194, 208, 187, 0.8);
+}
+
+.stroika-plan-card--built strong,
+.stroika-plan-card--built span,
+.stroika-plan-card--built small {
+  color: rgba(29, 33, 29, 0.72);
 }
 
 .stroika-plan-card--built::after {
-  content: "ПРИНЯТО";
+  content: "✓ ПРИНЯТО";
   position: absolute;
-  right: 7px;
-  top: 7px;
+  right: 6px;
+  top: 8px;
   padding: 2px 4px;
   border: 1px solid currentColor;
   color: var(--stroika-green);
@@ -888,6 +1232,12 @@
   font-weight: 900;
   line-height: 1;
   transform: rotate(-7deg);
+}
+
+.stroika-plan-card--tutorial {
+  outline: 2px dashed rgba(164, 57, 46, 0.62);
+  outline-offset: 2px;
+  animation: stroika-plan-pulse 1100ms ease-in-out infinite;
 }
 
 .stroika-actions {
@@ -943,46 +1293,70 @@
   flex: 0 0 auto;
 }
 
-.stroika-result {
+.stroika-end-overlay {
+  position: absolute;
+  inset: 12px;
+  z-index: 30;
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  gap: 12px;
-  align-items: center;
-  margin: 0 18px 18px;
-  padding: 12px;
-  box-shadow: 0 16px 40px rgba(28, 30, 26, 0.16);
+  place-items: center;
+  padding: 18px;
+  border-radius: 8px;
+  background:
+    repeating-linear-gradient(135deg, rgba(238, 227, 199, 0.1) 0 2px, transparent 2px 10px),
+    rgba(31, 35, 31, 0.48);
+  backdrop-filter: blur(1px);
+}
+
+.stroika-end-card {
+  width: min(100%, 420px);
+  display: grid;
+  justify-items: center;
+  gap: 11px;
+  padding: 22px;
+  border: 3px solid currentColor;
+  border-radius: 7px;
+  background:
+    linear-gradient(90deg, rgba(63, 101, 88, 0.12), transparent 62%),
+    repeating-linear-gradient(135deg, rgba(50, 48, 38, 0.04) 0 2px, transparent 2px 10px),
+    var(--stroika-paper-light);
+  color: var(--stroika-green);
+  text-align: center;
+  box-shadow: 8px 10px 0 rgba(22, 25, 22, 0.26);
+  transform: rotate(-1deg);
+}
+
+.stroika-end-overlay--danger .stroika-end-card {
+  color: var(--stroika-red);
+  background:
+    linear-gradient(90deg, rgba(164, 57, 46, 0.14), transparent 62%),
+    repeating-linear-gradient(45deg, rgba(164, 57, 46, 0.08) 0 6px, transparent 6px 14px),
+    var(--stroika-paper-light);
 }
 
 .stroika-result__icon {
   width: 28px;
   height: 28px;
-  color: var(--stroika-green);
+  color: currentColor;
 }
 
-.stroika-result strong {
+.stroika-end-card strong {
   display: block;
   color: #171b18;
-  font-size: 16px;
+  font-size: clamp(20px, 4vw, 31px);
   font-weight: 900;
-  line-height: 1.2;
+  line-height: 1.05;
   text-transform: uppercase;
 }
 
-.stroika-result span {
+.stroika-end-card span {
   display: block;
-  margin-top: 3px;
   color: var(--stroika-muted);
   font-size: 14px;
   line-height: 1.35;
 }
 
-.stroika-result--danger {
-  border-color: rgba(164, 57, 46, 0.5);
-  background: rgba(229, 205, 177, 0.88);
-}
-
-.stroika-result--danger .stroika-result__icon {
-  color: var(--stroika-red);
+.stroika-end-card button {
+  min-width: min(100%, 210px);
 }
 
 @keyframes stroika-build-in {
@@ -1014,6 +1388,30 @@
   }
 }
 
+@keyframes stroika-tutorial-pulse {
+  0%,
+  100% {
+    filter: saturate(1);
+    transform: scale(1);
+  }
+
+  50% {
+    filter: saturate(1.18);
+    transform: scale(1.015);
+  }
+}
+
+@keyframes stroika-plan-pulse {
+  0%,
+  100% {
+    box-shadow: 2px 3px 0 rgba(31, 35, 31, 0.08);
+  }
+
+  50% {
+    box-shadow: 0 0 0 4px rgba(164, 57, 46, 0.13);
+  }
+}
+
 @media (max-width: 980px) {
   .stroika-game__layout {
     grid-template-columns: 1fr;
@@ -1034,6 +1432,23 @@
     flex-direction: column;
     gap: 12px;
     padding: 14px;
+  }
+
+  .stroika-game__ribbon {
+    right: -96px;
+    top: 13px;
+    height: 28px;
+  }
+
+  .stroika-game__header-stamps {
+    width: 100%;
+    justify-items: stretch;
+    gap: 7px;
+  }
+
+  .stroika-game__approval {
+    justify-content: center;
+    font-size: 9px;
   }
 
   .stroika-game h3 {
@@ -1083,6 +1498,16 @@
     line-height: 1;
   }
 
+  .stroika-mobile-threat--warning {
+    border-color: rgba(178, 116, 47, 0.42) !important;
+    background: rgba(226, 199, 145, 0.72) !important;
+  }
+
+  .stroika-mobile-threat--danger {
+    border-color: rgba(164, 57, 46, 0.5) !important;
+    background: rgba(218, 174, 154, 0.72) !important;
+  }
+
   .stroika-game__layout {
     display: flex;
     flex-direction: column;
@@ -1097,6 +1522,22 @@
 
   .stroika-board-meta {
     font-size: 9px;
+  }
+
+  .stroika-progress {
+    padding: 7px;
+  }
+
+  .stroika-progress__top {
+    font-size: 9px;
+  }
+
+  .stroika-progress__top strong {
+    font-size: 15px;
+  }
+
+  .stroika-progress__track {
+    height: 10px;
   }
 
   .stroika-tutorial {
@@ -1136,6 +1577,17 @@
   .stroika-cell--blocked::before {
     font-size: 7px;
     letter-spacing: 0;
+  }
+
+  .stroika-tutorial-ghost__start,
+  .stroika-tutorial-ghost__end {
+    max-width: 58px;
+    font-size: 7px;
+  }
+
+  .stroika-tutorial-ghost__label {
+    min-width: 36px;
+    padding: 4px 6px;
   }
 
   .stroika-building {
@@ -1187,6 +1639,23 @@
 
   .stroika-panel .stroika-stats {
     display: none;
+  }
+
+  .stroika-threat {
+    gap: 6px;
+    padding: 8px;
+  }
+
+  .stroika-threat__top span {
+    font-size: 10px;
+  }
+
+  .stroika-threat__top strong {
+    font-size: 18px;
+  }
+
+  .stroika-threat__segments span {
+    height: 11px;
   }
 
   .stroika-plan {
@@ -1249,13 +1718,18 @@
     font-size: 9px;
   }
 
-  .stroika-result {
-    grid-template-columns: auto minmax(0, 1fr);
-    margin: 0 10px 10px;
+  .stroika-end-overlay {
+    inset: 7px;
+    padding: 10px;
   }
 
-  .stroika-result button {
-    grid-column: 1 / -1;
+  .stroika-end-card {
+    gap: 8px;
+    padding: 16px 13px;
+  }
+
+  .stroika-end-card span {
+    font-size: 12px;
   }
 }
 
@@ -1284,6 +1758,13 @@
   .stroika-board {
     gap: 3px;
     padding: 3px;
+  }
+
+  .stroika-blocked-overlay span {
+    max-width: calc(100% - 4px);
+    padding: 2px 3px;
+    font-size: 6px;
+    letter-spacing: 0;
   }
 
   .stroika-plan__list {
