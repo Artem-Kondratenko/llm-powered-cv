@@ -60,6 +60,16 @@ type FailedSelection = {
   tone: "warning" | "danger";
 };
 
+type SelectionAnalysis = {
+  rect: Rect;
+  area: number;
+  hasBlockedCell: boolean;
+  availablePlan: PlanItem | undefined;
+  overlappedIds: Set<string>;
+  tone: "success" | "warning" | "danger";
+  label: string;
+};
+
 const MAX_DIFFICULTY = 5;
 const MAX_LONG_BUILDS = 3;
 
@@ -215,8 +225,8 @@ function shuffle<T>(items: T[]) {
 
 function getHint(rect: Rect): CellCoord {
   return {
-    x: rect.x + Math.floor(rect.width / 2),
-    y: rect.y + Math.floor(rect.height / 2),
+    x: rect.x,
+    y: rect.y,
   };
 }
 
@@ -420,16 +430,41 @@ function formatTime(totalSeconds: number) {
   return `${minutes}:${String(seconds).padStart(2, "0")}`;
 }
 
-function getCellFromPointer(event: PointerEvent<HTMLElement>, level: Level, board: HTMLElement | null): CellCoord | null {
+function getCellWord(area: number) {
+  const lastDigit = area % 10;
+  const lastTwoDigits = area % 100;
+
+  if (lastDigit === 1 && lastTwoDigits !== 11) {
+    return "клетка";
+  }
+
+  if (lastDigit >= 2 && lastDigit <= 4 && (lastTwoDigits < 12 || lastTwoDigits > 14)) {
+    return "клетки";
+  }
+
+  return "клеток";
+}
+
+function getCellFromPointer(
+  event: PointerEvent<HTMLElement>,
+  level: Level,
+  board: HTMLElement | null,
+  clampOutside = false,
+): CellCoord | null {
   if (!board) {
     return null;
   }
 
   const bounds = board.getBoundingClientRect();
+
+  if (bounds.width <= 0 || bounds.height <= 0) {
+    return null;
+  }
+
   const rawX = (event.clientX - bounds.left) / bounds.width;
   const rawY = (event.clientY - bounds.top) / bounds.height;
 
-  if (rawX < -0.04 || rawX > 1.04 || rawY < -0.04 || rawY > 1.04) {
+  if (!clampOutside && (rawX < 0 || rawX > 1 || rawY < 0 || rawY > 1)) {
     return null;
   }
 
@@ -515,6 +550,10 @@ function getPlanStatus(item: PlanItem, placedPlanIds: Set<string>) {
   return placedPlanIds.has(item.id) ? "Построено" : "В плане";
 }
 
+function getPlanCardLabel(item: PlanItem) {
+  return `${romanize(item.area)} · ${item.area} ${getCellWord(item.area)}`;
+}
+
 export function StroikaVekaGame() {
   const [levelNumber, setLevelNumber] = useState(1);
   const [difficulty, setDifficulty] = useState(1);
@@ -567,18 +606,38 @@ export function StroikaVekaGame() {
     return hints;
   }, [level.plan, placedPlanIds]);
 
-  const liveSelection = useMemo(() => {
-    if (!selection) {
-      return null;
-    }
+  const occupiedCellCount = useMemo(() => {
+    const occupiedCells = new Set<string>();
 
-    const rect = normalizeSelection(selection.start, selection.end);
+    placements.forEach((building) => {
+      for (let y = building.y; y < building.y + building.height; y += 1) {
+        for (let x = building.x; x < building.x + building.width; x += 1) {
+          occupiedCells.add(cellKey({ x, y }));
+        }
+      }
+    });
+
+    return occupiedCells.size;
+  }, [placements]);
+
+  const builtCount = placedPlanIds.size;
+  const readiness = Math.round((occupiedCellCount / getAccessibleCellCount(level)) * 100);
+
+  function analyzeSelection(activeSelection: Selection): SelectionAnalysis {
+    const rect = normalizeSelection(activeSelection.start, activeSelection.end);
     const overlapped = placements.filter((building) => rectsIntersect(rect, building));
     const overlappedIds = new Set(overlapped.map((building) => building.id));
     const hasBlockedCell = level.blocked.some((cell) => rectContainsCell(rect, cell));
     const area = rectArea(rect);
     const availablePlan = findAvailablePlan(level, placements, overlappedIds, area);
     const tone = hasBlockedCell ? "danger" : availablePlan ? (overlapped.length > 0 ? "warning" : "success") : "warning";
+    const label = hasBlockedCell
+      ? "Пустырь"
+      : !availablePlan
+        ? "Не по плану"
+        : overlapped.length > 0
+          ? "Под снос"
+          : `Фундамент: ${romanize(area)}`;
 
     return {
       rect,
@@ -587,8 +646,11 @@ export function StroikaVekaGame() {
       availablePlan,
       overlappedIds,
       tone,
+      label,
     };
-  }, [level, placements, selection]);
+  }
+
+  const liveSelection = useMemo(() => (selection ? analyzeSelection(selection) : null), [level, placements, selection]);
 
   function showFailedSelection(rect: Rect, tone: "warning" | "danger") {
     setFailedSelection({ rect, tone });
@@ -649,7 +711,7 @@ export function StroikaVekaGame() {
       return;
     }
 
-    const cell = getCellFromPointer(event, level, boardRef.current);
+    const cell = getCellFromPointer(event, level, boardRef.current, true);
 
     if (!cell) {
       return;
@@ -659,13 +721,13 @@ export function StroikaVekaGame() {
     setSelection((current) => (current && current.pointerId === event.pointerId ? { ...current, end: cell } : current));
   }
 
-  function finishSelection() {
-    if (!liveSelection) {
+  function finishSelection(finalSelection = liveSelection) {
+    if (!finalSelection) {
       setSelection(null);
       return;
     }
 
-    const { rect, area, hasBlockedCell, availablePlan, overlappedIds } = liveSelection;
+    const { rect, area, hasBlockedCell, availablePlan, overlappedIds } = finalSelection;
 
     if (hasBlockedCell) {
       setErrors((current) => current + 1);
@@ -699,7 +761,7 @@ export function StroikaVekaGame() {
     setPlacements(nextPlacements);
     setSelection(null);
     setFeedback({
-      text: removedCount > 0 ? "Под снос. Новый фундамент принят" : "Фундамент принят",
+      text: removedCount > 0 ? `Под снос. Корпус ${romanize(area)} сдан` : `Корпус ${romanize(area)} сдан`,
       tone: removedCount > 0 ? "warning" : "success",
     });
 
@@ -715,7 +777,7 @@ export function StroikaVekaGame() {
         nextDifficulty: adaptation.nextDifficulty,
         verdict: adaptation.verdict,
       });
-      setFeedback({ text: "План выполнен", tone: "success" });
+      setFeedback({ text: "Пятилетка выполнена", tone: "success" });
     }
   }
 
@@ -726,11 +788,15 @@ export function StroikaVekaGame() {
 
     event.preventDefault();
 
+    const cell = getCellFromPointer(event, level, boardRef.current, true);
+    const finalSelection = cell ? { ...selection, end: cell } : selection;
+    const finalAnalysis = analyzeSelection(finalSelection);
+
     if (boardRef.current?.hasPointerCapture(event.pointerId)) {
       boardRef.current.releasePointerCapture(event.pointerId);
     }
 
-    finishSelection();
+    finishSelection(finalAnalysis);
   }
 
   function handlePointerCancel(event: PointerEvent<HTMLDivElement>) {
@@ -739,6 +805,10 @@ export function StroikaVekaGame() {
     }
 
     setSelection(null);
+  }
+
+  function handleLostPointerCapture(event: PointerEvent<HTMLDivElement>) {
+    setSelection((current) => (current?.pointerId === event.pointerId ? null : current));
   }
 
   function handleResetLevel() {
@@ -786,8 +856,27 @@ export function StroikaVekaGame() {
         </div>
       </div>
 
+      <div className="stroika-mobile-status" aria-label="Короткая сводка уровня">
+        <span>
+          Уровень <strong>{levelNumber}</strong>
+        </span>
+        <span>
+          План <strong>{builtCount}/{level.plan.length}</strong>
+        </span>
+        <span>
+          Долгострои <strong>{Math.min(longBuilds, MAX_LONG_BUILDS)}/{MAX_LONG_BUILDS}</strong>
+        </span>
+        <span>
+          {formatTime(elapsed)} · {errors} ош.
+        </span>
+      </div>
+
       <div className="stroika-game__layout">
         <div className="stroika-board-shell">
+          <div className="stroika-board-meta" aria-hidden="true">
+            <span>ГЕНПЛАН</span>
+            <span>ГОРОД ГОТОВ НА {readiness}%</span>
+          </div>
           <div
             ref={boardRef}
             className="stroika-board"
@@ -798,6 +887,7 @@ export function StroikaVekaGame() {
             onPointerMove={handlePointerMove}
             onPointerUp={handlePointerUp}
             onPointerCancel={handlePointerCancel}
+            onLostPointerCapture={handleLostPointerCapture}
           >
             {Array.from({ length: level.height }).flatMap((_, y) =>
               Array.from({ length: level.width }).map((__, x) => {
@@ -814,7 +904,8 @@ export function StroikaVekaGame() {
                   >
                     {hint && !isBlocked ? (
                       <span className="stroika-cell__hint" aria-hidden="true">
-                        {romanize(hint.area)}
+                        <strong>{romanize(hint.area)}</strong>
+                        <small>проект</small>
                       </span>
                     ) : null}
                   </div>
@@ -824,7 +915,7 @@ export function StroikaVekaGame() {
 
             {placements.map((building) => {
               const isMarkedForDemolition = liveSelection?.overlappedIds.has(building.id) ?? false;
-              const windowCount = Math.min(30, Math.max(5, building.area * 2));
+              const detailCount = Math.min(10, Math.max(3, Math.ceil(building.area / 2)));
 
               return (
                 <div
@@ -837,10 +928,20 @@ export function StroikaVekaGame() {
                     gridRow: `${building.y + 1} / span ${building.height}`,
                   }}
                 >
+                  <span className="stroika-building__slab" aria-hidden="true" />
                   <span className="stroika-building__label">{romanize(building.area)}</span>
                   <span className="stroika-building__flag" aria-hidden="true" />
-                  <span className="stroika-building__windows" aria-hidden="true">
-                    {Array.from({ length: windowCount }).map((_, index) => (
+                  <span className="stroika-building__roof" aria-hidden="true">
+                    <span className="stroika-building__core" />
+                    <span className="stroika-building__antenna" />
+                    <span className="stroika-building__roof-grid">
+                      {Array.from({ length: detailCount }).map((_, index) => (
+                        <span key={index} />
+                      ))}
+                    </span>
+                  </span>
+                  <span className="stroika-building__edge-lights" aria-hidden="true">
+                    {Array.from({ length: 5 }).map((_, index) => (
                       <span key={index} />
                     ))}
                   </span>
@@ -856,7 +957,10 @@ export function StroikaVekaGame() {
                   gridRow: `${liveSelection.rect.y + 1} / span ${liveSelection.rect.height}`,
                 }}
               >
-                <span>{romanize(liveSelection.area)}</span>
+                <span>
+                  <strong>{romanize(liveSelection.area)}</strong>
+                  <small>{liveSelection.label}</small>
+                </span>
               </div>
             ) : null}
 
@@ -890,6 +994,11 @@ export function StroikaVekaGame() {
               <span>Время</span>
               <strong>{formatTime(elapsed)}</strong>
             </div>
+            <div className="stroika-stats__wide">
+              <span>Прогресс</span>
+              <strong>{builtCount}/{level.plan.length}</strong>
+              <small>Город готов на {readiness}%</small>
+            </div>
           </div>
 
           <div className="stroika-plan">
@@ -906,7 +1015,7 @@ export function StroikaVekaGame() {
                 return (
                   <div key={item.id} className={`stroika-plan-card${isBuilt ? " stroika-plan-card--built" : ""}`}>
                     <strong>{romanize(item.area)}</strong>
-                    <span>{item.area} клетки</span>
+                    <span>{getPlanCardLabel(item)}</span>
                     <small>{getPlanStatus(item, placedPlanIds)}</small>
                   </div>
                 );
@@ -931,7 +1040,7 @@ export function StroikaVekaGame() {
         <div className="stroika-result" role="status" aria-live="polite">
           <CheckCircle2 className="stroika-result__icon" aria-hidden="true" />
           <div>
-            <strong>План выполнен</strong>
+            <strong>Пятилетка выполнена</strong>
             <span>
               {formatTime(result.seconds)}, ошибок: {result.errors}. {getVerdictText(result)}. Сложность{" "}
               {result.previousDifficulty}
@@ -940,7 +1049,7 @@ export function StroikaVekaGame() {
             </span>
           </div>
           <button type="button" onClick={handleNextLevel}>
-            Следующий уровень
+            Следующий генплан
           </button>
         </div>
       ) : null}

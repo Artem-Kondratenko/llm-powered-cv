@@ -1,24 +1,31 @@
 .stroika-game {
-  --stroika-paper: #d9cfb5;
-  --stroika-paper-deep: #b9ad91;
-  --stroika-ink: #202521;
-  --stroika-muted: #5d625a;
-  --stroika-red: #a7372b;
-  --stroika-red-dark: #6f211b;
-  --stroika-green: #42675c;
-  --stroika-concrete: #8e9389;
-  --stroika-concrete-dark: #4f5650;
-  --stroika-warning: #b06f2a;
+  --stroika-paper: #d8cfb6;
+  --stroika-paper-light: #eee3c7;
+  --stroika-paper-deep: #b7ab8e;
+  --stroika-ink: #1d211d;
+  --stroika-muted: #5b5e55;
+  --stroika-red: #a4392e;
+  --stroika-red-dark: #6f241e;
+  --stroika-green: #3f6558;
+  --stroika-road: #53584f;
+  --stroika-road-dark: #383d37;
+  --stroika-concrete: #9da194;
+  --stroika-concrete-top: #c1c3b4;
+  --stroika-concrete-side: #777d73;
+  --stroika-warning: #b2742f;
+  width: 100%;
+  max-width: 100%;
   isolation: isolate;
   overflow: hidden;
   border: 1px solid rgba(222, 206, 161, 0.42);
   border-radius: 8px;
   background:
+    radial-gradient(circle at 88% 16%, rgba(164, 57, 46, 0.14), transparent 18rem),
     linear-gradient(90deg, rgba(73, 68, 53, 0.08) 1px, transparent 1px),
     linear-gradient(0deg, rgba(73, 68, 53, 0.08) 1px, transparent 1px),
-    linear-gradient(135deg, rgba(167, 55, 43, 0.14), transparent 34%),
+    repeating-linear-gradient(135deg, rgba(50, 48, 38, 0.025) 0 2px, transparent 2px 9px),
     var(--stroika-paper);
-  background-size: 22px 22px, 22px 22px, 100% 100%, 100% 100%;
+  background-size: 100% 100%, 22px 22px, 22px 22px, 100% 100%, 100% 100%;
   color: var(--stroika-ink);
   box-shadow: 0 24px 80px rgba(0, 0, 0, 0.28);
 }
@@ -41,7 +48,8 @@
   margin: 0 0 7px;
   color: var(--stroika-red-dark);
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 900;
+  letter-spacing: 0.08em;
   line-height: 1.2;
   text-transform: uppercase;
 }
@@ -50,9 +58,9 @@
   margin: 0;
   color: #141815;
   font-family: Georgia, "Times New Roman", serif;
-  font-size: clamp(28px, 4vw, 44px);
-  font-weight: 800;
-  line-height: 1;
+  font-size: clamp(30px, 4vw, 48px);
+  font-weight: 900;
+  line-height: 0.96;
 }
 
 .stroika-game__header p:last-child {
@@ -60,12 +68,12 @@
   margin: 10px 0 0;
   color: var(--stroika-muted);
   font-size: 16px;
-  line-height: 1.55;
+  line-height: 1.5;
 }
 
 .stroika-stamp {
   flex: 0 0 auto;
-  max-width: 240px;
+  max-width: 260px;
   min-height: 48px;
   display: inline-flex;
   align-items: center;
@@ -73,6 +81,7 @@
   padding: 8px 12px;
   border: 2px solid currentColor;
   border-radius: 4px;
+  background: rgba(238, 227, 199, 0.42);
   color: var(--stroika-red-dark);
   font-size: 13px;
   font-weight: 900;
@@ -83,7 +92,7 @@
 }
 
 .stroika-stamp--success {
-  color: #2e5d45;
+  color: #2f6046;
 }
 
 .stroika-stamp--warning {
@@ -94,40 +103,59 @@
   color: var(--stroika-red);
 }
 
+.stroika-mobile-status {
+  display: none;
+}
+
 .stroika-game__layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 320px;
+  grid-template-columns: minmax(0, 1fr) minmax(286px, 320px);
   gap: 18px;
   padding: 18px;
 }
 
 .stroika-board-shell {
-  display: flex;
   min-width: 0;
-  align-items: center;
-  justify-content: center;
+  display: grid;
+  gap: 9px;
+  align-content: start;
   border: 1px solid rgba(44, 42, 33, 0.26);
   border-radius: 8px;
   background:
+    linear-gradient(135deg, rgba(164, 57, 46, 0.08), transparent 28%),
     repeating-linear-gradient(135deg, rgba(32, 37, 33, 0.07) 0 1px, transparent 1px 12px),
     rgba(242, 232, 199, 0.42);
   padding: 12px;
 }
 
+.stroika-board-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  color: rgba(48, 50, 43, 0.72);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  line-height: 1.2;
+}
+
 .stroika-board {
   width: min(100%, 660px);
-  min-width: 260px;
+  max-width: 100%;
+  min-width: 0;
+  justify-self: center;
   display: grid;
   grid-template-columns: repeat(var(--stroika-cols), minmax(0, 1fr));
   grid-template-rows: repeat(var(--stroika-rows), minmax(0, 1fr));
-  gap: 4px;
-  border: 3px solid #31352f;
-  border-radius: 6px;
+  gap: 6px;
+  border: 3px solid #2c322d;
+  border-radius: 7px;
   background:
-    linear-gradient(90deg, rgba(167, 55, 43, 0.18) 1px, transparent 1px),
-    linear-gradient(0deg, rgba(167, 55, 43, 0.14) 1px, transparent 1px),
-    #84887c;
-  background-size: 34px 34px;
+    linear-gradient(90deg, rgba(236, 225, 196, 0.08) 1px, transparent 1px),
+    linear-gradient(0deg, rgba(236, 225, 196, 0.07) 1px, transparent 1px),
+    repeating-linear-gradient(45deg, rgba(24, 27, 24, 0.12) 0 1px, transparent 1px 13px),
+    var(--stroika-road);
+  background-size: 34px 34px, 34px 34px, 100% 100%, 100% 100%;
   padding: 6px;
   touch-action: none;
   user-select: none;
@@ -138,11 +166,20 @@
   min-width: 0;
   min-height: 0;
   overflow: hidden;
-  border: 1px solid rgba(31, 35, 31, 0.36);
+  border: 1px solid rgba(31, 35, 31, 0.28);
   border-radius: 4px;
   background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.2), transparent 44%),
-    #c1b89e;
+    linear-gradient(135deg, rgba(255, 255, 255, 0.17), transparent 44%),
+    radial-gradient(circle at 70% 28%, rgba(85, 91, 78, 0.12), transparent 38%),
+    #c2b99f;
+}
+
+.stroika-cell::after {
+  content: "";
+  position: absolute;
+  inset: 7px;
+  border: 1px dashed rgba(57, 59, 50, 0.16);
+  border-radius: 2px;
 }
 
 .stroika-cell--blocked {
@@ -152,176 +189,344 @@
     #8b806a;
 }
 
-.stroika-cell--blocked::after {
-  content: "X";
+.stroika-cell--blocked::before {
+  content: "ПУСТ";
   position: absolute;
   inset: 0;
   display: grid;
   place-items: center;
-  color: rgba(66, 31, 26, 0.72);
-  font-size: clamp(14px, 3.5vw, 22px);
+  color: rgba(66, 31, 26, 0.78);
+  font-size: clamp(9px, 2.2vw, 14px);
   font-weight: 900;
+  letter-spacing: 0.08em;
 }
 
 .stroika-cell__hint {
   position: absolute;
-  left: 6px;
+  left: 5px;
   top: 5px;
-  z-index: 1;
-  color: rgba(32, 37, 33, 0.78);
+  z-index: 2;
+  pointer-events: none;
+  display: inline-flex;
+  max-width: calc(100% - 10px);
+  align-items: center;
+  gap: 4px;
+  padding: 2px 5px;
+  border: 1px solid rgba(111, 36, 30, 0.72);
+  border-radius: 3px;
+  background: rgba(238, 227, 199, 0.86);
+  color: var(--stroika-red-dark);
+  box-shadow: 2px 2px 0 rgba(39, 40, 35, 0.18);
+}
+
+.stroika-cell__hint strong {
   font-family: Georgia, "Times New Roman", serif;
-  font-size: clamp(13px, 3.5vw, 22px);
+  font-size: clamp(13px, 3.2vw, 19px);
   font-weight: 900;
   line-height: 1;
+}
+
+.stroika-cell__hint small {
+  color: rgba(37, 40, 35, 0.72);
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  line-height: 1;
+  text-transform: uppercase;
 }
 
 .stroika-building {
   position: relative;
   z-index: 3;
-  overflow: hidden;
-  display: flex;
+  overflow: visible;
   min-width: 0;
   min-height: 0;
-  align-items: stretch;
-  justify-content: center;
-  border: 2px solid rgba(30, 35, 31, 0.72);
+  margin: 2px;
+  border-radius: 7px;
+  background: rgba(39, 43, 38, 0.12);
+  animation: stroika-build-in 210ms ease-out both;
+}
+
+.stroika-building::before {
+  content: "";
+  position: absolute;
+  inset: 6px 3px 2px 9px;
+  z-index: 0;
+  border-radius: 6px;
+  background: rgba(27, 30, 28, 0.34);
+  filter: blur(1px);
+  transform: translate(5px, 6px);
+}
+
+.stroika-building__slab {
+  position: absolute;
+  inset: 4px;
+  z-index: 1;
+  border: 2px solid rgba(32, 37, 33, 0.62);
+  border-radius: 6px;
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.16), transparent 42%),
+    linear-gradient(180deg, var(--stroika-concrete-top), var(--stroika-concrete));
+  box-shadow:
+    inset -5px -6px 0 rgba(80, 85, 78, 0.22),
+    4px 5px 0 var(--stroika-concrete-side);
+}
+
+.stroika-building__roof {
+  position: absolute;
+  inset: 13% 12%;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid rgba(26, 30, 27, 0.46);
   border-radius: 5px;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.2), transparent 18%),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.12), transparent 32%),
-    var(--stroika-concrete);
-  box-shadow:
-    inset 0 -9px 0 rgba(32, 37, 33, 0.16),
-    0 8px 0 rgba(63, 65, 58, 0.42);
-  animation: stroika-build-in 220ms ease-out both;
+    repeating-linear-gradient(90deg, rgba(35, 38, 34, 0.12) 0 1px, transparent 1px 12px),
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.15) 0 1px, transparent 1px 14px),
+    #b8bbb0;
+  box-shadow: 3px 4px 0 rgba(63, 66, 60, 0.5);
 }
 
-.stroika-building--panel {
+.stroika-building__core {
+  position: absolute;
+  width: min(34px, 34%);
+  aspect-ratio: 1;
+  border: 1px solid rgba(30, 35, 31, 0.48);
+  border-radius: 4px;
   background:
-    linear-gradient(90deg, rgba(65, 103, 92, 0.38) 0 18%, transparent 18% 100%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.18), transparent 24%),
-    #9ea494;
+    radial-gradient(circle at 50% 50%, rgba(164, 57, 46, 0.28), transparent 40%),
+    #d5d0bd;
+  box-shadow: inset -3px -3px 0 rgba(75, 80, 73, 0.18);
 }
 
-.stroika-building--tower {
-  background:
-    linear-gradient(180deg, rgba(167, 55, 43, 0.34) 0 13%, transparent 13%),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.2), transparent 42%),
-    #7f8f8a;
+.stroika-building__antenna {
+  position: absolute;
+  right: 13%;
+  top: 12%;
+  width: 5px;
+  height: 24%;
+  min-height: 12px;
+  border-radius: 2px;
+  background: var(--stroika-red-dark);
+  box-shadow: 0 0 0 2px rgba(235, 221, 187, 0.52);
+  transform: rotate(8deg);
 }
 
-.stroika-building--institute {
-  background:
-    linear-gradient(135deg, rgba(167, 55, 43, 0.24), transparent 36%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.2), transparent 20%),
-    #a19b86;
+.stroika-building__roof-grid {
+  position: absolute;
+  inset: auto 10% 12% 10%;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10px, 1fr));
+  gap: 5px;
+  width: 68%;
 }
 
-.stroika-building--combinat {
-  background:
-    repeating-linear-gradient(90deg, rgba(32, 37, 33, 0.14) 0 7px, transparent 7px 18px),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.18), transparent 22%),
-    #8d9488;
+.stroika-building__roof-grid span {
+  height: 5px;
+  border-radius: 999px;
+  background: rgba(50, 54, 49, 0.34);
 }
 
-.stroika-building--demolition {
-  border-color: rgba(148, 38, 30, 0.98);
-  background:
-    repeating-linear-gradient(45deg, rgba(167, 55, 43, 0.36) 0 8px, rgba(92, 33, 28, 0.16) 8px 16px),
-    #a47c72;
-  color: #fff7ea;
+.stroika-building__edge-lights {
+  position: absolute;
+  right: 7px;
+  bottom: 7px;
+  z-index: 3;
+  display: grid;
+  grid-auto-flow: column;
+  gap: 4px;
+}
+
+.stroika-building__edge-lights span {
+  width: 5px;
+  height: 5px;
+  border-radius: 999px;
+  background: rgba(238, 223, 178, 0.82);
+  box-shadow: 0 0 0 1px rgba(36, 38, 34, 0.28);
 }
 
 .stroika-building__label {
   position: absolute;
-  left: 7px;
-  top: 6px;
-  z-index: 2;
+  left: 8px;
+  top: 7px;
+  z-index: 4;
+  display: inline-flex;
+  min-width: 26px;
+  justify-content: center;
+  padding: 2px 5px;
+  border: 1px solid rgba(30, 35, 31, 0.5);
+  border-radius: 3px;
+  background: rgba(238, 227, 199, 0.86);
   color: #141815;
   font-family: Georgia, "Times New Roman", serif;
-  font-size: clamp(15px, 3.4vw, 26px);
+  font-size: clamp(12px, 3vw, 20px);
   font-weight: 900;
   line-height: 1;
-}
-
-.stroika-building--demolition .stroika-building__label {
-  color: #fff4df;
+  box-shadow: 2px 2px 0 rgba(33, 35, 31, 0.18);
 }
 
 .stroika-building__flag {
   position: absolute;
-  right: 7px;
-  top: 7px;
-  z-index: 2;
-  width: 14px;
-  height: 10px;
+  right: 9px;
+  top: 8px;
+  z-index: 4;
+  width: 15px;
+  height: 11px;
   border-left: 2px solid #202521;
   background: linear-gradient(90deg, var(--stroika-red), var(--stroika-red-dark));
   clip-path: polygon(0 0, 100% 16%, 84% 50%, 100% 84%, 0 100%);
 }
 
-.stroika-building__windows {
-  width: 72%;
-  align-self: center;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(8px, 1fr));
-  gap: 5px;
-  padding: 26px 8px 9px;
+.stroika-building--tower .stroika-building__roof {
+  inset: 12% 24%;
+  background:
+    radial-gradient(circle at 50% 42%, rgba(164, 57, 46, 0.18), transparent 28%),
+    repeating-linear-gradient(0deg, rgba(35, 38, 34, 0.13) 0 1px, transparent 1px 11px),
+    #a9b3ad;
 }
 
-.stroika-building__windows span {
-  min-height: 7px;
-  border: 1px solid rgba(27, 31, 28, 0.28);
-  border-radius: 1px;
-  background: rgba(238, 222, 174, 0.76);
+.stroika-building--tower .stroika-building__core {
+  width: min(42px, 52%);
+  border-radius: 999px;
+}
+
+.stroika-building--panel .stroika-building__roof {
+  inset: 18% 7%;
+  background:
+    repeating-linear-gradient(90deg, rgba(69, 102, 90, 0.28) 0 10px, rgba(185, 190, 179, 0.65) 10px 20px),
+    #b5b9ae;
+}
+
+.stroika-building--panel .stroika-building__core {
+  width: min(44px, 22%);
+  border-radius: 3px;
+}
+
+.stroika-building--institute .stroika-building__roof {
+  inset: 10%;
+  background:
+    radial-gradient(circle at 50% 50%, rgba(216, 207, 181, 0.94) 0 18%, rgba(51, 58, 51, 0.22) 19% 21%, transparent 22%),
+    repeating-linear-gradient(90deg, rgba(35, 38, 34, 0.12) 0 1px, transparent 1px 16px),
+    #bbb59f;
+}
+
+.stroika-building--institute .stroika-building__core {
+  width: min(48px, 38%);
+  background: rgba(214, 205, 178, 0.92);
+}
+
+.stroika-building--combinat .stroika-building__roof {
+  inset: 14% 8%;
+  background:
+    linear-gradient(90deg, rgba(164, 57, 46, 0.16) 0 8%, transparent 8%),
+    repeating-linear-gradient(90deg, rgba(35, 38, 34, 0.18) 0 5px, transparent 5px 17px),
+    #aab0a4;
+}
+
+.stroika-building--module .stroika-building__roof {
+  inset: 16%;
+}
+
+.stroika-building--demolition .stroika-building__slab,
+.stroika-building--demolition .stroika-building__roof {
+  border-color: rgba(148, 38, 30, 0.98);
+  background:
+    repeating-linear-gradient(45deg, rgba(164, 57, 46, 0.36) 0 8px, rgba(92, 33, 28, 0.16) 8px 16px),
+    #a47c72;
+}
+
+.stroika-building--demolition .stroika-building__label {
+  background: rgba(111, 36, 30, 0.94);
+  color: #fff2dc;
 }
 
 .stroika-selection,
 .stroika-failed-selection {
-  z-index: 5;
+  z-index: 6;
   pointer-events: none;
-  border-radius: 5px;
+  border-radius: 6px;
 }
 
 .stroika-selection {
+  position: relative;
   display: grid;
   place-items: center;
-  border: 2px dashed #f1c65a;
+  border: 2px dashed #f0c75a;
   background:
-    repeating-linear-gradient(45deg, rgba(241, 198, 90, 0.24) 0 7px, rgba(75, 78, 69, 0.12) 7px 14px),
+    linear-gradient(135deg, rgba(240, 199, 90, 0.16), transparent 44%),
+    repeating-linear-gradient(45deg, rgba(240, 199, 90, 0.24) 0 7px, rgba(75, 78, 69, 0.12) 7px 14px),
     rgba(66, 103, 92, 0.25);
   box-shadow:
-    inset 0 0 0 3px rgba(32, 37, 33, 0.16),
-    0 0 0 2px rgba(241, 198, 90, 0.16);
+    inset 0 0 0 4px rgba(32, 37, 33, 0.16),
+    0 0 0 2px rgba(240, 199, 90, 0.16);
+}
+
+.stroika-selection::before {
+  content: "";
+  position: absolute;
+  inset: 10px;
+  border: 1px dashed rgba(32, 37, 33, 0.46);
+  border-radius: 4px;
+}
+
+.stroika-selection::after {
+  content: "";
+  position: absolute;
+  right: 10px;
+  bottom: 8px;
+  width: 30px;
+  height: 16px;
+  border-top: 3px solid rgba(111, 36, 30, 0.86);
+  border-left: 3px solid rgba(111, 36, 30, 0.86);
+  transform: skewX(-24deg);
 }
 
 .stroika-selection span {
-  display: inline-flex;
-  min-width: 44px;
-  min-height: 34px;
-  align-items: center;
-  justify-content: center;
+  position: relative;
+  z-index: 1;
+  display: inline-grid;
+  min-width: min(140px, calc(100% - 12px));
+  min-height: 42px;
+  place-items: center;
+  padding: 5px 9px;
   border: 2px solid rgba(32, 37, 33, 0.65);
   border-radius: 4px;
-  background: rgba(225, 215, 187, 0.88);
+  background: rgba(238, 227, 199, 0.9);
   color: var(--stroika-ink);
+  text-align: center;
+  box-shadow: 3px 4px 0 rgba(32, 37, 33, 0.18);
+}
+
+.stroika-selection strong {
   font-family: Georgia, "Times New Roman", serif;
-  font-size: 22px;
+  font-size: clamp(18px, 4vw, 26px);
   font-weight: 900;
+  line-height: 1;
+}
+
+.stroika-selection small {
+  margin-top: 2px;
+  color: var(--stroika-red-dark);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  line-height: 1;
+  text-transform: uppercase;
 }
 
 .stroika-selection--warning {
   border-color: var(--stroika-warning);
   background:
-    repeating-linear-gradient(45deg, rgba(176, 111, 42, 0.28) 0 7px, rgba(87, 57, 27, 0.12) 7px 14px),
-    rgba(176, 111, 42, 0.24);
+    repeating-linear-gradient(45deg, rgba(178, 116, 47, 0.28) 0 7px, rgba(87, 57, 27, 0.12) 7px 14px),
+    rgba(178, 116, 47, 0.24);
 }
 
 .stroika-selection--danger {
   border-color: var(--stroika-red);
   background:
-    repeating-linear-gradient(45deg, rgba(167, 55, 43, 0.3) 0 7px, rgba(99, 30, 24, 0.18) 7px 14px),
-    rgba(167, 55, 43, 0.22);
+    repeating-linear-gradient(45deg, rgba(164, 57, 46, 0.32) 0 7px, rgba(99, 30, 24, 0.18) 7px 14px),
+    rgba(164, 57, 46, 0.22);
 }
 
 .stroika-failed-selection {
@@ -334,8 +539,8 @@
 }
 
 .stroika-panel {
-  display: flex;
   min-width: 0;
+  display: flex;
   flex-direction: column;
   gap: 14px;
 }
@@ -351,15 +556,22 @@
 .stroika-result {
   border: 1px solid rgba(44, 42, 33, 0.24);
   border-radius: 8px;
-  background: rgba(246, 234, 198, 0.66);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.18), transparent 45%),
+    rgba(246, 234, 198, 0.7);
 }
 
 .stroika-stats div {
-  min-height: 70px;
+  min-height: 68px;
   padding: 10px;
 }
 
+.stroika-stats__wide {
+  grid-column: 1 / -1;
+}
+
 .stroika-stats span,
+.stroika-stats small,
 .stroika-panel__title small,
 .stroika-plan-card small {
   display: block;
@@ -375,6 +587,11 @@
   font-family: Georgia, "Times New Roman", serif;
   font-size: 25px;
   line-height: 1;
+}
+
+.stroika-stats__wide strong {
+  display: inline-block;
+  margin-right: 8px;
 }
 
 .stroika-plan {
@@ -408,13 +625,18 @@
 }
 
 .stroika-plan-card {
-  min-height: 76px;
+  position: relative;
+  min-height: 74px;
   padding: 9px;
   border: 1px solid rgba(32, 37, 33, 0.24);
   border-radius: 6px;
   background:
-    linear-gradient(90deg, rgba(167, 55, 43, 0.14) 0 4px, transparent 4px),
-    rgba(216, 207, 181, 0.76);
+    linear-gradient(90deg, rgba(164, 57, 46, 0.16) 0 4px, transparent 4px),
+    rgba(216, 207, 181, 0.78);
+  transition:
+    transform 150ms ease,
+    border-color 150ms ease,
+    background 150ms ease;
 }
 
 .stroika-plan-card strong {
@@ -429,15 +651,30 @@
   display: block;
   margin-top: 5px;
   color: var(--stroika-muted);
-  font-size: 13px;
+  font-size: 12px;
   line-height: 1.2;
 }
 
 .stroika-plan-card--built {
-  border-color: rgba(66, 103, 92, 0.48);
+  transform: translateY(-1px);
+  border-color: rgba(63, 101, 88, 0.58);
   background:
-    linear-gradient(90deg, rgba(66, 103, 92, 0.24) 0 4px, transparent 4px),
-    rgba(194, 208, 187, 0.76);
+    linear-gradient(90deg, rgba(63, 101, 88, 0.26) 0 4px, transparent 4px),
+    rgba(194, 208, 187, 0.82);
+}
+
+.stroika-plan-card--built::after {
+  content: "ПРИНЯТО";
+  position: absolute;
+  right: 7px;
+  top: 7px;
+  padding: 2px 4px;
+  border: 1px solid currentColor;
+  color: var(--stroika-green);
+  font-size: 8px;
+  font-weight: 900;
+  line-height: 1;
+  transform: rotate(-7deg);
 }
 
 .stroika-actions {
@@ -447,7 +684,7 @@
 }
 
 .stroika-game button {
-  min-height: 44px;
+  min-height: 46px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -459,7 +696,7 @@
   cursor: pointer;
   font: inherit;
   font-size: 14px;
-  font-weight: 800;
+  font-weight: 900;
   line-height: 1.2;
   transition:
     transform 160ms ease,
@@ -469,12 +706,12 @@
 
 .stroika-game button:hover:not(:disabled) {
   transform: translateY(-1px);
-  border-color: rgba(167, 55, 43, 0.58);
+  border-color: rgba(164, 57, 46, 0.58);
   background: #3b443e;
 }
 
 .stroika-game button:focus-visible {
-  outline: 3px solid rgba(167, 55, 43, 0.32);
+  outline: 3px solid rgba(164, 57, 46, 0.32);
   outline-offset: 2px;
 }
 
@@ -500,6 +737,7 @@
   align-items: center;
   margin: 0 18px 18px;
   padding: 12px;
+  box-shadow: 0 16px 40px rgba(28, 30, 26, 0.16);
 }
 
 .stroika-result__icon {
@@ -512,7 +750,9 @@
   display: block;
   color: #171b18;
   font-size: 16px;
+  font-weight: 900;
   line-height: 1.2;
+  text-transform: uppercase;
 }
 
 .stroika-result span {
@@ -524,8 +764,8 @@
 }
 
 .stroika-result--danger {
-  border-color: rgba(167, 55, 43, 0.5);
-  background: rgba(229, 205, 177, 0.86);
+  border-color: rgba(164, 57, 46, 0.5);
+  background: rgba(229, 205, 177, 0.88);
 }
 
 .stroika-result--danger .stroika-result__icon {
@@ -535,7 +775,7 @@
 @keyframes stroika-build-in {
   from {
     opacity: 0;
-    transform: scale(0.92) translateY(6px);
+    transform: scale(0.9) translateY(7px);
   }
 
   to {
@@ -572,41 +812,207 @@
   }
 }
 
-@media (max-width: 680px) {
+@media (max-width: 720px) {
+  .stroika-game {
+    border-radius: 7px;
+  }
+
   .stroika-game__header {
     flex-direction: column;
-    padding: 16px;
+    gap: 12px;
+    padding: 14px;
+  }
+
+  .stroika-game h3 {
+    font-size: 33px;
+  }
+
+  .stroika-game__header p:last-child {
+    margin-top: 7px;
+    font-size: 14px;
+    line-height: 1.35;
   }
 
   .stroika-stamp {
     width: 100%;
     max-width: none;
+    min-height: 38px;
+    font-size: 11px;
     transform: rotate(-1deg);
   }
 
+  .stroika-mobile-status {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+    padding: 10px 12px 0;
+  }
+
+  .stroika-mobile-status span {
+    min-height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 7px 8px;
+    border: 1px solid rgba(44, 42, 33, 0.2);
+    border-radius: 6px;
+    background: rgba(246, 234, 198, 0.66);
+    color: var(--stroika-muted);
+    font-size: 11px;
+    line-height: 1.1;
+  }
+
+  .stroika-mobile-status strong {
+    color: #171b18;
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 16px;
+    line-height: 1;
+  }
+
   .stroika-game__layout {
-    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 10px;
   }
 
   .stroika-board-shell {
-    padding: 8px;
+    gap: 6px;
+    padding: 7px;
+  }
+
+  .stroika-board-meta {
+    font-size: 9px;
   }
 
   .stroika-board {
-    min-width: 0;
-    gap: 3px;
+    width: 100%;
+    gap: 4px;
     padding: 4px;
+    border-width: 2px;
   }
 
-  .stroika-plan__list,
-  .stroika-stats,
+  .stroika-cell::after {
+    inset: 5px;
+  }
+
+  .stroika-cell__hint {
+    left: 4px;
+    top: 4px;
+    gap: 0;
+    padding: 2px 4px;
+  }
+
+  .stroika-cell__hint small {
+    display: none;
+  }
+
+  .stroika-building {
+    margin: 1px;
+  }
+
+  .stroika-building__slab {
+    inset: 3px;
+    box-shadow:
+      inset -3px -4px 0 rgba(80, 85, 78, 0.2),
+      3px 3px 0 var(--stroika-concrete-side);
+  }
+
+  .stroika-building__roof {
+    inset: 18% 14%;
+  }
+
+  .stroika-building__roof-grid,
+  .stroika-building__edge-lights {
+    display: none;
+  }
+
+  .stroika-building__label {
+    left: 6px;
+    top: 6px;
+    min-width: 22px;
+    padding: 2px 4px;
+  }
+
+  .stroika-building__flag {
+    right: 7px;
+    top: 7px;
+    width: 12px;
+    height: 9px;
+  }
+
+  .stroika-panel {
+    gap: 8px;
+  }
+
+  .stroika-panel .stroika-stats {
+    display: none;
+  }
+
+  .stroika-plan {
+    padding: 9px;
+  }
+
+  .stroika-panel__title {
+    margin-bottom: 8px;
+  }
+
+  .stroika-panel__title span {
+    font-size: 13px;
+  }
+
+  .stroika-plan__list {
+    grid-template-columns: repeat(auto-fit, minmax(82px, 1fr));
+    gap: 6px;
+  }
+
+  .stroika-plan-card {
+    min-height: 54px;
+    padding: 7px;
+  }
+
+  .stroika-plan-card strong {
+    font-size: 19px;
+  }
+
+  .stroika-plan-card span {
+    margin-top: 3px;
+    font-size: 10px;
+  }
+
+  .stroika-plan-card small {
+    font-size: 10px;
+  }
+
+  .stroika-plan-card--built::after {
+    right: 5px;
+    top: 5px;
+    font-size: 7px;
+  }
+
   .stroika-actions {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .stroika-game button {
+    min-height: 44px;
+    font-size: 13px;
+  }
+
+  .stroika-selection span {
+    min-width: min(118px, calc(100% - 10px));
+    min-height: 36px;
+    padding: 4px 7px;
+  }
+
+  .stroika-selection small {
+    font-size: 9px;
+  }
+
   .stroika-result {
     grid-template-columns: auto minmax(0, 1fr);
-    margin: 0 12px 12px;
+    margin: 0 10px 10px;
   }
 
   .stroika-result button {
@@ -615,15 +1021,41 @@
 }
 
 @media (max-width: 420px) {
+  .stroika-game__header {
+    padding: 12px;
+  }
+
   .stroika-game h3 {
-    font-size: 30px;
+    font-size: 29px;
+  }
+
+  .stroika-mobile-status {
+    grid-template-columns: 1fr 1fr;
+    padding-inline: 8px;
+  }
+
+  .stroika-game__layout {
+    padding: 8px;
+  }
+
+  .stroika-board-shell {
+    padding: 5px;
+  }
+
+  .stroika-board {
+    gap: 3px;
+    padding: 3px;
   }
 
   .stroika-plan__list {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
-  .stroika-game button {
-    font-size: 13px;
+  .stroika-plan-card {
+    min-width: 0;
+  }
+
+  .stroika-plan-card span {
+    display: none;
   }
 }
