@@ -12,10 +12,10 @@ export const gamePrototypeSlots: GamePrototypeSlot[] = [
   {
     title: "Стройка века",
     status: "prototype",
-    statusLabel: "В разработке",
+    statusLabel: "Прототип",
     description:
-      "Будущая puzzle-игра про строительство советских ретро-футуристических зданий на необычных игровых полях.",
-    ctaLabel: "Скоро",
+      "Короткая puzzle-игра про строительство города будущего по плану пятилетки.",
+    ctaLabel: "Играть",
   },
   {
     title: "Следующий прототип",

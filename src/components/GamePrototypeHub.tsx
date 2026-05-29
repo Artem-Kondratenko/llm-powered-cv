@@ -1,6 +1,7 @@
 import { Construction, Lock } from "lucide-react";
 import { gamePrototypeSlots } from "../data/gamePrototypeSlots";
 import type { GamePrototypeSlot } from "../data/gamePrototypeSlots";
+import { StroikaVekaGame } from "./StroikaVekaGame";
 
 function getSlotIcon(slot: GamePrototypeSlot) {
   if (slot.status === "prototype") {
@@ -19,36 +20,44 @@ function getStatusClass(slot: GamePrototypeSlot) {
 }
 
 export function GamePrototypeHub() {
+  const reservedSlots = gamePrototypeSlots.filter((slot) => slot.status === "reserved");
+
   return (
-    <div className="grid gap-4 md:grid-cols-2">
-      {gamePrototypeSlots.map((slot) => (
-        <article
-          key={slot.title}
-          className="flex h-full flex-col rounded-lg border border-white/10 bg-slate-900/70 p-6 shadow-soft transition hover:-translate-y-0.5 hover:border-teal-300/25 hover:bg-slate-900 sm:p-7"
-        >
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-teal-300/20 bg-teal-300/10 text-teal-200">
-              {getSlotIcon(slot)}
-            </div>
-            <span
-              className={`rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] ${getStatusClass(slot)}`}
+    <div className="grid gap-6">
+      <StroikaVekaGame />
+
+      {reservedSlots.length > 0 ? (
+        <div className="grid gap-4 md:grid-cols-2">
+          {reservedSlots.map((slot) => (
+            <article
+              key={slot.title}
+              className="flex h-full flex-col rounded-lg border border-white/10 bg-slate-900/70 p-6 shadow-soft transition hover:-translate-y-0.5 hover:border-teal-300/25 hover:bg-slate-900 sm:p-7"
             >
-              {slot.statusLabel}
-            </span>
-          </div>
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-teal-300/20 bg-teal-300/10 text-teal-200">
+                  {getSlotIcon(slot)}
+                </div>
+                <span
+                  className={`rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] ${getStatusClass(slot)}`}
+                >
+                  {slot.statusLabel}
+                </span>
+              </div>
 
-          <h3 className="mt-5 text-xl font-semibold text-slate-50">{slot.title}</h3>
-          <p className="mt-3 flex-1 text-[16px] leading-7 text-slate-300">{slot.description}</p>
+              <h3 className="mt-5 text-xl font-semibold text-slate-50">{slot.title}</h3>
+              <p className="mt-3 flex-1 text-[16px] leading-7 text-slate-300">{slot.description}</p>
 
-          <button
-            type="button"
-            disabled
-            className="mt-5 inline-flex min-h-11 w-fit items-center justify-center rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-slate-400"
-          >
-            {slot.ctaLabel}
-          </button>
-        </article>
-      ))}
+              <button
+                type="button"
+                disabled
+                className="mt-5 inline-flex min-h-11 w-fit items-center justify-center rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-slate-400"
+              >
+                {slot.ctaLabel}
+              </button>
+            </article>
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 }
