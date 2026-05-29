@@ -36,9 +36,13 @@ type PlacedBuilding = Rect & {
   planId: string;
   area: number;
   visualType: BuildingVisualType;
+  roofVariant: RoofVariant;
+  surfaceVariant: SurfaceVariant;
 };
 
 type BuildingVisualType = "tower" | "panel" | "institute" | "combinat" | "module";
+type RoofVariant = "core" | "radar" | "vents";
+type SurfaceVariant = "concrete" | "mint" | "ochre" | "graphite";
 
 type FeedbackTone = "neutral" | "success" | "warning" | "danger";
 
@@ -67,6 +71,7 @@ type SelectionAnalysis = {
   availablePlan: PlanItem | undefined;
   overlappedIds: Set<string>;
   tone: "success" | "warning" | "danger";
+  marker: string;
   label: string;
 };
 
@@ -423,6 +428,26 @@ function getBuildingVisualType(rect: Rect): BuildingVisualType {
   return "module";
 }
 
+function hashText(value: string) {
+  return Array.from(value).reduce((hash, char) => hash + char.charCodeAt(0), 0);
+}
+
+function getRoofVariant(rect: Rect, planId: string): RoofVariant {
+  const variants: RoofVariant[] = rectArea(rect) <= 3 ? ["radar", "core", "vents"] : ["core", "vents", "radar"];
+
+  return variants[hashText(`${planId}-${rect.width}-${rect.height}`) % variants.length];
+}
+
+function getSurfaceVariant(rect: Rect, planId: string): SurfaceVariant {
+  const variants: SurfaceVariant[] = ["concrete", "mint", "ochre", "graphite"];
+
+  if (rectArea(rect) >= 10) {
+    return variants[(hashText(planId) + 2) % variants.length];
+  }
+
+  return variants[(hashText(planId) + rect.width + rect.height) % variants.length];
+}
+
 function formatTime(totalSeconds: number) {
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
@@ -631,8 +656,9 @@ export function StroikaVekaGame() {
     const area = rectArea(rect);
     const availablePlan = findAvailablePlan(level, placements, overlappedIds, area);
     const tone = hasBlockedCell ? "danger" : availablePlan ? (overlapped.length > 0 ? "warning" : "success") : "warning";
+    const marker = hasBlockedCell ? "ПУСТЫРЬ" : romanize(area);
     const label = hasBlockedCell
-      ? "Пустырь"
+      ? "Стройка запрещена"
       : !availablePlan
         ? "Не по плану"
         : overlapped.length > 0
@@ -646,6 +672,7 @@ export function StroikaVekaGame() {
       availablePlan,
       overlappedIds,
       tone,
+      marker,
       label,
     };
   }
@@ -753,6 +780,8 @@ export function StroikaVekaGame() {
         planId: availablePlan.id,
         area,
         visualType: getBuildingVisualType(rect),
+        roofVariant: getRoofVariant(rect, availablePlan.id),
+        surfaceVariant: getSurfaceVariant(rect, availablePlan.id),
       },
     ];
     const removedCount = overlappedIds.size;
@@ -842,6 +871,8 @@ export function StroikaVekaGame() {
     "--stroika-rows": level.height,
     aspectRatio: `${level.width} / ${level.height}`,
   } as CSSProperties;
+  const shouldReserveTutorial = levelNumber === 1 && !result && !gameOver;
+  const shouldShowTutorial = shouldReserveTutorial && placements.length === 0;
 
   return (
     <section className="stroika-game" aria-label="Игровой прототип Стройка века">
@@ -877,6 +908,12 @@ export function StroikaVekaGame() {
             <span>ГЕНПЛАН</span>
             <span>ГОРОД ГОТОВ НА {readiness}%</span>
           </div>
+          {shouldReserveTutorial ? (
+            <div className={`stroika-tutorial${shouldShowTutorial ? "" : " stroika-tutorial--hidden"}`} role="note">
+              <strong>Первый приказ</strong>
+              <span>Зажми клетку и протяни прямоугольник. Площадь должна совпасть с планом: IV = 4 клетки.</span>
+            </div>
+          ) : null}
           <div
             ref={boardRef}
             className="stroika-board"
@@ -914,13 +951,16 @@ export function StroikaVekaGame() {
             )}
 
             {placements.map((building) => {
-              const isMarkedForDemolition = liveSelection?.overlappedIds.has(building.id) ?? false;
+              const isMarkedForDemolition =
+                Boolean(liveSelection?.availablePlan) &&
+                !liveSelection?.hasBlockedCell &&
+                (liveSelection?.overlappedIds.has(building.id) ?? false);
               const detailCount = Math.min(10, Math.max(3, Math.ceil(building.area / 2)));
 
               return (
                 <div
                   key={building.id}
-                  className={`stroika-building stroika-building--${building.visualType}${
+                  className={`stroika-building stroika-building--${building.visualType} stroika-building--roof-${building.roofVariant} stroika-building--surface-${building.surfaceVariant}${
                     isMarkedForDemolition ? " stroika-building--demolition" : ""
                   }`}
                   style={{
@@ -934,6 +974,8 @@ export function StroikaVekaGame() {
                   <span className="stroika-building__roof" aria-hidden="true">
                     <span className="stroika-building__core" />
                     <span className="stroika-building__antenna" />
+                    <span className="stroika-building__dish" />
+                    <span className="stroika-building__pipes" />
                     <span className="stroika-building__roof-grid">
                       {Array.from({ length: detailCount }).map((_, index) => (
                         <span key={index} />
@@ -951,14 +993,16 @@ export function StroikaVekaGame() {
 
             {liveSelection ? (
               <div
-                className={`stroika-selection stroika-selection--${liveSelection.tone}`}
+                className={`stroika-selection stroika-selection--${liveSelection.tone}${
+                  liveSelection.hasBlockedCell ? " stroika-selection--blocked" : ""
+                }`}
                 style={{
                   gridColumn: `${liveSelection.rect.x + 1} / span ${liveSelection.rect.width}`,
                   gridRow: `${liveSelection.rect.y + 1} / span ${liveSelection.rect.height}`,
                 }}
               >
                 <span>
-                  <strong>{romanize(liveSelection.area)}</strong>
+                  <strong>{liveSelection.marker}</strong>
                   <small>{liveSelection.label}</small>
                 </span>
               </div>

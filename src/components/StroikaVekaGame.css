@@ -139,6 +139,40 @@
   line-height: 1.2;
 }
 
+.stroika-tutorial {
+  display: grid;
+  gap: 4px;
+  max-width: 520px;
+  padding: 9px 11px;
+  border: 1px solid rgba(111, 36, 30, 0.34);
+  border-left: 5px solid var(--stroika-red);
+  border-radius: 6px;
+  background:
+    linear-gradient(90deg, rgba(164, 57, 46, 0.1), transparent 55%),
+    rgba(238, 227, 199, 0.82);
+  color: var(--stroika-muted);
+  box-shadow: 4px 5px 0 rgba(35, 38, 33, 0.1);
+}
+
+.stroika-tutorial strong {
+  color: var(--stroika-red-dark);
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.07em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.stroika-tutorial span {
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.stroika-tutorial--hidden {
+  visibility: hidden;
+  opacity: 0;
+}
+
 .stroika-board {
   width: min(100%, 660px);
   max-width: 100%;
@@ -190,15 +224,16 @@
 }
 
 .stroika-cell--blocked::before {
-  content: "ПУСТ";
+  content: "ПУСТЫРЬ";
   position: absolute;
   inset: 0;
   display: grid;
   place-items: center;
   color: rgba(66, 31, 26, 0.78);
-  font-size: clamp(9px, 2.2vw, 14px);
+  font-size: clamp(7px, 1.7vw, 12px);
   font-weight: 900;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.02em;
+  line-height: 1;
 }
 
 .stroika-cell__hint {
@@ -272,6 +307,42 @@
     4px 5px 0 var(--stroika-concrete-side);
 }
 
+.stroika-building--surface-concrete .stroika-building__slab {
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.16), transparent 42%),
+    linear-gradient(180deg, #c1c3b4, #989d91);
+  box-shadow:
+    inset -5px -6px 0 rgba(80, 85, 78, 0.22),
+    4px 5px 0 #777d73;
+}
+
+.stroika-building--surface-mint .stroika-building__slab {
+  background:
+    linear-gradient(135deg, rgba(238, 227, 199, 0.18), transparent 48%),
+    linear-gradient(180deg, #b9c7bd, #7f988d);
+  box-shadow:
+    inset -5px -6px 0 rgba(46, 77, 66, 0.22),
+    4px 5px 0 #5d746a;
+}
+
+.stroika-building--surface-ochre .stroika-building__slab {
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.16), transparent 42%),
+    linear-gradient(180deg, #c8b78f, #9e8c68);
+  box-shadow:
+    inset -5px -6px 0 rgba(91, 71, 40, 0.18),
+    4px 5px 0 #7c6b50;
+}
+
+.stroika-building--surface-graphite .stroika-building__slab {
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.14), transparent 42%),
+    linear-gradient(180deg, #8e948c, #59625d);
+  box-shadow:
+    inset -5px -6px 0 rgba(25, 30, 27, 0.22),
+    4px 5px 0 #424a45;
+}
+
 .stroika-building__roof {
   position: absolute;
   inset: 13% 12%;
@@ -286,6 +357,27 @@
     repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.15) 0 1px, transparent 1px 14px),
     #b8bbb0;
   box-shadow: 3px 4px 0 rgba(63, 66, 60, 0.5);
+}
+
+.stroika-building--surface-mint .stroika-building__roof {
+  background:
+    repeating-linear-gradient(90deg, rgba(39, 76, 63, 0.13) 0 1px, transparent 1px 12px),
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.16) 0 1px, transparent 1px 14px),
+    #b7c7bc;
+}
+
+.stroika-building--surface-ochre .stroika-building__roof {
+  background:
+    repeating-linear-gradient(90deg, rgba(88, 65, 36, 0.12) 0 1px, transparent 1px 12px),
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.14) 0 1px, transparent 1px 14px),
+    #c2b08b;
+}
+
+.stroika-building--surface-graphite .stroika-building__roof {
+  background:
+    repeating-linear-gradient(90deg, rgba(29, 34, 31, 0.2) 0 1px, transparent 1px 10px),
+    repeating-linear-gradient(0deg, rgba(238, 227, 199, 0.1) 0 1px, transparent 1px 14px),
+    #89918a;
 }
 
 .stroika-building__core {
@@ -311,6 +403,92 @@
   background: var(--stroika-red-dark);
   box-shadow: 0 0 0 2px rgba(235, 221, 187, 0.52);
   transform: rotate(8deg);
+}
+
+.stroika-building__dish,
+.stroika-building__pipes {
+  display: none;
+}
+
+.stroika-building__dish {
+  position: absolute;
+  left: 12%;
+  top: 14%;
+  width: min(28px, 24%);
+  aspect-ratio: 1;
+  border: 3px solid rgba(111, 36, 30, 0.78);
+  border-radius: 999px;
+  border-left-color: transparent;
+  transform: rotate(-28deg);
+}
+
+.stroika-building__dish::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 38%;
+  height: 3px;
+  background: rgba(111, 36, 30, 0.78);
+  transform: rotate(30deg);
+  transform-origin: left center;
+}
+
+.stroika-building__pipes {
+  position: absolute;
+  right: 10%;
+  bottom: 13%;
+  width: 32%;
+  height: 20%;
+  background:
+    linear-gradient(90deg, rgba(64, 67, 60, 0.46) 0 18%, transparent 18% 30%, rgba(64, 67, 60, 0.46) 30% 48%, transparent 48% 60%, rgba(64, 67, 60, 0.46) 60% 100%);
+  border-radius: 2px;
+}
+
+.stroika-building--roof-core .stroika-building__core {
+  display: block;
+}
+
+.stroika-building--roof-core .stroika-building__roof-grid {
+  inset: auto 12% 13% 12%;
+}
+
+.stroika-building--roof-radar .stroika-building__core {
+  left: 46%;
+  top: 42%;
+  width: min(24px, 24%);
+  border-radius: 999px;
+}
+
+.stroika-building--roof-radar .stroika-building__dish {
+  display: block;
+}
+
+.stroika-building--roof-radar .stroika-building__antenna {
+  right: 16%;
+  top: 16%;
+  height: 18%;
+  transform: rotate(-12deg);
+}
+
+.stroika-building--roof-radar .stroika-building__roof-grid {
+  width: 46%;
+  left: auto;
+}
+
+.stroika-building--roof-vents .stroika-building__core {
+  width: min(32px, 22%);
+  border-radius: 2px;
+  transform: translate(-24%, -12%);
+}
+
+.stroika-building--roof-vents .stroika-building__pipes {
+  display: block;
+}
+
+.stroika-building--roof-vents .stroika-building__roof-grid {
+  inset: 18% auto auto 12%;
+  width: 46%;
 }
 
 .stroika-building__roof-grid {
@@ -384,6 +562,17 @@
     radial-gradient(circle at 50% 42%, rgba(164, 57, 46, 0.18), transparent 28%),
     repeating-linear-gradient(0deg, rgba(35, 38, 34, 0.13) 0 1px, transparent 1px 11px),
     #a9b3ad;
+}
+
+.stroika-building--tower.stroika-building--roof-radar .stroika-building__dish {
+  left: 20%;
+  top: 18%;
+  width: min(22px, 38%);
+}
+
+.stroika-building--tower.stroika-building--roof-vents .stroika-building__pipes {
+  right: 24%;
+  width: 42%;
 }
 
 .stroika-building--tower .stroika-building__core {
@@ -527,6 +716,30 @@
   background:
     repeating-linear-gradient(45deg, rgba(164, 57, 46, 0.32) 0 7px, rgba(99, 30, 24, 0.18) 7px 14px),
     rgba(164, 57, 46, 0.22);
+}
+
+.stroika-selection--blocked {
+  border-color: rgba(111, 36, 30, 0.9);
+  background:
+    repeating-linear-gradient(45deg, rgba(111, 36, 30, 0.16) 0 8px, rgba(238, 227, 199, 0.14) 8px 16px),
+    rgba(111, 36, 30, 0.08);
+  box-shadow:
+    inset 0 0 0 3px rgba(111, 36, 30, 0.22),
+    0 0 0 2px rgba(238, 227, 199, 0.22);
+}
+
+.stroika-selection--blocked::after {
+  display: none;
+}
+
+.stroika-selection--blocked span {
+  border-color: rgba(111, 36, 30, 0.78);
+  background: rgba(238, 227, 199, 0.94);
+}
+
+.stroika-selection--blocked strong {
+  font-size: clamp(14px, 3.2vw, 18px);
+  letter-spacing: 0.03em;
 }
 
 .stroika-failed-selection {
@@ -886,6 +1099,18 @@
     font-size: 9px;
   }
 
+  .stroika-tutorial {
+    padding: 8px 9px;
+  }
+
+  .stroika-tutorial strong {
+    font-size: 11px;
+  }
+
+  .stroika-tutorial span {
+    font-size: 12px;
+  }
+
   .stroika-board {
     width: 100%;
     gap: 4px;
@@ -908,6 +1133,11 @@
     display: none;
   }
 
+  .stroika-cell--blocked::before {
+    font-size: 7px;
+    letter-spacing: 0;
+  }
+
   .stroika-building {
     margin: 1px;
   }
@@ -926,6 +1156,15 @@
   .stroika-building__roof-grid,
   .stroika-building__edge-lights {
     display: none;
+  }
+
+  .stroika-building--roof-radar .stroika-building__dish {
+    display: block;
+    border-width: 2px;
+  }
+
+  .stroika-building--roof-vents .stroika-building__pipes {
+    display: block;
   }
 
   .stroika-building__label {
