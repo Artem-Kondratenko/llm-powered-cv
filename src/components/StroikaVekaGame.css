@@ -285,15 +285,40 @@
   line-height: 1.35;
 }
 
+.stroika-tutorial__dots {
+  display: inline-grid;
+  grid-auto-flow: column;
+  justify-content: start;
+  gap: 5px;
+}
+
+.stroika-tutorial__dots span {
+  width: 22px;
+  height: 6px;
+  border: 1px solid rgba(111, 36, 30, 0.35);
+  border-radius: 999px;
+  background: rgba(88, 91, 80, 0.18);
+}
+
+.stroika-tutorial__dots span.is-active {
+  background: var(--stroika-red);
+}
+
+.stroika-tutorial__dots span.is-done {
+  background: var(--stroika-green);
+}
+
 .stroika-tutorial--hidden {
   visibility: hidden;
   opacity: 0;
 }
 
 .stroika-board {
+  position: relative;
   width: min(100%, 660px);
   max-width: 100%;
   min-width: 0;
+  overflow: hidden;
   justify-self: center;
   display: grid;
   grid-template-columns: repeat(var(--stroika-cols), minmax(0, 1fr));
@@ -312,6 +337,90 @@
   user-select: none;
 }
 
+.stroika-board::before,
+.stroika-board::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.stroika-board::before {
+  opacity: 0.62;
+}
+
+.stroika-board::after {
+  inset: auto 10px 8px auto;
+  width: auto;
+  height: auto;
+  padding: 2px 6px;
+  border: 1px solid rgba(238, 227, 199, 0.22);
+  background: rgba(42, 47, 42, 0.34);
+  color: rgba(238, 227, 199, 0.54);
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.stroika-board--blueprint-basic::before {
+  background:
+    linear-gradient(90deg, rgba(238, 227, 199, 0.12) 1px, transparent 1px),
+    linear-gradient(0deg, rgba(238, 227, 199, 0.1) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+.stroika-board--blueprint-basic::after {
+  content: "ОСЬ 1";
+}
+
+.stroika-board--blueprint-sector::before {
+  background:
+    repeating-linear-gradient(135deg, rgba(238, 227, 199, 0.1) 0 1px, transparent 1px 18px),
+    linear-gradient(90deg, transparent 47%, rgba(164, 57, 46, 0.12) 47% 48%, transparent 48%);
+}
+
+.stroika-board--blueprint-sector::after {
+  content: "СЕКТОР А";
+}
+
+.stroika-board--blueprint-industrial::before {
+  background:
+    radial-gradient(circle at 22% 24%, transparent 0 30px, rgba(238, 227, 199, 0.1) 31px 33px, transparent 34px),
+    linear-gradient(90deg, transparent 18%, rgba(238, 227, 199, 0.09) 18% 20%, transparent 20% 54%, rgba(238, 227, 199, 0.09) 54% 56%, transparent 56%),
+    repeating-linear-gradient(0deg, rgba(238, 227, 199, 0.06) 0 1px, transparent 1px 22px);
+}
+
+.stroika-board--blueprint-industrial::after {
+  content: "ТРУБОПРОВОД";
+}
+
+.stroika-board--blueprint-residential::before {
+  background:
+    linear-gradient(90deg, rgba(238, 227, 199, 0.1) 1px, transparent 1px),
+    linear-gradient(0deg, rgba(238, 227, 199, 0.08) 1px, transparent 1px),
+    repeating-linear-gradient(90deg, transparent 0 38px, rgba(164, 57, 46, 0.08) 38px 42px);
+  background-size: 32px 32px, 32px 32px, 100% 100%;
+}
+
+.stroika-board--blueprint-residential::after {
+  content: "КВАРТАЛ";
+}
+
+.stroika-board--blueprint-restricted::before {
+  background:
+    repeating-linear-gradient(45deg, rgba(164, 57, 46, 0.08) 0 2px, transparent 2px 18px),
+    radial-gradient(circle at 72% 28%, rgba(164, 57, 46, 0.11), transparent 76px),
+    linear-gradient(90deg, rgba(238, 227, 199, 0.1) 1px, transparent 1px);
+  background-size: 100% 100%, 100% 100%, 30px 30px;
+}
+
+.stroika-board--blueprint-restricted::after {
+  content: "ЗОНА ОГР.";
+}
+
 .stroika-board-viewport {
   min-width: 0;
   min-height: 0;
@@ -321,6 +430,7 @@
 
 .stroika-cell {
   position: relative;
+  z-index: 1;
   min-width: 0;
   min-height: 0;
   overflow: hidden;
@@ -1000,15 +1110,15 @@
 .stroika-selection--blocked {
   border-color: rgba(111, 36, 30, 0.9);
   background:
-    repeating-linear-gradient(45deg, rgba(111, 36, 30, 0.16) 0 8px, rgba(238, 227, 199, 0.14) 8px 16px),
-    rgba(111, 36, 30, 0.08);
+    linear-gradient(135deg, rgba(164, 57, 46, 0.2), transparent 48%),
+    rgba(164, 57, 46, 0.12);
   box-shadow:
-    inset 0 0 0 3px rgba(111, 36, 30, 0.22),
-    0 0 0 2px rgba(238, 227, 199, 0.22);
+    inset 0 0 0 3px rgba(111, 36, 30, 0.2),
+    0 0 0 2px rgba(238, 227, 199, 0.16);
 }
 
 .stroika-selection--blocked::after {
-  display: none;
+  border-color: rgba(111, 36, 30, 0.74);
 }
 
 .stroika-selection--blocked span {
@@ -1017,8 +1127,21 @@
 }
 
 .stroika-selection--blocked strong {
-  font-size: clamp(14px, 3.2vw, 18px);
+  font-size: clamp(18px, 4vw, 24px);
   letter-spacing: 0.03em;
+}
+
+.stroika-selection--demolish {
+  border-color: rgba(111, 36, 30, 0.96);
+  background:
+    repeating-linear-gradient(45deg, rgba(164, 57, 46, 0.24) 0 7px, rgba(45, 34, 31, 0.12) 7px 14px),
+    rgba(111, 36, 30, 0.18);
+}
+
+.stroika-selection--demolish span {
+  border-color: rgba(111, 36, 30, 0.86);
+  color: var(--stroika-red-dark);
+  transform: rotate(-1deg);
 }
 
 .stroika-failed-selection {
@@ -1308,10 +1431,30 @@
   background: var(--stroika-red-dark) !important;
 }
 
+.stroika-actions__skip {
+  background: var(--stroika-green) !important;
+}
+
 .stroika-button-icon {
   width: 17px;
   height: 17px;
   flex: 0 0 auto;
+}
+
+.stroika-mobile-stamp {
+  display: none;
+}
+
+.stroika-mobile-stamp--success {
+  color: var(--stroika-green);
+}
+
+.stroika-mobile-stamp--warning {
+  color: var(--stroika-warning);
+}
+
+.stroika-mobile-stamp--danger {
+  color: var(--stroika-red);
 }
 
 .stroika-end-overlay {
@@ -1964,7 +2107,7 @@
   .stroika-panel {
     min-height: 0;
     display: grid;
-    grid-template-rows: auto auto;
+    grid-template-rows: auto auto auto;
     gap: 6px;
   }
 
@@ -2051,6 +2194,42 @@
     right: 4px;
     top: 4px;
     font-size: 8px;
+  }
+
+  .stroika-mobile-stamp {
+    order: 3;
+    grid-row: 3;
+    min-height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 5px 8px;
+    border: 2px solid currentColor;
+    border-radius: 5px;
+    background:
+      repeating-linear-gradient(135deg, currentColor 0 1px, transparent 1px 9px),
+      rgba(238, 227, 199, 0.88);
+    background-blend-mode: soft-light, normal;
+    color: var(--stroika-red-dark);
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: 0.04em;
+    line-height: 1.1;
+    text-align: center;
+    text-transform: uppercase;
+    transform: rotate(-1deg);
+  }
+
+  .stroika-mobile-stamp--success {
+    color: var(--stroika-green);
+  }
+
+  .stroika-mobile-stamp--warning {
+    color: var(--stroika-warning);
+  }
+
+  .stroika-mobile-stamp--danger {
+    color: var(--stroika-red);
   }
 
   .stroika-tutorial-ghost {

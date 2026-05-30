@@ -25,10 +25,16 @@ type Level = {
   blocked: CellCoord[];
 };
 
+type SelectionMode = "build" | "demolish";
+type GamePhase = "tutorial" | "main";
+type BoardBlueprintVariant = "basic" | "sector" | "industrial" | "residential" | "restricted";
+
 type Selection = {
   pointerId: number;
   start: CellCoord;
   end: CellCoord;
+  mode: SelectionMode;
+  targetBuildingId?: string;
 };
 
 type PlacedBuilding = Rect & {
@@ -73,14 +79,24 @@ type BoardMetrics = {
 };
 
 type SelectionAnalysis = {
+  mode: SelectionMode;
   rect: Rect;
   area: number;
   hasBlockedCell: boolean;
   availablePlan: PlanItem | undefined;
   overlappedIds: Set<string>;
+  targetBuildingId?: string;
   tone: "success" | "warning" | "danger";
   marker: string;
   label: string;
+};
+
+type TutorialStep = {
+  title: string;
+  description: string;
+  level: Level;
+  ghost: Rect;
+  targetArea: number;
 };
 
 const MAX_DIFFICULTY = 5;
@@ -119,11 +135,10 @@ const PRESET_LEVELS: Array<{
     height: 5,
     rects: [
       { x: 0, y: 0, width: 2, height: 2 },
-      { x: 2, y: 0, width: 2, height: 2 },
-      { x: 4, y: 0, width: 2, height: 3 },
-      { x: 0, y: 2, width: 2, height: 3 },
-      { x: 2, y: 2, width: 2, height: 3 },
-      { x: 4, y: 3, width: 2, height: 2 },
+      { x: 2, y: 0, width: 4, height: 2 },
+      { x: 0, y: 2, width: 1, height: 3 },
+      { x: 1, y: 2, width: 2, height: 3 },
+      { x: 3, y: 2, width: 3, height: 3 },
     ],
   },
   {
@@ -154,13 +169,13 @@ const PRESET_LEVELS: Array<{
     width: 7,
     height: 6,
     rects: [
-      { x: 0, y: 0, width: 2, height: 3 },
+      { x: 0, y: 0, width: 2, height: 2 },
       { x: 2, y: 0, width: 3, height: 2 },
-      { x: 5, y: 0, width: 2, height: 3 },
-      { x: 2, y: 2, width: 3, height: 2 },
-      { x: 0, y: 3, width: 2, height: 3 },
-      { x: 2, y: 4, width: 3, height: 2 },
-      { x: 5, y: 3, width: 2, height: 3 },
+      { x: 5, y: 0, width: 2, height: 4 },
+      { x: 0, y: 2, width: 3, height: 2 },
+      { x: 3, y: 2, width: 2, height: 2 },
+      { x: 0, y: 4, width: 4, height: 2 },
+      { x: 4, y: 4, width: 3, height: 2 },
     ],
   },
 ];
@@ -243,14 +258,19 @@ function getHint(rect: Rect): CellCoord {
   };
 }
 
-function createLevelFromRects(width: number, height: number, rects: Rect[], blocked: CellCoord[] = []): Level {
-  const plan = shuffle(
-    rects.map((rect, index) => ({
+function createLevelFromRects(
+  width: number,
+  height: number,
+  rects: Rect[],
+  blocked: CellCoord[] = [],
+  shufflePlan = true,
+): Level {
+  const planItems = rects.map((rect, index) => ({
       id: `plan-${index + 1}-${rect.x}-${rect.y}`,
       area: rectArea(rect),
       hint: getHint(rect),
-    })),
-  );
+  }));
+  const plan = shufflePlan ? shuffle(planItems) : planItems;
 
   return {
     width,
@@ -259,6 +279,48 @@ function createLevelFromRects(width: number, height: number, rects: Rect[], bloc
     blocked,
   };
 }
+
+const TUTORIAL_STEPS: TutorialStep[] = [
+  {
+    title: "Учебный приказ 1/3",
+    description: "Протяни первый фундамент на III клетки.",
+    level: createLevelFromRects(4, 3, [{ x: 0, y: 1, width: 3, height: 1 }], [], false),
+    ghost: { x: 0, y: 1, width: 3, height: 1 },
+    targetArea: 3,
+  },
+  {
+    title: "Учебный приказ 2/3",
+    description: "Закрой два проекта из плана: IV и VI.",
+    level: createLevelFromRects(
+      4,
+      4,
+      [
+        { x: 0, y: 0, width: 2, height: 2 },
+        { x: 2, y: 0, width: 2, height: 3 },
+      ],
+      [],
+      false,
+    ),
+    ghost: { x: 0, y: 0, width: 2, height: 2 },
+    targetArea: 4,
+  },
+  {
+    title: "Учебный приказ 3/3",
+    description: "Пустырь не застраивать. Обведи корпус рядом с ним.",
+    level: createLevelFromRects(
+      4,
+      4,
+      [
+        { x: 0, y: 0, width: 2, height: 2 },
+        { x: 0, y: 2, width: 3, height: 1 },
+      ],
+      [{ x: 2, y: 1 }],
+      false,
+    ),
+    ghost: { x: 0, y: 0, width: 2, height: 2 },
+    targetArea: 4,
+  },
+];
 
 function getDifficultyShape(difficulty: number) {
   if (difficulty <= 1) {
@@ -387,28 +449,150 @@ function splitRects(baseRects: Rect[], targetRects: number, maxArea: number) {
   return rects;
 }
 
+function rectWithinBounds(rect: Rect, width: number, height: number) {
+  return rect.x >= 0 && rect.y >= 0 && rect.x + rect.width <= width && rect.y + rect.height <= height;
+}
+
+function rectIncludesBlockedCell(rect: Rect, blocked: CellCoord[]) {
+  return blocked.some((cell) => rectContainsCell(rect, cell));
+}
+
+function rectsOverlapBlockedCells(rects: Rect[], blocked: CellCoord[]) {
+  return rects.some((rect) => rectIncludesBlockedCell(rect, blocked));
+}
+
+function placementOverlapsBlockedCell(placement: PlacedBuilding, blocked: CellCoord[]) {
+  return rectIncludesBlockedCell(placement, blocked);
+}
+
+function getOccupiedCells(rects: Rect[]) {
+  const occupiedCells = new Set<string>();
+
+  rects.forEach((rect) => {
+    for (let y = rect.y; y < rect.y + rect.height; y += 1) {
+      for (let x = rect.x; x < rect.x + rect.width; x += 1) {
+        occupiedCells.add(cellKey({ x, y }));
+      }
+    }
+  });
+
+  return occupiedCells;
+}
+
+function getLevelVarietyStats(rects: Rect[]) {
+  const areaCounts = new Map<number, number>();
+  const shapeSet = new Set<string>();
+
+  rects.forEach((rect) => {
+    const area = rectArea(rect);
+    areaCounts.set(area, (areaCounts.get(area) ?? 0) + 1);
+    shapeSet.add(`${rect.width}x${rect.height}`);
+  });
+
+  const maxSameAreaShare = rects.length > 0 ? Math.max(...areaCounts.values()) / rects.length : 1;
+
+  return {
+    areaCount: areaCounts.size,
+    shapeCount: shapeSet.size,
+    maxSameAreaShare,
+  };
+}
+
+function isVariedEnough(rects: Rect[], difficulty: number) {
+  const stats = getLevelVarietyStats(rects);
+  const requiredAreaCount = difficulty <= 1 ? 2 : 3;
+  const achievableAreaCount = Math.min(requiredAreaCount, rects.length);
+
+  return stats.areaCount >= achievableAreaCount && stats.shapeCount >= 2 && stats.maxSameAreaShare <= 0.7;
+}
+
+function validateRectPartition(width: number, height: number, rects: Rect[], blocked: CellCoord[], difficulty: number) {
+  const blockedKeys = new Set(blocked.map(cellKey));
+  const accessibleArea = width * height - blockedKeys.size;
+  const occupiedCells = new Set<string>();
+  const blockedAreValid = blockedKeys.size === blocked.length && blocked.every((cell) => rectWithinBounds({ ...cell, width: 1, height: 1 }, width, height));
+
+  if (!blockedAreValid || rects.length < 1 || rectsOverlapBlockedCells(rects, blocked) || !isVariedEnough(rects, difficulty)) {
+    return false;
+  }
+
+  for (const rect of rects) {
+    if (!rectWithinBounds(rect, width, height) || rectArea(rect) < 1) {
+      return false;
+    }
+
+    for (let y = rect.y; y < rect.y + rect.height; y += 1) {
+      for (let x = rect.x; x < rect.x + rect.width; x += 1) {
+        const key = cellKey({ x, y });
+
+        if (occupiedCells.has(key) || blockedKeys.has(key)) {
+          return false;
+        }
+
+        occupiedCells.add(key);
+      }
+    }
+  }
+
+  return occupiedCells.size === accessibleArea;
+}
+
+function validateLevelIntegrity(level: Level): { ok: boolean; reason?: string } {
+  const blockedKeys = new Set(level.blocked.map(cellKey));
+  const plannedArea = level.plan.reduce((sum, item) => sum + item.area, 0);
+  const accessibleArea = getAccessibleCellCount(level);
+
+  if (blockedKeys.size !== level.blocked.length) {
+    return { ok: false, reason: "Повторяющийся пустырь" };
+  }
+
+  if (!level.blocked.every((cell) => rectWithinBounds({ ...cell, width: 1, height: 1 }, level.width, level.height))) {
+    return { ok: false, reason: "Пустырь вне поля" };
+  }
+
+  if (plannedArea !== accessibleArea) {
+    return { ok: false, reason: "План не равен доступной площади" };
+  }
+
+  return { ok: true };
+}
+
 function generateLevel(levelNumber: number, difficulty: number, forceGenerated = false): Level {
   if (!forceGenerated && levelNumber <= PRESET_LEVELS.length) {
     const preset = PRESET_LEVELS[levelNumber - 1];
 
-    return createLevelFromRects(preset.width, preset.height, preset.rects, preset.blocked);
+    if (validateRectPartition(preset.width, preset.height, preset.rects, preset.blocked ?? [], difficulty)) {
+      return createLevelFromRects(preset.width, preset.height, preset.rects, preset.blocked);
+    }
   }
 
   const shape = getDifficultyShape(difficulty);
 
-  for (let attempt = 0; attempt < 10; attempt += 1) {
+  for (let attempt = 0; attempt < 24; attempt += 1) {
     const base = createBaseRects(shape.width, shape.height, shape.blockedCount);
     const rects = splitRects(base.rects, shape.targetRects, shape.maxArea);
     const validRects = rects.filter((rect) => rectArea(rect) >= 2 && rectArea(rect) <= shape.maxArea);
     const accessibleArea = shape.width * shape.height - base.blocked.length;
     const generatedArea = validRects.reduce((sum, rect) => sum + rectArea(rect), 0);
 
-    if (validRects.length >= 4 && validRects.length <= 8 && generatedArea === accessibleArea) {
-      return createLevelFromRects(shape.width, shape.height, validRects, base.blocked);
+    if (
+      validRects.length >= 4 &&
+      validRects.length <= 8 &&
+      generatedArea === accessibleArea &&
+      validateRectPartition(shape.width, shape.height, validRects, base.blocked, difficulty)
+    ) {
+      const level = createLevelFromRects(shape.width, shape.height, validRects, base.blocked);
+
+      if (validateLevelIntegrity(level).ok) {
+        return level;
+      }
     }
   }
 
-  const fallback = PRESET_LEVELS[Math.min(PRESET_LEVELS.length - 1, Math.max(0, difficulty - 1))];
+  const fallback =
+    PRESET_LEVELS.find((preset) =>
+      validateRectPartition(preset.width, preset.height, preset.rects, preset.blocked ?? [], difficulty),
+    ) ?? PRESET_LEVELS[0];
 
   return createLevelFromRects(fallback.width, fallback.height, fallback.rects, fallback.blocked);
 }
@@ -520,26 +704,55 @@ function findAvailablePlan(
   return level.plan.find((item) => item.area === area && !stillPlacedPlanIds.has(item.id));
 }
 
+function findBuildingAtCell(placements: PlacedBuilding[], cell: CellCoord) {
+  return placements.find((building) => rectContainsCell(building, cell));
+}
+
+function getBuildingsIntersectingRect(placements: PlacedBuilding[], rect: Rect) {
+  return placements.filter((building) => rectsIntersect(rect, building));
+}
+
 function getAccessibleCellCount(level: Level) {
   return level.width * level.height - level.blocked.length;
 }
 
 function isLevelComplete(level: Level, placements: PlacedBuilding[]) {
   const placedPlanIds = new Set(placements.map((building) => building.planId));
+  const occupiedCells = new Set<string>();
+  const blockedCells = new Set(level.blocked.map(cellKey));
 
   if (placedPlanIds.size !== level.plan.length) {
     return false;
   }
 
-  const occupiedCells = new Set<string>();
+  for (let index = 0; index < placements.length; index += 1) {
+    const building = placements[index];
 
-  placements.forEach((building) => {
-    for (let y = building.y; y < building.y + building.height; y += 1) {
-      for (let x = building.x; x < building.x + building.width; x += 1) {
-        occupiedCells.add(cellKey({ x, y }));
+    if (
+      !rectWithinBounds(building, level.width, level.height) ||
+      placementOverlapsBlockedCell(building, level.blocked)
+    ) {
+      return false;
+    }
+
+    for (let otherIndex = index + 1; otherIndex < placements.length; otherIndex += 1) {
+      if (rectsIntersect(building, placements[otherIndex])) {
+        return false;
       }
     }
-  });
+
+    for (let y = building.y; y < building.y + building.height; y += 1) {
+      for (let x = building.x; x < building.x + building.width; x += 1) {
+        const key = cellKey({ x, y });
+
+        if (blockedCells.has(key) || occupiedCells.has(key)) {
+          return false;
+        }
+
+        occupiedCells.add(key);
+      }
+    }
+  }
 
   return occupiedCells.size === getAccessibleCellCount(level);
 }
@@ -599,10 +812,32 @@ function getThreatTone(longBuilds: number) {
   return "calm";
 }
 
+function getBoardBlueprintVariant(levelNumber: number, difficulty: number, blockedCount: number): BoardBlueprintVariant {
+  if (blockedCount > 0) {
+    return "restricted";
+  }
+
+  if (difficulty >= 5) {
+    return "industrial";
+  }
+
+  if (difficulty >= 4) {
+    return "residential";
+  }
+
+  if (levelNumber % 2 === 0) {
+    return "sector";
+  }
+
+  return "basic";
+}
+
 export function StroikaVekaGame() {
+  const [gamePhase, setGamePhase] = useState<GamePhase>("tutorial");
+  const [tutorialStepIndex, setTutorialStepIndex] = useState(0);
   const [levelNumber, setLevelNumber] = useState(1);
   const [difficulty, setDifficulty] = useState(1);
-  const [level, setLevel] = useState(() => generateLevel(1, 1));
+  const [level, setLevel] = useState(() => TUTORIAL_STEPS[0].level);
   const [placements, setPlacements] = useState<PlacedBuilding[]>([]);
   const [selection, setSelection] = useState<Selection | null>(null);
   const [failedSelection, setFailedSelection] = useState<FailedSelection | null>(null);
@@ -617,6 +852,7 @@ export function StroikaVekaGame() {
   const boardViewportRef = useRef<HTMLDivElement | null>(null);
   const boardRef = useRef<HTMLDivElement | null>(null);
   const failureTimerRef = useRef<number | null>(null);
+  const tutorialTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (result || gameOver) {
@@ -634,6 +870,9 @@ export function StroikaVekaGame() {
     () => () => {
       if (failureTimerRef.current !== null) {
         window.clearTimeout(failureTimerRef.current);
+      }
+      if (tutorialTimerRef.current !== null) {
+        window.clearTimeout(tutorialTimerRef.current);
       }
     },
     [],
@@ -719,34 +958,47 @@ export function StroikaVekaGame() {
   }, [level.plan, placedPlanIds]);
 
   const occupiedCellCount = useMemo(() => {
-    const occupiedCells = new Set<string>();
-
-    placements.forEach((building) => {
-      for (let y = building.y; y < building.y + building.height; y += 1) {
-        for (let x = building.x; x < building.x + building.width; x += 1) {
-          occupiedCells.add(cellKey({ x, y }));
-        }
-      }
-    });
-
-    return occupiedCells.size;
+    return getOccupiedCells(placements).size;
   }, [placements]);
 
   const builtCount = placedPlanIds.size;
-  const readiness = Math.round((occupiedCellCount / getAccessibleCellCount(level)) * 100);
+  const requiredCellCount =
+    gamePhase === "tutorial" ? level.plan.reduce((sum, item) => sum + item.area, 0) : getAccessibleCellCount(level);
+  const readiness = Math.min(100, Math.round((occupiedCellCount / Math.max(1, requiredCellCount)) * 100));
   const threatTone = getThreatTone(longBuilds);
+  const currentTutorial = gamePhase === "tutorial" ? TUTORIAL_STEPS[tutorialStepIndex] : null;
+  const levelLabel = gamePhase === "tutorial" ? `${tutorialStepIndex + 1}/${TUTORIAL_STEPS.length}` : String(levelNumber);
 
   function analyzeSelection(activeSelection: Selection): SelectionAnalysis {
     const rect = normalizeSelection(activeSelection.start, activeSelection.end);
-    const overlapped = placements.filter((building) => rectsIntersect(rect, building));
-    const overlappedIds = new Set(overlapped.map((building) => building.id));
-    const hasBlockedCell = level.blocked.some((cell) => rectContainsCell(rect, cell));
     const area = rectArea(rect);
-    const availablePlan = findAvailablePlan(level, placements, overlappedIds, area);
+
+    if (activeSelection.mode === "demolish") {
+      const target = placements.find((building) => building.id === activeSelection.targetBuildingId);
+      const overlappedIds = new Set(target ? [target.id] : []);
+
+      return {
+        mode: activeSelection.mode,
+        rect,
+        area,
+        hasBlockedCell: false,
+        availablePlan: undefined,
+        overlappedIds,
+        targetBuildingId: target?.id,
+        tone: "danger",
+        marker: "СНОС",
+        label: "Снести корпус",
+      };
+    }
+
+    const overlapped = getBuildingsIntersectingRect(placements, rect);
+    const overlappedIds = new Set(overlapped.map((building) => building.id));
+    const hasBlockedCell = rectIncludesBlockedCell(rect, level.blocked);
+    const availablePlan = hasBlockedCell ? undefined : findAvailablePlan(level, placements, overlappedIds, area);
     const tone = hasBlockedCell ? "danger" : availablePlan ? (overlapped.length > 0 ? "warning" : "success") : "warning";
-    const marker = hasBlockedCell ? "ПУСТЫРЬ" : romanize(area);
+    const marker = hasBlockedCell ? "!" : romanize(area);
     const label = hasBlockedCell
-      ? "Стройка запрещена"
+      ? "Нельзя через пустырь"
       : !availablePlan
         ? "Не по плану"
         : overlapped.length > 0
@@ -754,6 +1006,7 @@ export function StroikaVekaGame() {
           : `Фундамент: ${romanize(area)}`;
 
     return {
+      mode: activeSelection.mode,
       rect,
       area,
       hasBlockedCell,
@@ -780,7 +1033,27 @@ export function StroikaVekaGame() {
     }, 520);
   }
 
+  function startTutorialStep(nextStepIndex: number, message: Feedback = { text: "Учебный приказ выдан", tone: "neutral" }) {
+    const safeStepIndex = clamp(nextStepIndex, 0, TUTORIAL_STEPS.length - 1);
+
+    setGamePhase("tutorial");
+    setTutorialStepIndex(safeStepIndex);
+    setLevel(TUTORIAL_STEPS[safeStepIndex].level);
+    setLevelNumber(1);
+    setDifficulty(1);
+    setPlacements([]);
+    setSelection(null);
+    setFailedSelection(null);
+    setErrors(0);
+    setStartedAt(Date.now());
+    setElapsed(0);
+    setResult(null);
+    setGameOver(false);
+    setFeedback(message);
+  }
+
   function startLevel(nextLevelNumber: number, nextDifficulty: number, message = FEEDBACK_IDLE, forceGenerated = false) {
+    setGamePhase("main");
     setLevelNumber(nextLevelNumber);
     setDifficulty(nextDifficulty);
     setLevel(generateLevel(nextLevelNumber, nextDifficulty, forceGenerated));
@@ -797,7 +1070,38 @@ export function StroikaVekaGame() {
 
   function resetSession() {
     setLongBuilds(0);
-    startLevel(1, 1, { text: "Новая пятилетка утверждена", tone: "neutral" });
+    startTutorialStep(0, { text: "Новая пятилетка утверждена", tone: "neutral" });
+  }
+
+  function startMainAfterTutorial(message: Feedback = { text: "Генплан открыт", tone: "neutral" }) {
+    startLevel(1, 1, message);
+  }
+
+  function handleSkipTutorial() {
+    startMainAfterTutorial({ text: "Обучение закрыто. Генплан открыт", tone: "neutral" });
+  }
+
+  function isTutorialStepComplete(nextPlacements: PlacedBuilding[]) {
+    const nextPlacedPlanIds = new Set(nextPlacements.map((building) => building.planId));
+
+    return level.plan.every((item) => nextPlacedPlanIds.has(item.id));
+  }
+
+  function scheduleTutorialAdvance() {
+    if (tutorialTimerRef.current !== null) {
+      window.clearTimeout(tutorialTimerRef.current);
+    }
+
+    tutorialTimerRef.current = window.setTimeout(() => {
+      tutorialTimerRef.current = null;
+
+      if (tutorialStepIndex + 1 < TUTORIAL_STEPS.length) {
+        startTutorialStep(tutorialStepIndex + 1, { text: "План принят. Следующий приказ", tone: "success" });
+        return;
+      }
+
+      startMainAfterTutorial({ text: "Учебка завершена. Генплан открыт", tone: "success" });
+    }, 620);
   }
 
   function handlePointerDown(event: PointerEvent<HTMLDivElement>) {
@@ -813,10 +1117,14 @@ export function StroikaVekaGame() {
 
     event.preventDefault();
     boardRef.current?.setPointerCapture(event.pointerId);
+    const targetBuilding = findBuildingAtCell(placements, cell);
+
     setSelection({
       pointerId: event.pointerId,
       start: cell,
       end: cell,
+      mode: targetBuilding ? "demolish" : "build",
+      targetBuildingId: targetBuilding?.id,
     });
     setFailedSelection(null);
   }
@@ -843,6 +1151,22 @@ export function StroikaVekaGame() {
     }
 
     const { rect, area, hasBlockedCell, availablePlan, overlappedIds } = finalSelection;
+
+    if (finalSelection.mode === "demolish") {
+      const targetBuildingId = finalSelection.targetBuildingId;
+      const target = placements.find((building) => building.id === targetBuildingId);
+
+      if (!target) {
+        setSelection(null);
+        return;
+      }
+
+      setPlacements((current) => current.filter((building) => building.id !== target.id));
+      setResult(null);
+      setSelection(null);
+      setFeedback({ text: `Корпус ${romanize(target.area)} списан`, tone: "warning" });
+      return;
+    }
 
     if (hasBlockedCell) {
       setErrors((current) => current + 1);
@@ -874,13 +1198,23 @@ export function StroikaVekaGame() {
     ];
     const removedCount = overlappedIds.size;
     const finalSeconds = Math.max(1, Math.floor((Date.now() - startedAt) / 1000));
+    const buildFeedback: Feedback = {
+      text: removedCount > 0 ? `Под снос. Корпус ${romanize(area)} сдан` : `Корпус ${romanize(area)} сдан`,
+      tone: removedCount > 0 ? "warning" : "success",
+    };
 
     setPlacements(nextPlacements);
     setSelection(null);
-    setFeedback({
-      text: removedCount > 0 ? `Под снос. Корпус ${romanize(area)} сдан` : `Корпус ${romanize(area)} сдан`,
-      tone: removedCount > 0 ? "warning" : "success",
-    });
+    setFeedback(buildFeedback);
+
+    if (gamePhase === "tutorial") {
+      if (isTutorialStepComplete(nextPlacements)) {
+        setFeedback({ text: "Фундамент принят", tone: "success" });
+        scheduleTutorialAdvance();
+      }
+
+      return;
+    }
 
     if (isLevelComplete(level, nextPlacements)) {
       const adaptation = adaptDifficulty(difficulty, errors, finalSeconds);
@@ -929,10 +1263,20 @@ export function StroikaVekaGame() {
   }
 
   function handleResetLevel() {
+    if (gamePhase === "tutorial") {
+      startTutorialStep(tutorialStepIndex, { text: "Учебный приказ повторен", tone: "neutral" });
+      return;
+    }
+
     startLevel(levelNumber, difficulty, { text: "Генплан возвращен на стол", tone: "neutral" });
   }
 
   function handleLongBuild() {
+    if (gamePhase === "tutorial") {
+      handleSkipTutorial();
+      return;
+    }
+
     const nextLongBuilds = longBuilds + 1;
 
     if (nextLongBuilds >= MAX_LONG_BUILDS) {
@@ -972,13 +1316,13 @@ export function StroikaVekaGame() {
   const progressStyle = {
     "--stroika-progress": `${readiness}%`,
   } as CSSProperties;
-  const shouldReserveTutorial = levelNumber === 1 && !result && !gameOver;
-  const shouldShowTutorial = shouldReserveTutorial && placements.length === 0;
-  const tutorialTargetPlan = shouldShowTutorial
-    ? (level.plan.find((item) => item.area === 4 && item.hint.x === 0 && item.hint.y === 0) ??
-      level.plan.find((item) => item.area === 4) ??
-      level.plan[0])
+  const boardBlueprint = getBoardBlueprintVariant(levelNumber, difficulty, level.blocked.length);
+  const tutorialTargetPlan = currentTutorial
+    ? (level.plan.find((item) => !placedPlanIds.has(item.id) && item.area === currentTutorial.targetArea) ??
+      level.plan.find((item) => !placedPlanIds.has(item.id)) ??
+      null)
     : null;
+  const tutorialGhost = currentTutorial && placements.length === 0 ? currentTutorial.ghost : null;
 
   return (
     <section className="stroika-game" aria-label="Игровой прототип Стройка века">
@@ -999,7 +1343,7 @@ export function StroikaVekaGame() {
 
       <div className="stroika-mobile-status" aria-label="Короткая сводка уровня">
         <span>
-          Ур. <strong>{levelNumber}</strong>
+          {gamePhase === "tutorial" ? "Уч." : "Ур."} <strong>{levelLabel}</strong>
         </span>
         <span>
           План <strong>{builtCount}/{level.plan.length}</strong>
@@ -1038,16 +1382,26 @@ export function StroikaVekaGame() {
               <span>100</span>
             </div>
           </div>
-          {shouldReserveTutorial ? (
-            <div className={`stroika-tutorial${shouldShowTutorial ? "" : " stroika-tutorial--hidden"}`} role="note">
-              <strong>Первый приказ</strong>
-              <span>Повтори образец: зажми старт и протяни фундамент 2x2. IV = 4 клетки.</span>
+          {currentTutorial ? (
+            <div className="stroika-tutorial" role="note">
+              <div>
+                <strong>{currentTutorial.title}</strong>
+                <span>{currentTutorial.description}</span>
+              </div>
+              <div className="stroika-tutorial__dots" aria-hidden="true">
+                {TUTORIAL_STEPS.map((_, index) => (
+                  <span
+                    key={index}
+                    className={index === tutorialStepIndex ? "is-active" : index < tutorialStepIndex ? "is-done" : ""}
+                  />
+                ))}
+              </div>
             </div>
           ) : null}
           <div ref={boardViewportRef} className="stroika-board-viewport">
             <div
               ref={boardRef}
-              className="stroika-board"
+              className={`stroika-board stroika-board--blueprint-${boardBlueprint}`}
               style={boardStyle}
               role="grid"
               aria-label={`Генплан ${level.width} на ${level.height}`}
@@ -1083,16 +1437,16 @@ export function StroikaVekaGame() {
                 }),
               )}
 
-              {shouldShowTutorial ? (
+              {tutorialGhost && currentTutorial ? (
                 <div
                   className="stroika-tutorial-ghost"
                   style={{
-                    gridColumn: "1 / span 2",
-                    gridRow: "1 / span 2",
+                    gridColumn: `${tutorialGhost.x + 1} / span ${tutorialGhost.width}`,
+                    gridRow: `${tutorialGhost.y + 1} / span ${tutorialGhost.height}`,
                   }}
                   aria-hidden="true"
                 >
-                  <span className="stroika-tutorial-ghost__label">IV</span>
+                  <span className="stroika-tutorial-ghost__label">{romanize(currentTutorial.targetArea)}</span>
                   <span className="stroika-tutorial-ghost__start">Зажми</span>
                   <span className="stroika-tutorial-ghost__end">Протяни</span>
                 </div>
@@ -1100,9 +1454,11 @@ export function StroikaVekaGame() {
 
               {placements.map((building) => {
                 const isMarkedForDemolition =
-                  Boolean(liveSelection?.availablePlan) &&
-                  !liveSelection?.hasBlockedCell &&
-                  (liveSelection?.overlappedIds.has(building.id) ?? false);
+                  liveSelection?.mode === "demolish"
+                    ? liveSelection.targetBuildingId === building.id
+                    : Boolean(liveSelection?.availablePlan) &&
+                      !liveSelection?.hasBlockedCell &&
+                      (liveSelection?.overlappedIds.has(building.id) ?? false);
                 const detailCount = Math.min(10, Math.max(3, Math.ceil(building.area / 2)));
 
                 return (
@@ -1157,7 +1513,7 @@ export function StroikaVekaGame() {
                 <div
                   className={`stroika-selection stroika-selection--${liveSelection.tone}${
                     liveSelection.hasBlockedCell ? " stroika-selection--blocked" : ""
-                  }`}
+                  }${liveSelection.mode === "demolish" ? " stroika-selection--demolish" : ""}`}
                   style={{
                     gridColumn: `${liveSelection.rect.x + 1} / span ${liveSelection.rect.width}`,
                     gridRow: `${liveSelection.rect.y + 1} / span ${liveSelection.rect.height}`,
@@ -1217,8 +1573,8 @@ export function StroikaVekaGame() {
         <aside className="stroika-panel" aria-label="Панель плана">
           <div className="stroika-stats">
             <div>
-              <span>Уровень</span>
-              <strong>{levelNumber}</strong>
+              <span>{gamePhase === "tutorial" ? "Обучение" : "Уровень"}</span>
+              <strong>{levelLabel}</strong>
             </div>
             <div>
               <span>Сложность</span>
@@ -1284,13 +1640,17 @@ export function StroikaVekaGame() {
             </button>
             <button
               type="button"
-              className="stroika-actions__danger"
+              className={gamePhase === "tutorial" ? "stroika-actions__skip" : "stroika-actions__danger"}
               onClick={handleLongBuild}
               disabled={Boolean(result || gameOver)}
             >
               <TimerReset className="stroika-button-icon" aria-hidden="true" />
-              Долгострой
+              {gamePhase === "tutorial" ? "Пропустить" : "Долгострой"}
             </button>
+          </div>
+
+          <div className={`stroika-mobile-stamp stroika-mobile-stamp--${feedback.tone}`} role="status" aria-live="polite">
+            {feedback.text}
           </div>
         </aside>
       </div>
