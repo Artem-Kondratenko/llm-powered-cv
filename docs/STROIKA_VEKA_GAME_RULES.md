@@ -91,6 +91,51 @@
 - Поле использует неяркие blueprint-подложки по сложности.
 - Все стили игры должны быть scoped внутри `.stroika-game`.
 
+## Visual Assets / Texture Pack
+
+Ассеты лежат в:
+
+```txt
+src/assets/stroika/
+```
+
+Структура:
+
+```txt
+src/assets/stroika/
+  README_TEXTURES.md
+  ASSET_REPORT.md
+  preview/
+    stroika-preview.webp
+  textures/
+    blueprint_basic_01.webp
+    blueprint_sector_01.webp
+    blueprint_industrial_01.webp
+    blueprint_restricted_01.webp
+    concrete_roof_01.webp
+    concrete_roof_02.webp
+    panel_roof_01.webp
+    institute_roof_01.webp
+    industrial_roof_01.webp
+    road_asphalt_01.webp
+    road_service_01.webp
+    wasteland_blocked_01.webp
+    wasteland_blocked_02.webp
+    foundation_01.webp
+    foundation_danger_01.webp
+    paper_noise_01.webp
+    stamp_noise_01.png
+```
+
+- Preview карточки подключается через импорт `src/assets/stroika/preview/stroika-preview.webp` в `src/data/gamePrototypeSlots.ts`.
+- Чтобы заменить preview, нужно заменить файл `src/assets/stroika/preview/stroika-preview.webp` с тем же именем и форматом. Рекомендуемый размер: `1600x900`.
+- Чтобы заменить texture pack, нужно заменить файлы в `src/assets/stroika/textures/` с теми же именами. Основные текстуры: `512x512 WebP`; `stamp_noise_01.png` - `512x512 PNG with alpha`.
+- После замены ассетов выполнить `npm run build`.
+- Texture pack работает как дополнительный слой поверх CSS fallback: gradients нельзя удалять, иначе при ошибке загрузки ассетов поле станет визуально слабым.
+- `wasteland_blocked_*` используется только для настоящих клеток `ПУСТЫРЬ`.
+- Danger-selection через пустырь использует `foundation_danger_01.webp`, а не `wasteland_blocked_*`, чтобы временное выделение не выглядело как новый большой пустырь.
+- Подробности по pack: `src/assets/stroika/README_TEXTURES.md`.
+
 ## Что Нельзя Добавлять В MVP
 
 - Экономику, ресурсы, рабочих, магазин.
@@ -101,4 +146,5 @@
 
 ## Changelog
 
+- 2026-05-30: подключен texture pack в `src/assets/stroika`, preview карточки через импорт Vite, texture layers поверх CSS fallback.
 - 2026-05-30: добавлены правила удаления построек, стабильных пустырей, tutorial из 3 этапов, mobile stamp area, разнообразия уровней и blueprint-подложек.

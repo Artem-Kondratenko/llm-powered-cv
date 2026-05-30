@@ -350,6 +350,7 @@ src/components/StroikaVekaGame.tsx
 src/components/StroikaVekaGame.css
 src/data/gamePrototypeSlots.ts
 docs/STROIKA_VEKA_GAME_RULES.md
+src/assets/stroika/
 ```
 
 Что где лежит:
@@ -360,6 +361,7 @@ docs/STROIKA_VEKA_GAME_RULES.md
 - `StroikaVekaGame.css` — scoped-стили игры, board layers, mobile app layout, советский ретро-футуристический визуал;
 - `gamePrototypeSlots.ts` — список прототипов, id, статус, описание, CTA и тип preview.
 - `docs/STROIKA_VEKA_GAME_RULES.md` — игровой reference: правила, tutorial flow, пустыри, снос, победа, визуальный стиль.
+- `src/assets/stroika/` — preview и texture pack для `Стройки века`, подключенные через Vite imports/CSS urls.
 
 Первый слот — playable `Стройка века`: Shikaku-like puzzle про строительство советского ретро-футуристического города по плану пятилетки.
 
@@ -377,6 +379,8 @@ docs/STROIKA_VEKA_GAME_RULES.md
 - blocked cells рисуются отдельным верхним слоем с подписью `ПУСТЫРЬ`, остаются видимыми поверх зданий и не принимают pointer events;
 - danger-selection через пустырь показывает отдельную ошибку `Нельзя через пустырь` и не выглядит как новый большой пустырь;
 - board получает неяркие CSS blueprint-подложки по сложности: basic, sector, industrial, residential, restricted.
+- preview карточки меняется заменой `src/assets/stroika/preview/stroika-preview.webp`;
+- texture pack меняется заменой файлов в `src/assets/stroika/textures/` с теми же именами; CSS fallback остается рабочим без ассетов.
 
 Перед следующими игровыми итерациями сначала сверяйтесь с `docs/STROIKA_VEKA_GAME_RULES.md` и обновляйте его после изменения правил.
 

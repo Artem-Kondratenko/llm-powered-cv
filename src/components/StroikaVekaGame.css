@@ -18,6 +18,23 @@
   --stroika-texture-blocked: none;
   --stroika-texture-foundation: none;
   --stroika-texture-paper: none;
+  --stroika-tex-blueprint-basic: url("../assets/stroika/textures/blueprint_basic_01.webp");
+  --stroika-tex-blueprint-sector: url("../assets/stroika/textures/blueprint_sector_01.webp");
+  --stroika-tex-blueprint-industrial: url("../assets/stroika/textures/blueprint_industrial_01.webp");
+  --stroika-tex-blueprint-restricted: url("../assets/stroika/textures/blueprint_restricted_01.webp");
+  --stroika-tex-concrete-roof-01: url("../assets/stroika/textures/concrete_roof_01.webp");
+  --stroika-tex-concrete-roof-02: url("../assets/stroika/textures/concrete_roof_02.webp");
+  --stroika-tex-panel-roof-01: url("../assets/stroika/textures/panel_roof_01.webp");
+  --stroika-tex-institute-roof-01: url("../assets/stroika/textures/institute_roof_01.webp");
+  --stroika-tex-industrial-roof-01: url("../assets/stroika/textures/industrial_roof_01.webp");
+  --stroika-tex-road-asphalt: url("../assets/stroika/textures/road_asphalt_01.webp");
+  --stroika-tex-road-service: url("../assets/stroika/textures/road_service_01.webp");
+  --stroika-tex-wasteland-blocked-01: url("../assets/stroika/textures/wasteland_blocked_01.webp");
+  --stroika-tex-wasteland-blocked-02: url("../assets/stroika/textures/wasteland_blocked_02.webp");
+  --stroika-tex-foundation: url("../assets/stroika/textures/foundation_01.webp");
+  --stroika-tex-foundation-danger: url("../assets/stroika/textures/foundation_danger_01.webp");
+  --stroika-tex-paper-noise: url("../assets/stroika/textures/paper_noise_01.webp");
+  --stroika-tex-stamp-noise: url("../assets/stroika/textures/stamp_noise_01.png");
   width: 100%;
   max-width: 100%;
   isolation: isolate;
@@ -25,12 +42,14 @@
   border: 1px solid rgba(222, 206, 161, 0.42);
   border-radius: 8px;
   background:
+    linear-gradient(rgba(216, 207, 182, 0.9), rgba(216, 207, 182, 0.9)),
+    var(--stroika-tex-paper-noise),
     radial-gradient(circle at 88% 16%, rgba(164, 57, 46, 0.14), transparent 18rem),
     linear-gradient(90deg, rgba(73, 68, 53, 0.08) 1px, transparent 1px),
     linear-gradient(0deg, rgba(73, 68, 53, 0.08) 1px, transparent 1px),
     repeating-linear-gradient(135deg, rgba(50, 48, 38, 0.025) 0 2px, transparent 2px 9px),
     var(--stroika-paper);
-  background-size: 100% 100%, 22px 22px, 22px 22px, 100% 100%, 100% 100%;
+  background-size: 100% 100%, 320px 320px, 100% 100%, 22px 22px, 22px 22px, 100% 100%, 100% 100%;
   color: var(--stroika-ink);
   box-shadow: 0 24px 80px rgba(0, 0, 0, 0.28);
 }
@@ -122,6 +141,7 @@
 }
 
 .stroika-stamp {
+  position: relative;
   flex: 0 0 auto;
   max-width: 260px;
   min-height: 48px;
@@ -139,6 +159,18 @@
   text-align: center;
   text-transform: uppercase;
   transform: rotate(-2deg);
+  overflow: hidden;
+}
+
+.stroika-stamp::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: var(--stroika-tex-stamp-noise);
+  background-size: cover;
+  opacity: 0.32;
+  pointer-events: none;
+  mix-blend-mode: multiply;
 }
 
 .stroika-stamp--success {
@@ -315,6 +347,7 @@
 
 .stroika-board {
   position: relative;
+  --stroika-board-blueprint: var(--stroika-tex-blueprint-basic);
   width: min(100%, 660px);
   max-width: 100%;
   min-width: 0;
@@ -327,14 +360,37 @@
   border: 3px solid #2c322d;
   border-radius: 7px;
   background:
+    linear-gradient(rgba(84, 88, 78, 0.68), rgba(84, 88, 78, 0.68)),
+    var(--stroika-board-blueprint),
+    var(--stroika-tex-road-asphalt),
     linear-gradient(90deg, rgba(236, 225, 196, 0.08) 1px, transparent 1px),
     linear-gradient(0deg, rgba(236, 225, 196, 0.07) 1px, transparent 1px),
     repeating-linear-gradient(45deg, rgba(24, 27, 24, 0.12) 0 1px, transparent 1px 13px),
     var(--stroika-road);
-  background-size: 34px 34px, 34px 34px, 100% 100%, 100% 100%;
+  background-size: 100% 100%, 512px 512px, 256px 256px, 34px 34px, 34px 34px, 100% 100%, 100% 100%;
   padding: var(--stroika-board-padding, 6px);
   touch-action: none;
   user-select: none;
+}
+
+.stroika-board--blueprint-basic {
+  --stroika-board-blueprint: var(--stroika-tex-blueprint-basic);
+}
+
+.stroika-board--blueprint-sector {
+  --stroika-board-blueprint: var(--stroika-tex-blueprint-sector);
+}
+
+.stroika-board--blueprint-industrial {
+  --stroika-board-blueprint: var(--stroika-tex-blueprint-industrial);
+}
+
+.stroika-board--blueprint-residential {
+  --stroika-board-blueprint: var(--stroika-tex-blueprint-sector);
+}
+
+.stroika-board--blueprint-restricted {
+  --stroika-board-blueprint: var(--stroika-tex-blueprint-restricted);
 }
 
 .stroika-board::before,
@@ -437,9 +493,12 @@
   border: 1px solid rgba(31, 35, 31, 0.28);
   border-radius: 4px;
   background:
+    linear-gradient(rgba(194, 185, 159, 0.76), rgba(194, 185, 159, 0.76)),
+    var(--stroika-tex-road-service),
     linear-gradient(135deg, rgba(255, 255, 255, 0.17), transparent 44%),
     radial-gradient(circle at 70% 28%, rgba(85, 91, 78, 0.12), transparent 38%),
     #c2b99f;
+  background-size: 100% 100%, 180px 180px, 100% 100%, 100% 100%, 100% 100%;
   pointer-events: none;
 }
 
@@ -676,6 +735,38 @@
     4px 5px 0 #424a45;
 }
 
+.stroika-building--surface-concrete {
+  --stroika-building-texture: var(--stroika-tex-concrete-roof-01);
+}
+
+.stroika-building--surface-mint {
+  --stroika-building-texture: var(--stroika-tex-panel-roof-01);
+}
+
+.stroika-building--surface-ochre {
+  --stroika-building-texture: var(--stroika-tex-institute-roof-01);
+}
+
+.stroika-building--surface-graphite {
+  --stroika-building-texture: var(--stroika-tex-industrial-roof-01);
+}
+
+.stroika-building--tower {
+  --stroika-building-texture: var(--stroika-tex-concrete-roof-02);
+}
+
+.stroika-building--panel {
+  --stroika-building-texture: var(--stroika-tex-panel-roof-01);
+}
+
+.stroika-building--institute {
+  --stroika-building-texture: var(--stroika-tex-institute-roof-01);
+}
+
+.stroika-building--combinat {
+  --stroika-building-texture: var(--stroika-tex-industrial-roof-01);
+}
+
 .stroika-building__roof {
   position: absolute;
   inset: 13% 12%;
@@ -686,31 +777,43 @@
   border: 1px solid rgba(26, 30, 27, 0.46);
   border-radius: 5px;
   background:
+    linear-gradient(rgba(190, 190, 178, 0.46), rgba(90, 96, 88, 0.22)),
+    var(--stroika-building-texture, var(--stroika-tex-concrete-roof-01)),
     repeating-linear-gradient(90deg, rgba(35, 38, 34, 0.12) 0 1px, transparent 1px 12px),
     repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.15) 0 1px, transparent 1px 14px),
     #b8bbb0;
+  background-size: 100% 100%, 128px 128px, auto, auto, auto;
   box-shadow: 3px 4px 0 rgba(63, 66, 60, 0.5);
 }
 
 .stroika-building--surface-mint .stroika-building__roof {
   background:
+    linear-gradient(rgba(190, 202, 190, 0.44), rgba(82, 107, 96, 0.22)),
+    var(--stroika-building-texture, var(--stroika-tex-panel-roof-01)),
     repeating-linear-gradient(90deg, rgba(39, 76, 63, 0.13) 0 1px, transparent 1px 12px),
     repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.16) 0 1px, transparent 1px 14px),
     #b7c7bc;
+  background-size: 100% 100%, 128px 128px, auto, auto, auto;
 }
 
 .stroika-building--surface-ochre .stroika-building__roof {
   background:
+    linear-gradient(rgba(204, 187, 145, 0.48), rgba(118, 98, 66, 0.2)),
+    var(--stroika-building-texture, var(--stroika-tex-institute-roof-01)),
     repeating-linear-gradient(90deg, rgba(88, 65, 36, 0.12) 0 1px, transparent 1px 12px),
     repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.14) 0 1px, transparent 1px 14px),
     #c2b08b;
+  background-size: 100% 100%, 128px 128px, auto, auto, auto;
 }
 
 .stroika-building--surface-graphite .stroika-building__roof {
   background:
+    linear-gradient(rgba(148, 155, 145, 0.42), rgba(54, 62, 58, 0.24)),
+    var(--stroika-building-texture, var(--stroika-tex-industrial-roof-01)),
     repeating-linear-gradient(90deg, rgba(29, 34, 31, 0.2) 0 1px, transparent 1px 10px),
     repeating-linear-gradient(0deg, rgba(238, 227, 199, 0.1) 0 1px, transparent 1px 14px),
     #89918a;
+  background-size: 100% 100%, 128px 128px, auto, auto, auto;
 }
 
 .stroika-building__core {
@@ -892,9 +995,12 @@
 .stroika-building--tower .stroika-building__roof {
   inset: 12% 24%;
   background:
+    linear-gradient(rgba(178, 190, 182, 0.44), rgba(78, 92, 85, 0.22)),
+    var(--stroika-building-texture, var(--stroika-tex-concrete-roof-02)),
     radial-gradient(circle at 50% 42%, rgba(164, 57, 46, 0.18), transparent 28%),
     repeating-linear-gradient(0deg, rgba(35, 38, 34, 0.13) 0 1px, transparent 1px 11px),
     #a9b3ad;
+  background-size: 100% 100%, 128px 128px, 100% 100%, auto, auto;
 }
 
 .stroika-building--tower.stroika-building--roof-radar .stroika-building__dish {
@@ -916,8 +1022,11 @@
 .stroika-building--panel .stroika-building__roof {
   inset: 18% 7%;
   background:
+    linear-gradient(rgba(188, 195, 184, 0.42), rgba(88, 102, 94, 0.18)),
+    var(--stroika-building-texture, var(--stroika-tex-panel-roof-01)),
     repeating-linear-gradient(90deg, rgba(69, 102, 90, 0.28) 0 10px, rgba(185, 190, 179, 0.65) 10px 20px),
     #b5b9ae;
+  background-size: 100% 100%, 128px 128px, auto, auto;
 }
 
 .stroika-building--panel .stroika-building__core {
@@ -928,9 +1037,12 @@
 .stroika-building--institute .stroika-building__roof {
   inset: 10%;
   background:
+    linear-gradient(rgba(198, 190, 165, 0.42), rgba(92, 84, 67, 0.18)),
+    var(--stroika-building-texture, var(--stroika-tex-institute-roof-01)),
     radial-gradient(circle at 50% 50%, rgba(216, 207, 181, 0.94) 0 18%, rgba(51, 58, 51, 0.22) 19% 21%, transparent 22%),
     repeating-linear-gradient(90deg, rgba(35, 38, 34, 0.12) 0 1px, transparent 1px 16px),
     #bbb59f;
+  background-size: 100% 100%, 128px 128px, 100% 100%, auto, auto;
 }
 
 .stroika-building--institute .stroika-building__core {
@@ -941,9 +1053,12 @@
 .stroika-building--combinat .stroika-building__roof {
   inset: 14% 8%;
   background:
+    linear-gradient(rgba(176, 184, 174, 0.42), rgba(62, 70, 64, 0.2)),
+    var(--stroika-building-texture, var(--stroika-tex-industrial-roof-01)),
     linear-gradient(90deg, rgba(164, 57, 46, 0.16) 0 8%, transparent 8%),
     repeating-linear-gradient(90deg, rgba(35, 38, 34, 0.18) 0 5px, transparent 5px 17px),
     #aab0a4;
+  background-size: 100% 100%, 128px 128px, 100% 100%, auto, auto;
 }
 
 .stroika-building--module .stroika-building__roof {
@@ -975,9 +1090,12 @@
   border: 2px solid rgba(111, 36, 30, 0.86);
   border-radius: 5px;
   background:
+    linear-gradient(rgba(90, 36, 30, 0.2), rgba(30, 30, 28, 0.22)),
+    var(--stroika-tex-wasteland-blocked-01),
     radial-gradient(circle at 50% 50%, rgba(238, 227, 199, 0.32), transparent 30%),
     repeating-linear-gradient(45deg, rgba(111, 36, 30, 0.42) 0 6px, rgba(35, 37, 34, 0.34) 6px 12px),
     #7c7564;
+  background-size: 100% 100%, cover, 100% 100%, auto, auto;
   box-shadow:
     inset 0 0 0 3px rgba(238, 227, 199, 0.16),
     0 0 0 2px rgba(32, 37, 33, 0.22);
@@ -1032,9 +1150,12 @@
   place-items: center;
   border: 2px dashed #f0c75a;
   background:
+    linear-gradient(rgba(240, 199, 90, 0.22), rgba(64, 103, 92, 0.16)),
+    var(--stroika-tex-foundation),
     linear-gradient(135deg, rgba(240, 199, 90, 0.16), transparent 44%),
     repeating-linear-gradient(45deg, rgba(240, 199, 90, 0.24) 0 7px, rgba(75, 78, 69, 0.12) 7px 14px),
     rgba(66, 103, 92, 0.25);
+  background-size: 100% 100%, 192px 192px, 100% 100%, auto, auto;
   box-shadow:
     inset 0 0 0 4px rgba(32, 37, 33, 0.16),
     0 0 0 2px rgba(240, 199, 90, 0.16);
@@ -1096,22 +1217,30 @@
 .stroika-selection--warning {
   border-color: var(--stroika-warning);
   background:
+    linear-gradient(rgba(178, 116, 47, 0.22), rgba(87, 57, 27, 0.12)),
+    var(--stroika-tex-foundation),
     repeating-linear-gradient(45deg, rgba(178, 116, 47, 0.28) 0 7px, rgba(87, 57, 27, 0.12) 7px 14px),
     rgba(178, 116, 47, 0.24);
+  background-size: 100% 100%, 192px 192px, auto, auto;
 }
 
 .stroika-selection--danger {
   border-color: var(--stroika-red);
   background:
+    linear-gradient(rgba(164, 57, 46, 0.26), rgba(99, 30, 24, 0.18)),
+    var(--stroika-tex-foundation-danger),
     repeating-linear-gradient(45deg, rgba(164, 57, 46, 0.32) 0 7px, rgba(99, 30, 24, 0.18) 7px 14px),
     rgba(164, 57, 46, 0.22);
+  background-size: 100% 100%, 192px 192px, auto, auto;
 }
 
 .stroika-selection--blocked {
   border-color: rgba(111, 36, 30, 0.9);
   background:
     linear-gradient(135deg, rgba(164, 57, 46, 0.2), transparent 48%),
+    var(--stroika-tex-foundation-danger),
     rgba(164, 57, 46, 0.12);
+  background-size: 100% 100%, 192px 192px, auto;
   box-shadow:
     inset 0 0 0 3px rgba(111, 36, 30, 0.2),
     0 0 0 2px rgba(238, 227, 199, 0.16);
@@ -1134,8 +1263,11 @@
 .stroika-selection--demolish {
   border-color: rgba(111, 36, 30, 0.96);
   background:
+    linear-gradient(rgba(164, 57, 46, 0.28), rgba(72, 31, 27, 0.18)),
+    var(--stroika-tex-foundation-danger),
     repeating-linear-gradient(45deg, rgba(164, 57, 46, 0.24) 0 7px, rgba(45, 34, 31, 0.12) 7px 14px),
     rgba(111, 36, 30, 0.18);
+  background-size: 100% 100%, 192px 192px, auto, auto;
 }
 
 .stroika-selection--demolish span {
@@ -1146,11 +1278,21 @@
 
 .stroika-failed-selection {
   border: 3px solid var(--stroika-warning);
+  background:
+    linear-gradient(rgba(178, 116, 47, 0.18), rgba(87, 57, 27, 0.12)),
+    var(--stroika-tex-foundation),
+    transparent;
+  background-size: 100% 100%, 192px 192px, auto;
   animation: stroika-error-pulse 520ms ease-out both;
 }
 
 .stroika-failed-selection--danger {
   border-color: var(--stroika-red);
+  background:
+    linear-gradient(rgba(164, 57, 46, 0.26), rgba(99, 30, 24, 0.18)),
+    var(--stroika-tex-foundation-danger),
+    transparent;
+  background-size: 100% 100%, 192px 192px, auto;
 }
 
 .stroika-panel {
@@ -1442,7 +1584,20 @@
 }
 
 .stroika-mobile-stamp {
+  position: relative;
   display: none;
+  overflow: hidden;
+}
+
+.stroika-mobile-stamp::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: var(--stroika-tex-stamp-noise);
+  background-size: cover;
+  opacity: 0.3;
+  pointer-events: none;
+  mix-blend-mode: multiply;
 }
 
 .stroika-mobile-stamp--success {

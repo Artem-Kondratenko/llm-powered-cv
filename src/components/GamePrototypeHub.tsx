@@ -14,7 +14,23 @@ function getSlotIcon(slot: GamePrototypeSlot) {
   return <Lock className="h-5 w-5" aria-hidden="true" />;
 }
 
-function PrototypePreview({ kind }: { kind: GamePrototypeSlot["previewKind"] }) {
+function PrototypePreview({
+  kind,
+  image,
+  alt,
+}: {
+  kind: GamePrototypeSlot["previewKind"];
+  image?: string;
+  alt?: string;
+}) {
+  if (image) {
+    return (
+      <div className="prototype-card__preview prototype-card__preview--image">
+        <img src={image} alt={alt ?? ""} loading="lazy" />
+      </div>
+    );
+  }
+
   if (kind !== "stroika") {
     return (
       <div className="prototype-card__preview prototype-card__preview--placeholder" aria-hidden="true">
@@ -69,7 +85,7 @@ function GamePrototypeCard({
             {slot.ctaLabel}
           </button>
         </div>
-        <PrototypePreview kind={slot.previewKind} />
+        <PrototypePreview kind={slot.previewKind} image={slot.previewImage} alt={slot.previewAlt} />
       </div>
 
       {expanded ? (

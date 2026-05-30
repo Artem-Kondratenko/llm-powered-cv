@@ -1,3 +1,5 @@
+import stroikaPreview from "../assets/stroika/preview/stroika-preview.webp";
+
 export type GamePrototypeSlotStatus = "prototype" | "reserved";
 
 export type GamePrototypeSlot = {
@@ -8,6 +10,8 @@ export type GamePrototypeSlot = {
   description: string;
   ctaLabel: string;
   previewKind?: "stroika" | "placeholder";
+  previewImage?: string;
+  previewAlt?: string;
 };
 
 export const gamePrototypeSlots: GamePrototypeSlot[] = [
@@ -20,6 +24,8 @@ export const gamePrototypeSlots: GamePrototypeSlot[] = [
       "Короткая puzzle-игра про строительство города будущего по плану пятилетки.",
     ctaLabel: "Играть",
     previewKind: "stroika",
+    previewImage: stroikaPreview,
+    previewAlt: "Превью игры Стройка века в стиле советского ретро-футуризма",
   },
   {
     id: "next-prototype",
