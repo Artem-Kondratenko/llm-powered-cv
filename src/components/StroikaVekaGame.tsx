@@ -23,6 +23,7 @@ type Level = {
   height: number;
   plan: PlanItem[];
   blocked: CellCoord[];
+  solutionRects?: Rect[];
 };
 
 type SelectionMode = "build" | "demolish";
@@ -193,6 +194,17 @@ function cellKey(cell: CellCoord) {
   return `${cell.x}:${cell.y}`;
 }
 
+function getBlockedSignature(blocked: CellCoord[]) {
+  return blocked
+    .map((cell) => `${cell.x}:${cell.y}`)
+    .sort()
+    .join("|");
+}
+
+function assertBlockedStableBeforeAfterAction(before: Level, after: Level) {
+  return getBlockedSignature(before.blocked) === getBlockedSignature(after.blocked);
+}
+
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
 }
@@ -209,12 +221,31 @@ function normalizeSelection(start: CellCoord, end: CellCoord): Rect {
   };
 }
 
+function clampCellToLevel(cell: CellCoord, level: Level): CellCoord {
+  return {
+    x: clamp(cell.x, 0, level.width - 1),
+    y: clamp(cell.y, 0, level.height - 1),
+  };
+}
+
+function normalizeSelectionForLevel(selection: Selection, level: Level): Rect {
+  return normalizeSelection(clampCellToLevel(selection.start, level), clampCellToLevel(selection.end, level));
+}
+
 function rectsIntersect(a: Rect, b: Rect) {
   return a.x < b.x + b.width && a.x + a.width > b.x && a.y < b.y + b.height && a.y + a.height > b.y;
 }
 
 function rectContainsCell(rect: Rect, cell: CellCoord) {
   return cell.x >= rect.x && cell.x < rect.x + rect.width && cell.y >= rect.y && cell.y < rect.y + rect.height;
+}
+
+function cloneCell(cell: CellCoord): CellCoord {
+  return { x: cell.x, y: cell.y };
+}
+
+function cloneRect(rect: Rect): Rect {
+  return { x: rect.x, y: rect.y, width: rect.width, height: rect.height };
 }
 
 function romanize(value: number) {
@@ -251,11 +282,20 @@ function shuffle<T>(items: T[]) {
   return copy;
 }
 
-function getHint(rect: Rect): CellCoord {
-  return {
-    x: rect.x,
-    y: rect.y,
-  };
+function getHintForRect(rect: Rect, blocked: CellCoord[]): CellCoord {
+  const blockedKeys = new Set(blocked.map(cellKey));
+
+  for (let y = rect.y; y < rect.y + rect.height; y += 1) {
+    for (let x = rect.x; x < rect.x + rect.width; x += 1) {
+      const candidate = { x, y };
+
+      if (!blockedKeys.has(cellKey(candidate))) {
+        return candidate;
+      }
+    }
+  }
+
+  throw new Error("Cannot create a plan hint for a fully blocked rect.");
 }
 
 function createLevelFromRects(
@@ -265,10 +305,15 @@ function createLevelFromRects(
   blocked: CellCoord[] = [],
   shufflePlan = true,
 ): Level {
-  const planItems = rects.map((rect, index) => ({
-      id: `plan-${index + 1}-${rect.x}-${rect.y}`,
-      area: rectArea(rect),
-      hint: getHint(rect),
+  const blockedCopy = blocked.map(cloneCell);
+  const rectCopies = rects.map(cloneRect);
+  const solutionRects = rectsFormAccessiblePartition(width, height, rectCopies, blockedCopy)
+    ? rectCopies.map(cloneRect)
+    : undefined;
+  const planItems = rectCopies.map((rect, index) => ({
+    id: `plan-${index + 1}-${rect.x}-${rect.y}`,
+    area: rectArea(rect),
+    hint: getHintForRect(rect, blockedCopy),
   }));
   const plan = shufflePlan ? shuffle(planItems) : planItems;
 
@@ -276,7 +321,8 @@ function createLevelFromRects(
     width,
     height,
     plan,
-    blocked,
+    blocked: blockedCopy,
+    ...(solutionRects ? { solutionRects } : {}),
   };
 }
 
@@ -453,6 +499,10 @@ function rectWithinBounds(rect: Rect, width: number, height: number) {
   return rect.x >= 0 && rect.y >= 0 && rect.x + rect.width <= width && rect.y + rect.height <= height;
 }
 
+function cellWithinBounds(cell: CellCoord, width: number, height: number) {
+  return rectWithinBounds({ ...cell, width: 1, height: 1 }, width, height);
+}
+
 function rectIncludesBlockedCell(rect: Rect, blocked: CellCoord[]) {
   return blocked.some((cell) => rectContainsCell(rect, cell));
 }
@@ -506,19 +556,47 @@ function isVariedEnough(rects: Rect[], difficulty: number) {
   return stats.areaCount >= achievableAreaCount && stats.shapeCount >= 2 && stats.maxSameAreaShare <= 0.7;
 }
 
-function validateRectPartition(width: number, height: number, rects: Rect[], blocked: CellCoord[], difficulty: number) {
+function validateBlockedCells(width: number, height: number, blocked: CellCoord[]): { ok: boolean; reason?: string } {
+  const blockedKeys = new Set(blocked.map(cellKey));
+
+  if (blockedKeys.size !== blocked.length) {
+    return { ok: false, reason: "Повторяющийся пустырь" };
+  }
+
+  if (!blocked.every((cell) => cellWithinBounds(cell, width, height))) {
+    return { ok: false, reason: "Пустырь вне поля" };
+  }
+
+  return { ok: true };
+}
+
+function validatePartitionCoverage(
+  width: number,
+  height: number,
+  rects: Rect[],
+  blocked: CellCoord[],
+): { ok: boolean; reason?: string } {
+  const blockedValidation = validateBlockedCells(width, height, blocked);
+
+  if (!blockedValidation.ok) {
+    return blockedValidation;
+  }
+
   const blockedKeys = new Set(blocked.map(cellKey));
   const accessibleArea = width * height - blockedKeys.size;
   const occupiedCells = new Set<string>();
-  const blockedAreValid = blockedKeys.size === blocked.length && blocked.every((cell) => rectWithinBounds({ ...cell, width: 1, height: 1 }, width, height));
 
-  if (!blockedAreValid || rects.length < 1 || rectsOverlapBlockedCells(rects, blocked) || !isVariedEnough(rects, difficulty)) {
-    return false;
+  if (rects.length < 1) {
+    return { ok: false, reason: "Нет прямоугольников разбиения" };
   }
 
   for (const rect of rects) {
     if (!rectWithinBounds(rect, width, height) || rectArea(rect) < 1) {
-      return false;
+      return { ok: false, reason: "Rect вне поля" };
+    }
+
+    if (rectIncludesBlockedCell(rect, blocked)) {
+      return { ok: false, reason: "Rect пересекает пустырь" };
     }
 
     for (let y = rect.y; y < rect.y + rect.height; y += 1) {
@@ -526,7 +604,7 @@ function validateRectPartition(width: number, height: number, rects: Rect[], blo
         const key = cellKey({ x, y });
 
         if (occupiedCells.has(key) || blockedKeys.has(key)) {
-          return false;
+          return { ok: false, reason: "Клетка покрыта больше одного раза" };
         }
 
         occupiedCells.add(key);
@@ -534,24 +612,79 @@ function validateRectPartition(width: number, height: number, rects: Rect[], blo
     }
   }
 
-  return occupiedCells.size === accessibleArea;
+  if (occupiedCells.size !== accessibleArea) {
+    return { ok: false, reason: "Доступная область покрыта не полностью" };
+  }
+
+  return { ok: true };
 }
 
-function validateLevelIntegrity(level: Level): { ok: boolean; reason?: string } {
+function rectsFormAccessiblePartition(width: number, height: number, rects: Rect[], blocked: CellCoord[]) {
+  return validatePartitionCoverage(width, height, rects, blocked).ok;
+}
+
+function planAreasMatchSolution(plan: PlanItem[], solutionRects: Rect[]) {
+  const planAreas = plan.map((item) => item.area).sort((a, b) => a - b);
+  const solutionAreas = solutionRects.map(rectArea).sort((a, b) => a - b);
+
+  return planAreas.length === solutionAreas.length && planAreas.every((area, index) => area === solutionAreas[index]);
+}
+
+function validateRectPartition(width: number, height: number, rects: Rect[], blocked: CellCoord[], difficulty: number) {
+  const partition = validatePartitionCoverage(width, height, rects, blocked);
+
+  return partition.ok && isVariedEnough(rects, difficulty);
+}
+
+function validateLevelIntegrity(
+  level: Level,
+  options: { requireFullCoverage?: boolean } = {},
+): { ok: boolean; reason?: string } {
+  const requireFullCoverage = options.requireFullCoverage ?? Boolean(level.solutionRects);
   const blockedKeys = new Set(level.blocked.map(cellKey));
   const plannedArea = level.plan.reduce((sum, item) => sum + item.area, 0);
   const accessibleArea = getAccessibleCellCount(level);
+  const blockedValidation = validateBlockedCells(level.width, level.height, level.blocked);
 
-  if (blockedKeys.size !== level.blocked.length) {
-    return { ok: false, reason: "Повторяющийся пустырь" };
+  if (!blockedValidation.ok) {
+    return blockedValidation;
   }
 
-  if (!level.blocked.every((cell) => rectWithinBounds({ ...cell, width: 1, height: 1 }, level.width, level.height))) {
-    return { ok: false, reason: "Пустырь вне поля" };
+  for (const item of level.plan) {
+    if (!cellWithinBounds(item.hint, level.width, level.height)) {
+      return { ok: false, reason: "Подсказка вне поля" };
+    }
+
+    if (blockedKeys.has(cellKey(item.hint))) {
+      return { ok: false, reason: "Подсказка попала на пустырь" };
+    }
   }
 
-  if (plannedArea !== accessibleArea) {
+  if (requireFullCoverage && plannedArea !== accessibleArea) {
     return { ok: false, reason: "План не равен доступной площади" };
+  }
+
+  if (requireFullCoverage && !level.solutionRects) {
+    return { ok: false, reason: "Нет скрытого разбиения уровня" };
+  }
+
+  if (level.solutionRects) {
+    const partition = validatePartitionCoverage(level.width, level.height, level.solutionRects, level.blocked);
+    const solutionArea = level.solutionRects.reduce((sum, rect) => sum + rectArea(rect), 0);
+
+    if (!partition.ok) {
+      return partition;
+    }
+
+    if (solutionArea !== accessibleArea) {
+      return { ok: false, reason: "Скрытое разбиение не равно доступной площади" };
+    }
+
+    if (plannedArea !== solutionArea || !planAreasMatchSolution(level.plan, level.solutionRects)) {
+      return { ok: false, reason: "План не совпадает со скрытым разбиением" };
+    }
+  } else if (plannedArea > accessibleArea) {
+    return { ok: false, reason: "План больше доступной площади" };
   }
 
   return { ok: true };
@@ -853,6 +986,20 @@ export function StroikaVekaGame() {
   const boardRef = useRef<HTMLDivElement | null>(null);
   const failureTimerRef = useRef<number | null>(null);
   const tutorialTimerRef = useRef<number | null>(null);
+  const blockedSignature = useMemo(() => getBlockedSignature(level.blocked), [level.blocked]);
+  const currentBlockedSignature = getBlockedSignature(level.blocked);
+  const lastBlockedSignatureRef = useRef(currentBlockedSignature);
+  const allowedBlockedChangeRef = useRef<{ signature: string; reason: string } | null>(null);
+  const pointerInteractionLevelRef = useRef<Level | null>(null);
+  const pointerInteractionBlockedSignatureRef = useRef<string | null>(null);
+  const levelIntegrity = useMemo(
+    () => validateLevelIntegrity(level, { requireFullCoverage: gamePhase === "main" }),
+    [gamePhase, level],
+  );
+  const renderableBlockedCells = useMemo(
+    () => level.blocked.filter((cell) => cellWithinBounds(cell, level.width, level.height)),
+    [level.blocked, level.height, level.width],
+  );
 
   useEffect(() => {
     if (result || gameOver) {
@@ -877,6 +1024,45 @@ export function StroikaVekaGame() {
     },
     [],
   );
+
+  useEffect(() => {
+    const previousSignature = lastBlockedSignatureRef.current;
+    const allowedChange = allowedBlockedChangeRef.current;
+
+    if (import.meta.env.DEV && blockedSignature !== currentBlockedSignature) {
+      console.error("Blocked cells were mutated in place.", {
+        memoizedSignature: blockedSignature,
+        currentSignature: currentBlockedSignature,
+      });
+    }
+
+    if (
+      previousSignature !== currentBlockedSignature &&
+      import.meta.env.DEV &&
+      allowedChange?.signature !== currentBlockedSignature
+    ) {
+      console.error("Blocked cells changed outside a level transition.", {
+        previousSignature,
+        nextSignature: currentBlockedSignature,
+        allowedChange,
+      });
+    }
+
+    allowedBlockedChangeRef.current = null;
+    lastBlockedSignatureRef.current = currentBlockedSignature;
+  }, [blockedSignature, currentBlockedSignature, level]);
+
+  useEffect(() => {
+    if (gamePhase !== "main" || levelIntegrity.ok) {
+      return;
+    }
+
+    if (import.meta.env.DEV) {
+      console.error("Invalid Stroika Veka level regenerated.", levelIntegrity);
+    }
+
+    startLevel(levelNumber, difficulty, { text: "Генплан пересобран", tone: "warning" }, true);
+  }, [difficulty, gamePhase, levelIntegrity, levelNumber]);
 
   useEffect(() => {
     const viewport = boardViewportRef.current;
@@ -969,8 +1155,37 @@ export function StroikaVekaGame() {
   const currentTutorial = gamePhase === "tutorial" ? TUTORIAL_STEPS[tutorialStepIndex] : null;
   const levelLabel = gamePhase === "tutorial" ? `${tutorialStepIndex + 1}/${TUTORIAL_STEPS.length}` : String(levelNumber);
 
+  function setLevelWithAllowedBlockedChange(nextLevel: Level, reason: string) {
+    allowedBlockedChangeRef.current = {
+      signature: getBlockedSignature(nextLevel.blocked),
+      reason,
+    };
+    setLevel(nextLevel);
+  }
+
+  function assertBlockedSignatureStable(stage: string) {
+    if (!import.meta.env.DEV) {
+      return;
+    }
+
+    const pointerStartLevel = pointerInteractionLevelRef.current ?? level;
+    const pointerStartSignature = pointerInteractionBlockedSignatureRef.current ?? lastBlockedSignatureRef.current;
+    const latestSignature = getBlockedSignature(level.blocked);
+
+    if (
+      pointerStartSignature !== latestSignature ||
+      !assertBlockedStableBeforeAfterAction(pointerStartLevel, level)
+    ) {
+      console.error("Blocked cells changed during pointer interaction.", {
+        stage,
+        previousSignature: pointerStartSignature,
+        currentSignature: latestSignature,
+      });
+    }
+  }
+
   function analyzeSelection(activeSelection: Selection): SelectionAnalysis {
-    const rect = normalizeSelection(activeSelection.start, activeSelection.end);
+    const rect = normalizeSelectionForLevel(activeSelection, level);
     const area = rectArea(rect);
 
     if (activeSelection.mode === "demolish") {
@@ -1035,10 +1250,11 @@ export function StroikaVekaGame() {
 
   function startTutorialStep(nextStepIndex: number, message: Feedback = { text: "Учебный приказ выдан", tone: "neutral" }) {
     const safeStepIndex = clamp(nextStepIndex, 0, TUTORIAL_STEPS.length - 1);
+    const nextLevel = TUTORIAL_STEPS[safeStepIndex].level;
 
     setGamePhase("tutorial");
     setTutorialStepIndex(safeStepIndex);
-    setLevel(TUTORIAL_STEPS[safeStepIndex].level);
+    setLevelWithAllowedBlockedChange(nextLevel, "startTutorialStep");
     setLevelNumber(1);
     setDifficulty(1);
     setPlacements([]);
@@ -1053,10 +1269,12 @@ export function StroikaVekaGame() {
   }
 
   function startLevel(nextLevelNumber: number, nextDifficulty: number, message = FEEDBACK_IDLE, forceGenerated = false) {
+    const nextLevel = generateLevel(nextLevelNumber, nextDifficulty, forceGenerated);
+
     setGamePhase("main");
     setLevelNumber(nextLevelNumber);
     setDifficulty(nextDifficulty);
-    setLevel(generateLevel(nextLevelNumber, nextDifficulty, forceGenerated));
+    setLevelWithAllowedBlockedChange(nextLevel, "startLevel");
     setPlacements([]);
     setSelection(null);
     setFailedSelection(null);
@@ -1105,6 +1323,8 @@ export function StroikaVekaGame() {
   }
 
   function handlePointerDown(event: PointerEvent<HTMLDivElement>) {
+    assertBlockedSignatureStable("pointerdown:start");
+
     if (result || gameOver || (event.pointerType === "mouse" && event.button !== 0)) {
       return;
     }
@@ -1117,7 +1337,10 @@ export function StroikaVekaGame() {
 
     event.preventDefault();
     boardRef.current?.setPointerCapture(event.pointerId);
-    const targetBuilding = findBuildingAtCell(placements, cell);
+    pointerInteractionLevelRef.current = level;
+    pointerInteractionBlockedSignatureRef.current = getBlockedSignature(level.blocked);
+    const isBlockedCell = blockedCells.has(cellKey(cell));
+    const targetBuilding = isBlockedCell ? undefined : findBuildingAtCell(placements, cell);
 
     setSelection({
       pointerId: event.pointerId,
@@ -1127,9 +1350,12 @@ export function StroikaVekaGame() {
       targetBuildingId: targetBuilding?.id,
     });
     setFailedSelection(null);
+    assertBlockedSignatureStable("pointerdown:end");
   }
 
   function handlePointerMove(event: PointerEvent<HTMLDivElement>) {
+    assertBlockedSignatureStable("pointermove:start");
+
     if (!selection || selection.pointerId !== event.pointerId) {
       return;
     }
@@ -1142,9 +1368,12 @@ export function StroikaVekaGame() {
 
     event.preventDefault();
     setSelection((current) => (current && current.pointerId === event.pointerId ? { ...current, end: cell } : current));
+    assertBlockedSignatureStable("pointermove:end");
   }
 
   function finishSelection(finalSelection = liveSelection) {
+    assertBlockedSignatureStable("finishSelection:start");
+
     if (!finalSelection) {
       setSelection(null);
       return;
@@ -1233,6 +1462,8 @@ export function StroikaVekaGame() {
   }
 
   function handlePointerUp(event: PointerEvent<HTMLDivElement>) {
+    assertBlockedSignatureStable("pointerup:start");
+
     if (!selection || selection.pointerId !== event.pointerId) {
       return;
     }
@@ -1248,6 +1479,9 @@ export function StroikaVekaGame() {
     }
 
     finishSelection(finalAnalysis);
+    assertBlockedSignatureStable("pointerup:end");
+    pointerInteractionLevelRef.current = null;
+    pointerInteractionBlockedSignatureRef.current = null;
   }
 
   function handlePointerCancel(event: PointerEvent<HTMLDivElement>) {
@@ -1256,10 +1490,14 @@ export function StroikaVekaGame() {
     }
 
     setSelection(null);
+    pointerInteractionLevelRef.current = null;
+    pointerInteractionBlockedSignatureRef.current = null;
   }
 
   function handleLostPointerCapture(event: PointerEvent<HTMLDivElement>) {
     setSelection((current) => (current?.pointerId === event.pointerId ? null : current));
+    pointerInteractionLevelRef.current = null;
+    pointerInteractionBlockedSignatureRef.current = null;
   }
 
   function handleResetLevel() {
@@ -1421,6 +1659,10 @@ export function StroikaVekaGame() {
                     <div
                       key={key}
                       className={`stroika-cell${isBlocked ? " stroika-cell--blocked" : ""}`}
+                      style={{
+                        gridColumn: `${x + 1} / span 1`,
+                        gridRow: `${y + 1} / span 1`,
+                      }}
                       role="gridcell"
                       aria-label={
                         isBlocked ? "Пустырь" : hint ? `Подсказка ${romanize(hint.area)}` : "Свободная клетка"
@@ -1495,20 +1737,6 @@ export function StroikaVekaGame() {
                 );
               })}
 
-              {level.blocked.map((cell) => (
-                <div
-                  key={`blocked-${cellKey(cell)}`}
-                  className="stroika-blocked-overlay"
-                  style={{
-                    gridColumn: `${cell.x + 1} / span 1`,
-                    gridRow: `${cell.y + 1} / span 1`,
-                  }}
-                  aria-hidden="true"
-                >
-                  <span>ПУСТЫРЬ</span>
-                </div>
-              ))}
-
               {liveSelection ? (
                 <div
                   className={`stroika-selection stroika-selection--${liveSelection.tone}${
@@ -1535,6 +1763,20 @@ export function StroikaVekaGame() {
                   }}
                 />
               ) : null}
+
+              {renderableBlockedCells.map((cell) => (
+                <div
+                  key={`blocked-${cellKey(cell)}`}
+                  className="stroika-blocked-overlay"
+                  style={{
+                    gridColumn: `${cell.x + 1} / span 1`,
+                    gridRow: `${cell.y + 1} / span 1`,
+                  }}
+                  aria-hidden="true"
+                >
+                  <span>ПУСТЫРЬ</span>
+                </div>
+              ))}
             </div>
           </div>
 
