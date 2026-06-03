@@ -12,7 +12,7 @@ export function Header({ profile, contacts }: HeaderProps) {
   const navLinkClass =
     "inline-flex min-h-10 shrink-0 items-center justify-center rounded-lg px-3 py-2 text-sm font-medium text-slate-300 transition hover:bg-white/10 hover:text-slate-50 focus:outline-none focus:ring-4 focus:ring-teal-300/15";
   const mobileNavLinkClass =
-    "inline-flex min-h-10 min-w-0 items-center justify-center rounded-lg px-1.5 py-2 text-center text-xs font-medium text-slate-300 transition hover:bg-white/10 hover:text-slate-50 focus:outline-none focus:ring-4 focus:ring-teal-300/15";
+    "inline-flex min-h-10 min-w-0 items-center justify-center rounded-lg px-0.5 py-2 text-center text-xs font-medium whitespace-nowrap text-slate-300 transition hover:bg-white/10 hover:text-slate-50 focus:outline-none focus:ring-4 focus:ring-teal-300/15";
   const actionClass =
     "inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-lg border border-white/10 bg-white/10 px-3 py-2 text-sm font-semibold text-slate-100 transition hover:border-teal-300/40 hover:bg-teal-300/10 hover:text-white focus:outline-none focus:ring-4 focus:ring-teal-300/15";
   const pdfActionClass =
@@ -86,7 +86,7 @@ export function Header({ profile, contacts }: HeaderProps) {
             </a>
           </div>
           <nav
-            className="grid grid-cols-5 gap-1.5 border-t border-white/10 px-2 py-2"
+            className="grid min-w-0 grid-cols-5 gap-0.5 border-t border-white/10 px-1 py-2"
             aria-label="Навигация по секциям"
           >
             {headerLinks.map((link) => (

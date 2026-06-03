@@ -73,9 +73,9 @@ export function ProjectImageGallery({ images, projectTitle }: ProjectImageGaller
 
   return (
     <>
-      <div className="mt-5 rounded-xl border border-white/10 bg-slate-950/35 p-2">
+      <div className="mt-5 w-full min-w-0 max-w-full overflow-hidden rounded-xl border border-white/10 bg-slate-950/35 p-2">
         <div
-          className="no-scrollbar flex gap-2 overflow-x-auto"
+          className="no-scrollbar flex min-w-0 max-w-full gap-2 overflow-x-auto"
           aria-label={`${projectTitle} screenshots`}
         >
           {images.map((image, index) => (
@@ -107,12 +107,12 @@ export function ProjectImageGallery({ images, projectTitle }: ProjectImageGaller
           onClick={close}
         >
           <div
-            className="relative flex max-h-full w-full max-w-6xl flex-col gap-4"
+            className="relative flex max-h-full w-full max-w-6xl min-w-0 flex-col gap-4"
             onClick={(event) => event.stopPropagation()}
           >
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <p className="text-sm font-semibold uppercase tracking-[0.18em] text-teal-300">
+            <div className="flex min-w-0 items-center justify-between gap-3">
+              <div className="min-w-0">
+                <p className="break-words text-sm font-semibold uppercase tracking-[0.18em] text-teal-300">
                   {projectTitle}
                 </p>
                 <p className="mt-1 text-sm text-slate-400">
