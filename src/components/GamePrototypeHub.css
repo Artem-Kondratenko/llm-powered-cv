@@ -140,7 +140,151 @@
 }
 
 .prototype-card__preview--image {
-  background: rgba(15, 23, 42, 0.72);
+  background: #050712;
+}
+
+.prototype-card__preview--image::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, transparent 54%, rgba(2, 6, 23, 0.34)),
+    radial-gradient(circle at 50% 48%, transparent 48%, rgba(2, 6, 23, 0.34));
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+.prototype-card__preview--image.prototype-card__preview--organizm::after {
+  background:
+    radial-gradient(circle at 50% 50%, rgba(77, 255, 177, 0.04), transparent 42%),
+    radial-gradient(circle at 84% 24%, rgba(255, 79, 154, 0.1), transparent 30%),
+    linear-gradient(180deg, transparent 50%, rgba(2, 6, 23, 0.3)),
+    radial-gradient(circle at 50% 48%, transparent 50%, rgba(2, 6, 23, 0.38));
+  box-shadow:
+    inset 0 0 0 1px rgba(103, 232, 249, 0.2),
+    inset 0 0 32px rgba(54, 215, 255, 0.16);
+}
+
+.prototype-card__preview--organizm {
+  aspect-ratio: 16 / 9;
+  min-height: 0;
+  background:
+    radial-gradient(circle at 50% 52%, rgba(77, 255, 177, 0.18), transparent 82px),
+    radial-gradient(circle at 18% 18%, rgba(255, 79, 154, 0.18), transparent 120px),
+    linear-gradient(90deg, rgba(103, 232, 249, 0.12) 1px, transparent 1px),
+    linear-gradient(0deg, rgba(103, 232, 249, 0.1) 1px, transparent 1px),
+    #050712;
+  background-size: 100% 100%, 100% 100%, 28px 28px, 28px 28px, 100% 100%;
+}
+
+.prototype-organizm-preview__grid {
+  position: absolute;
+  left: 50%;
+  top: 54%;
+  width: 172px;
+  height: 136px;
+  border: 2px solid rgba(54, 215, 255, 0.42);
+  border-radius: 8px;
+  background:
+    linear-gradient(90deg, rgba(103, 232, 249, 0.18) 1px, transparent 1px),
+    linear-gradient(0deg, rgba(103, 232, 249, 0.16) 1px, transparent 1px),
+    rgba(5, 12, 25, 0.84);
+  background-size: calc(100% / 6) calc(100% / 5);
+  box-shadow: 0 0 28px rgba(54, 215, 255, 0.18);
+  transform: translate(-50%, -50%);
+}
+
+.prototype-organizm-preview__core {
+  position: absolute;
+  left: 50%;
+  top: 53%;
+  width: 52px;
+  height: 52px;
+  border: 1px solid rgba(77, 255, 177, 0.72);
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 38% 28%, rgba(255, 255, 255, 0.82), transparent 14%),
+    radial-gradient(circle, #4dffb1, rgba(54, 215, 255, 0.58) 58%, rgba(182, 108, 255, 0.28));
+  box-shadow: 0 0 30px rgba(77, 255, 177, 0.34);
+  transform: translate(-50%, -50%);
+}
+
+.prototype-organizm-preview__patch {
+  position: absolute;
+  width: 28px;
+  height: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.32);
+  border-radius: 5px;
+  box-shadow: 0 0 16px currentColor;
+}
+
+.prototype-organizm-preview__patch--pink {
+  left: 31%;
+  top: 35%;
+  background: #ff4f9a;
+  color: rgba(255, 79, 154, 0.62);
+}
+
+.prototype-organizm-preview__patch--cyan {
+  right: 33%;
+  top: 64%;
+  width: 56px;
+  background: #36d7ff;
+  color: rgba(54, 215, 255, 0.58);
+}
+
+.prototype-organizm-preview__patch--green {
+  left: 36%;
+  bottom: 18%;
+  background: #4dffb1;
+  color: rgba(77, 255, 177, 0.58);
+}
+
+.prototype-organizm-preview__virus {
+  position: absolute;
+  width: 28px;
+  height: 28px;
+  background: linear-gradient(135deg, #b66cff, #ff4f9a);
+  clip-path: polygon(50% 0, 100% 90%, 0 90%);
+  filter: drop-shadow(0 0 12px rgba(255, 79, 154, 0.72));
+}
+
+.prototype-organizm-preview__virus--one {
+  right: 12%;
+  top: 22%;
+}
+
+.prototype-organizm-preview__virus--two {
+  left: 13%;
+  bottom: 24%;
+  transform: rotate(28deg);
+}
+
+.prototype-organizm-preview__beam {
+  position: absolute;
+  left: 51%;
+  top: 48%;
+  width: 116px;
+  height: 2px;
+  border-radius: 999px;
+  background: #ff4f9a;
+  box-shadow: 0 0 16px #ff4f9a;
+  transform: rotate(-23deg);
+  transform-origin: left center;
+}
+
+.prototype-organizm-preview__label {
+  position: absolute;
+  left: 16px;
+  bottom: 15px;
+  color: #e5f7ff;
+  font-size: 24px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  line-height: 1;
+  text-shadow:
+    2px 0 rgba(255, 79, 154, 0.62),
+    -2px 0 rgba(54, 215, 255, 0.58);
 }
 
 .prototype-card__preview--image img {
@@ -149,6 +293,12 @@
   min-height: inherit;
   display: block;
   object-fit: cover;
+  object-position: center;
+}
+
+.prototype-card__preview--organizm img {
+  object-fit: cover;
+  object-position: center;
 }
 
 .prototype-preview__stamp {

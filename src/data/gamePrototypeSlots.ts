@@ -1,4 +1,5 @@
 import stroikaPreview from "../assets/stroika/preview/stroika-preview.webp";
+import organizmPreview from "../assets/organizm/preview/organizm-preview.png";
 
 export type GamePrototypeSlotStatus = "prototype" | "reserved";
 
@@ -9,12 +10,24 @@ export type GamePrototypeSlot = {
   statusLabel: string;
   description: string;
   ctaLabel: string;
-  previewKind?: "stroika" | "placeholder";
+  previewKind?: "stroika" | "organizm" | "placeholder";
   previewImage?: string;
   previewAlt?: string;
 };
 
 export const gamePrototypeSlots: GamePrototypeSlot[] = [
+  {
+    id: "organizm",
+    title: "Organizm",
+    status: "prototype",
+    statusLabel: "MVP",
+    description:
+      "Пиксельный автобатлер про цифровой организм. Размещай патчи, запускай защиту и переживи волну вирусов.",
+    ctaLabel: "Запустить",
+    previewKind: "organizm",
+    previewImage: organizmPreview,
+    previewAlt: "Неоновое пиксельное превью игры Organizm с ядром организма, патчами и атакующими вирусами",
+  },
   {
     id: "stroika-veka",
     title: "Стройка века",

@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { gamePrototypeSlots } from "../data/gamePrototypeSlots";
 import type { GamePrototypeSlot } from "../data/gamePrototypeSlots";
+import { OrganizmGame } from "./OrganizmGame";
 import { StroikaVekaGame } from "./StroikaVekaGame";
 import "./GamePrototypeHub.css";
 
@@ -25,13 +26,29 @@ function PrototypePreview({
 }) {
   if (image) {
     return (
-      <div className="prototype-card__preview prototype-card__preview--image">
+      <div className={`prototype-card__preview prototype-card__preview--image prototype-card__preview--${kind ?? "image"}`}>
         <img src={image} alt={alt ?? ""} loading="lazy" />
       </div>
     );
   }
 
   if (kind !== "stroika") {
+    if (kind === "organizm") {
+      return (
+        <div className="prototype-card__preview prototype-card__preview--organizm" aria-hidden="true">
+          <div className="prototype-organizm-preview__grid" />
+          <div className="prototype-organizm-preview__core" />
+          <div className="prototype-organizm-preview__patch prototype-organizm-preview__patch--pink" />
+          <div className="prototype-organizm-preview__patch prototype-organizm-preview__patch--cyan" />
+          <div className="prototype-organizm-preview__patch prototype-organizm-preview__patch--green" />
+          <div className="prototype-organizm-preview__virus prototype-organizm-preview__virus--one" />
+          <div className="prototype-organizm-preview__virus prototype-organizm-preview__virus--two" />
+          <div className="prototype-organizm-preview__beam" />
+          <div className="prototype-organizm-preview__label">ORGANIZM</div>
+        </div>
+      );
+    }
+
     return (
       <div className="prototype-card__preview prototype-card__preview--placeholder" aria-hidden="true">
         <span />
@@ -80,7 +97,13 @@ function GamePrototypeCard({
           </div>
           <h3>{slot.title}</h3>
           <p>{slot.description}</p>
-          <button type="button" onClick={onOpen} disabled={!isPlayable} className="prototype-card__cta">
+          <button
+            type="button"
+            onClick={onOpen}
+            disabled={!isPlayable}
+            className="prototype-card__cta"
+            aria-label={`${slot.ctaLabel}: ${slot.title}`}
+          >
             <Play className="h-4 w-4" aria-hidden="true" />
             {slot.ctaLabel}
           </button>
@@ -95,7 +118,7 @@ function GamePrototypeCard({
               <span>Playable prototype</span>
               <strong>{slot.title}</strong>
             </div>
-            <button type="button" onClick={onClose} className="prototype-card__close">
+            <button type="button" onClick={onClose} className="prototype-card__close" aria-label={`Закрыть ${slot.title}`}>
               <X className="h-4 w-4" aria-hidden="true" />
               Закрыть
             </button>
@@ -170,6 +193,7 @@ export function GamePrototypeHub() {
             onOpen={() => setExpandedPrototypeId(slot.id)}
             onClose={() => setExpandedPrototypeId(null)}
           >
+            {expanded && slot.id === "organizm" ? <OrganizmGame /> : null}
             {expanded && slot.id === "stroika-veka" ? <StroikaVekaGame /> : null}
           </GamePrototypeCard>
         );
