@@ -1,4 +1,4 @@
-import { BOARD_COLS, BOARD_ROWS, BOARD_START_COLS, BOARD_START_ROWS } from "../balance";
+import { BOARD_COLS, BOARD_ROWS, BOARD_START_CELLS } from "../balance";
 import { getPatchConfig } from "../patchCatalog";
 import type { BoardPatches, BoardPosition, CellCoord, PatchInstance, PlacementValidation, PlacedPatch } from "../types";
 
@@ -10,8 +10,10 @@ export function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
 }
 
+const START_CELL_KEYS = new Set(BOARD_START_CELLS.map(cellKey));
+
 export function isCellAvailable(cell: CellCoord, unlockedCells: Set<string>) {
-  return (cell.x < BOARD_START_COLS && cell.y < BOARD_START_ROWS) || unlockedCells.has(cellKey(cell));
+  return START_CELL_KEYS.has(cellKey(cell)) || unlockedCells.has(cellKey(cell));
 }
 
 export function getBoardEntries(boardPatches: BoardPatches) {

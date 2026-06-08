@@ -4,13 +4,24 @@ export const BOARD_START_COLS = 3;
 export const BOARD_START_ROWS = 3;
 export const BOARD_COLS = 6;
 export const BOARD_ROWS = 4;
-export const EXPANSION_CELLS = [
+export const BOARD_START_CELLS = [
+  { x: 1, y: 0 },
+  { x: 2, y: 0 },
   { x: 3, y: 0 },
+  { x: 1, y: 1 },
+  { x: 2, y: 1 },
   { x: 3, y: 1 },
+  { x: 1, y: 2 },
+  { x: 2, y: 2 },
   { x: 3, y: 2 },
+];
+export const EXPANSION_CELLS = [
   { x: 4, y: 0 },
   { x: 4, y: 1 },
   { x: 4, y: 2 },
+  { x: 0, y: 0 },
+  { x: 0, y: 1 },
+  { x: 0, y: 2 },
   { x: 5, y: 0 },
   { x: 5, y: 1 },
   { x: 5, y: 2 },

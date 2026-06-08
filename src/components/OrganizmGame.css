@@ -291,6 +291,15 @@
   transition: width 180ms linear;
 }
 
+.organizm-hud__stat--hit {
+  border-color: rgba(255, 79, 154, 0.5);
+  animation: organizm-hud-hit 520ms steps(2, end) both;
+}
+
+.organizm-hud__stat--hit i::before {
+  background: linear-gradient(90deg, var(--organizm-pink), var(--organizm-purple));
+}
+
 .organizm-mutagen-icon {
   width: 20px;
   height: 20px;
@@ -544,6 +553,11 @@
 
 .organizm-core--attack .organizm-core__body {
   animation: organizm-core-attack 430ms ease-out both;
+}
+
+.organizm-core--enemy-hit .organizm-core__membrane {
+  border-color: rgba(255, 79, 154, 0.54);
+  animation: organizm-core-enemy-impact 430ms steps(2, end) both;
 }
 
 .organizm-core--heal .organizm-core__membrane {
@@ -1167,6 +1181,73 @@
   filter: drop-shadow(0 0 6px currentColor) drop-shadow(0 0 16px rgba(54, 215, 255, 0.6));
 }
 
+.organizm-beam-vector.organizm-beam--enemy {
+  color: #ff3f86;
+  mix-blend-mode: screen;
+}
+
+.organizm-beam-vector.organizm-beam--enemy-shot {
+  color: #ff3f86;
+}
+
+.organizm-beam-vector.organizm-beam--parasite {
+  color: #baff3d;
+}
+
+.organizm-beam-vector.organizm-beam--boss {
+  color: #ff2f7e;
+}
+
+.organizm-beam--enemy .organizm-beam-line {
+  stroke-linecap: butt;
+  stroke-dasharray: 5 7 1 5;
+  animation: organizm-enemy-beam-jitter 120ms steps(2, end) infinite;
+  filter:
+    drop-shadow(0 0 4px rgba(255, 63, 134, 0.95))
+    drop-shadow(0 0 12px rgba(182, 108, 255, 0.55));
+}
+
+.organizm-beam-line--glitch-a,
+.organizm-beam-line--glitch-b {
+  opacity: 0.68;
+  stroke-width: 1.3;
+  stroke-dasharray: 2 9 12 8;
+}
+
+.organizm-beam-line--glitch-b {
+  opacity: 0.42;
+  stroke-width: 2;
+  stroke-dasharray: 10 12 2 8;
+}
+
+.organizm-beam--enemy-shot .organizm-beam-impact,
+.organizm-beam--boss .organizm-beam-impact {
+  fill: #ff3f86;
+  filter:
+    drop-shadow(0 0 6px rgba(255, 63, 134, 0.95))
+    drop-shadow(0 0 18px rgba(255, 79, 154, 0.6));
+}
+
+.organizm-beam--parasite .organizm-beam-line {
+  stroke-dasharray: 3 7 12 8;
+  filter:
+    drop-shadow(0 0 5px rgba(186, 255, 61, 0.92))
+    drop-shadow(0 0 13px rgba(77, 255, 177, 0.42));
+}
+
+.organizm-beam--parasite .organizm-beam-impact {
+  fill: #baff3d;
+}
+
+.organizm-beam--boss .organizm-beam-line {
+  stroke-width: 6;
+  stroke-dasharray: 14 5 4 7;
+  filter:
+    drop-shadow(0 0 7px rgba(255, 47, 126, 0.95))
+    drop-shadow(0 0 18px rgba(182, 108, 255, 0.7))
+    drop-shadow(0 0 26px rgba(255, 79, 154, 0.38));
+}
+
 .organizm-effect {
   position: absolute;
   z-index: 7;
@@ -1410,14 +1491,12 @@
 }
 
 .organizm-game--battle .organizm-command-panel__start,
-.organizm-game--battle .organizm-delete-zone,
 .organizm-game--battle .organizm-details__actions {
   display: none;
 }
 
 .organizm-command-panel__status,
 .organizm-command-panel__start,
-.organizm-delete-zone,
 .organizm-details {
   grid-column: 1 / -1;
 }
@@ -1473,29 +1552,6 @@
   font-size: clamp(14px, 2.4vw, 20px);
   font-weight: 900;
   line-height: 1.05;
-}
-
-.organizm-delete-zone {
-  min-height: 46px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 9px 10px;
-  border: 1px dashed rgba(255, 79, 154, 0.42);
-  border-radius: 8px;
-  background:
-    linear-gradient(90deg, rgba(255, 79, 154, 0.12), transparent 62%),
-    rgba(5, 12, 25, 0.54);
-  color: #ffc4d9;
-  font-size: 12px;
-  font-weight: 800;
-  line-height: 1.25;
-  text-align: center;
-}
-
-.organizm-delete-zone svg {
-  color: var(--organizm-pink);
 }
 
 .organizm-details {
@@ -1569,12 +1625,6 @@
   min-height: 38px;
   padding: 0 8px;
   font-size: 11px;
-}
-
-.organizm-details__delete {
-  grid-column: 1 / -1;
-  border-color: rgba(255, 79, 154, 0.38) !important;
-  color: #ffd4e2 !important;
 }
 
 .organizm-details--pink {
@@ -1675,13 +1725,41 @@
   border: 2px solid rgba(54, 215, 255, 0.44);
   border-radius: 8px;
   background:
-    radial-gradient(circle at 50% 50%, rgba(77, 255, 177, 0.1), transparent 45%),
-    linear-gradient(90deg, rgba(103, 232, 249, 0.14) 1px, transparent 1px),
-    linear-gradient(0deg, rgba(103, 232, 249, 0.12) 1px, transparent 1px),
+    radial-gradient(circle at 50% 44%, rgba(77, 255, 177, 0.11), transparent 42%),
+    radial-gradient(circle at 12% 50%, rgba(255, 79, 154, 0.1), transparent 32%),
+    radial-gradient(circle at 90% 44%, rgba(182, 108, 255, 0.12), transparent 34%),
+    repeating-linear-gradient(135deg, rgba(103, 232, 249, 0.04) 0 1px, transparent 1px 10px),
     rgba(2, 8, 18, 0.88);
-  background-size: 100% 100%, 24px 24px, 24px 24px, 100% 100%;
   touch-action: none;
   user-select: none;
+}
+
+.organizm-board::before,
+.organizm-board::after {
+  content: "";
+  position: absolute;
+  inset: 8px;
+  border-radius: 6px;
+  pointer-events: none;
+}
+
+.organizm-board::before {
+  z-index: 0;
+  border: 1px solid rgba(255, 79, 154, 0.08);
+  background:
+    radial-gradient(circle at 18% 50%, rgba(255, 79, 154, 0.14), transparent 20%),
+    radial-gradient(circle at 84% 42%, rgba(182, 108, 255, 0.16), transparent 26%),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.035), transparent 20% 80%, rgba(255, 255, 255, 0.035));
+  opacity: 0.72;
+}
+
+.organizm-board::after {
+  z-index: 2;
+  border: 1px solid rgba(77, 255, 177, 0.12);
+  box-shadow:
+    inset 0 0 22px rgba(77, 255, 177, 0.06),
+    0 0 24px rgba(54, 215, 255, 0.06);
+  opacity: 0.72;
 }
 
 .organizm-board__cell--locked {
@@ -1708,7 +1786,11 @@
   border-radius: 5px;
   background:
     linear-gradient(135deg, rgba(255, 255, 255, 0.06), transparent 45%),
-    rgba(7, 17, 34, 0.76);
+    linear-gradient(90deg, rgba(103, 232, 249, 0.08) 1px, transparent 1px),
+    linear-gradient(0deg, rgba(103, 232, 249, 0.08) 1px, transparent 1px),
+    rgba(7, 17, 34, 0.82);
+  background-size: 100% 100%, 14px 14px, 14px 14px, 100% 100%;
+  box-shadow: inset 0 0 0 1px rgba(77, 255, 177, 0.035);
   cursor: pointer;
 }
 
@@ -1718,6 +1800,30 @@
   inset: 6px;
   border: 1px dashed rgba(103, 232, 249, 0.12);
   border-radius: 3px;
+}
+
+.organizm-board--ftue-cells .organizm-board__cell {
+  border-color: rgba(77, 255, 177, 0.48);
+  background:
+    linear-gradient(135deg, rgba(77, 255, 177, 0.12), transparent 54%),
+    linear-gradient(90deg, rgba(103, 232, 249, 0.1) 1px, transparent 1px),
+    linear-gradient(0deg, rgba(103, 232, 249, 0.1) 1px, transparent 1px),
+    rgba(7, 17, 34, 0.9);
+  box-shadow:
+    inset 0 0 0 1px rgba(77, 255, 177, 0.12),
+    0 0 14px rgba(77, 255, 177, 0.08);
+}
+
+.organizm-board--placement-hint .organizm-board__cell--hint {
+  border-color: rgba(77, 255, 177, 0.34);
+  background:
+    linear-gradient(135deg, rgba(77, 255, 177, 0.08), transparent 54%),
+    linear-gradient(90deg, rgba(103, 232, 249, 0.09) 1px, transparent 1px),
+    linear-gradient(0deg, rgba(103, 232, 249, 0.09) 1px, transparent 1px),
+    rgba(7, 17, 34, 0.86);
+  box-shadow:
+    inset 0 0 0 1px rgba(77, 255, 177, 0.08),
+    0 0 12px rgba(77, 255, 177, 0.06);
 }
 
 .organizm-board__cell.organizm-board__cell--locked {
@@ -2388,6 +2494,37 @@
   gap: 9px;
 }
 
+.organizm-stash-more {
+  min-height: 86px !important;
+  display: none !important;
+  align-content: center;
+  justify-items: center;
+  gap: 6px !important;
+  padding: 10px !important;
+  border-style: dashed !important;
+  border-color: rgba(77, 255, 177, 0.36) !important;
+  background:
+    linear-gradient(135deg, rgba(77, 255, 177, 0.14), transparent 58%),
+    rgba(5, 12, 25, 0.72) !important;
+  text-align: center;
+}
+
+.organizm-stash-more strong {
+  color: #f8fdff;
+  font-size: 22px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.organizm-stash-more span {
+  color: var(--organizm-muted);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
 .organizm-patch-card {
   position: relative;
   min-width: 0;
@@ -2651,6 +2788,128 @@
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
+}
+
+.organizm-result__evolution {
+  position: relative;
+  display: grid !important;
+  gap: 3px !important;
+  padding: 8px 10px !important;
+}
+
+.organizm-result__evolution small {
+  color: var(--organizm-muted);
+  font-size: 10px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.organizm-result__evolution--available {
+  border-color: rgba(77, 255, 177, 0.72) !important;
+  background:
+    linear-gradient(90deg, rgba(77, 255, 177, 0.26), rgba(54, 215, 255, 0.16)),
+    rgba(7, 19, 30, 0.98) !important;
+  box-shadow:
+    0 0 0 2px rgba(77, 255, 177, 0.12),
+    0 0 26px rgba(77, 255, 177, 0.2);
+  animation: organizm-evolution-ready 1500ms ease-in-out infinite;
+}
+
+.organizm-result__evolution--available::after {
+  content: "!";
+  position: absolute;
+  right: 8px;
+  top: 7px;
+  width: 18px;
+  height: 18px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.42);
+  border-radius: 50%;
+  background: var(--organizm-green);
+  color: #03120d;
+  font-size: 12px;
+  font-weight: 900;
+  line-height: 1;
+  box-shadow: 0 0 16px rgba(77, 255, 177, 0.44);
+}
+
+.organizm-ftue-target {
+  position: relative;
+  z-index: 20;
+  border-color: rgba(77, 255, 177, 0.72) !important;
+  box-shadow:
+    0 0 0 2px rgba(77, 255, 177, 0.2),
+    0 0 24px rgba(77, 255, 177, 0.18) !important;
+  animation: organizm-ftue-pulse 1400ms ease-in-out infinite;
+}
+
+.organizm-ftue-target::before {
+  border-color: rgba(77, 255, 177, 0.34) !important;
+}
+
+.organizm-ftue-coach {
+  position: absolute;
+  left: 18px;
+  right: 18px;
+  bottom: 18px;
+  z-index: 90;
+  width: min(100% - 36px, 520px);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  padding: 12px;
+  border: 1px solid rgba(77, 255, 177, 0.4);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(77, 255, 177, 0.16), transparent 56%),
+    rgba(3, 8, 18, 0.96);
+  box-shadow:
+    0 18px 52px rgba(0, 0, 0, 0.42),
+    0 0 28px rgba(77, 255, 177, 0.14);
+  backdrop-filter: blur(14px);
+  pointer-events: none;
+}
+
+.organizm-ftue-coach span {
+  display: block;
+  color: var(--organizm-green);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.organizm-ftue-coach strong {
+  display: block;
+  margin-top: 5px;
+  color: #f8fdff;
+  font-size: 16px;
+  font-weight: 900;
+  line-height: 1.15;
+}
+
+.organizm-ftue-coach p {
+  margin: 5px 0 0;
+  color: #cdece5;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.organizm-ftue-coach__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.organizm-ftue-coach__actions button {
+  min-height: 40px;
+  padding: 0 12px !important;
+  white-space: nowrap;
+  pointer-events: auto;
 }
 
 .organizm-patch-tooltip-backdrop {
@@ -3297,6 +3556,32 @@
   }
 }
 
+@keyframes organizm-core-enemy-impact {
+  0%,
+  100% {
+    filter: none;
+    opacity: 0.72;
+    transform: rotate(12deg) scale(1);
+  }
+
+  45% {
+    filter: drop-shadow(4px 0 rgba(255, 79, 154, 0.72)) drop-shadow(-3px 0 rgba(182, 108, 255, 0.52));
+    opacity: 1;
+    transform: rotate(18deg) scale(1.16);
+  }
+}
+
+@keyframes organizm-hud-hit {
+  0%,
+  100% {
+    filter: none;
+  }
+
+  40% {
+    filter: drop-shadow(2px 0 rgba(255, 79, 154, 0.58)) drop-shadow(-2px 0 rgba(182, 108, 255, 0.44));
+  }
+}
+
 @keyframes organizm-core-stable {
   0%,
   100% {
@@ -3352,6 +3637,43 @@
 
   100% {
     opacity: 0;
+  }
+}
+
+@keyframes organizm-enemy-beam-jitter {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+
+  50% {
+    transform: translate(1px, -1px);
+  }
+}
+
+@keyframes organizm-evolution-ready {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 2px rgba(77, 255, 177, 0.12),
+      0 0 22px rgba(77, 255, 177, 0.16);
+  }
+
+  50% {
+    box-shadow:
+      0 0 0 3px rgba(77, 255, 177, 0.2),
+      0 0 34px rgba(77, 255, 177, 0.32);
+  }
+}
+
+@keyframes organizm-ftue-pulse {
+  0%,
+  100% {
+    filter: brightness(1);
+  }
+
+  50% {
+    filter: brightness(1.18);
   }
 }
 
@@ -3792,6 +4114,12 @@
     padding-bottom: calc(12px + env(safe-area-inset-bottom));
   }
 
+  .organizm-game__layout--battle {
+    height: 100%;
+    overflow: auto;
+    overscroll-behavior: contain;
+  }
+
   .organizm-game__layout--prep .organizm-workbench {
     order: 1;
   }
@@ -3837,6 +4165,12 @@
   .organizm-battlefield {
     min-height: 214px;
     aspect-ratio: 1.35;
+  }
+
+  .organizm-game__layout--battle .organizm-battlefield {
+    height: clamp(278px, 56svh, 430px);
+    min-height: 278px;
+    aspect-ratio: auto;
   }
 
   .organizm-core {
@@ -4045,22 +4379,67 @@
   }
 
   .organizm-palette__list {
-    display: flex;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 6px;
-    overflow-x: auto;
-    padding: 1px 1px 4px;
-    scrollbar-width: none;
-    -webkit-overflow-scrolling: touch;
+    overflow: visible;
+    padding: 1px;
   }
 
-  .organizm-palette__list::-webkit-scrollbar {
-    display: none;
+  .organizm-patch-card--shelf-hidden {
+    display: none !important;
+  }
+
+  .organizm-stash--expanded .organizm-patch-card--shelf-hidden {
+    display: inline-flex !important;
   }
 
   .organizm-patch-card {
-    flex: 0 0 204px;
+    min-width: 0;
     min-height: 74px !important;
     padding: 8px !important;
+  }
+
+  .organizm-stash-more {
+    grid-column: 1 / -1;
+    min-width: 0;
+    min-height: 74px !important;
+    display: grid !important;
+  }
+
+  .organizm-stash-more strong {
+    font-size: 18px;
+  }
+
+  .organizm-ftue-coach {
+    position: fixed;
+    left: 8px;
+    right: 8px;
+    bottom: calc(8px + env(safe-area-inset-bottom));
+    width: auto;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+    padding: 10px;
+  }
+
+  .organizm-game--prep .organizm-ftue-coach {
+    bottom: calc(74px + env(safe-area-inset-bottom));
+  }
+
+  .organizm-ftue-coach strong {
+    font-size: 14px;
+  }
+
+  .organizm-ftue-coach p {
+    font-size: 12px;
+  }
+
+  .organizm-ftue-coach__actions {
+    justify-content: stretch;
+  }
+
+  .organizm-ftue-coach__actions button {
+    flex: 1 1 auto;
   }
 
   .organizm-patch-cell__level {
@@ -4214,7 +4593,12 @@
   }
 
   .organizm-battlefield {
-    min-height: 196px;
+    min-height: 214px;
+  }
+
+  .organizm-game__layout--battle .organizm-battlefield {
+    height: clamp(260px, 54svh, 390px);
+    min-height: 260px;
   }
 
   .organizm-patch-card {
