@@ -1,4 +1,4 @@
-import { EXPANSION_CELLS, MATRIX_GROWTH_BATCH_SIZE } from "./balance";
+import { EXPANSION_CELLS } from "./balance";
 import type { MutationCombatStats, PatchTone } from "./types";
 
 export type MutationId =
@@ -114,9 +114,9 @@ export const MUTATIONS: Record<MutationId, MutationConfig> = {
     shortTitle: "CELL",
     tone: "cyan",
     icon: "cell",
-    description: "Открывает следующий прямоугольный шаг Матрицы адаптации.",
-    firstBonus: "+3 клетки / 4 x 3",
-    repeatBonus: "ещё +3 клетки",
+    description: "Открывает следующую клетку Матрицы адаптации по заданному порядку роста.",
+    firstBonus: "+1 клетка",
+    repeatBonus: "ещё +1 клетка",
   },
 };
 
@@ -151,7 +151,7 @@ export function getMutationStats(counts: MutationCounts): MutationCombatStats {
     armorBonus: armor > 0 ? 1 + Math.floor((armor - 1) / 2) : 0,
     doubleShotChancePercent: doubleShot > 0 ? 3 + (doubleShot - 1) * 1 : 0,
     hastePercent: haste > 0 ? 4 + (haste - 1) * 1.5 : 0,
-    unlockedCells: Math.min(EXPANSION_CELLS.length, growth * MATRIX_GROWTH_BATCH_SIZE),
+    unlockedCells: Math.min(EXPANSION_CELLS.length, growth),
   };
 }
 

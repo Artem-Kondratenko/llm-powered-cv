@@ -152,6 +152,10 @@ function getUnlockedCellSet(unlockedCount: number) {
 function getMatrixLabel(unlockedCells: Set<string>) {
   const unlockedCount = Math.min(unlockedCells.size, EXPANSION_CELLS.length);
 
+  if (unlockedCount > 0 && unlockedCount < 3) {
+    return `${BOARD_START_COLS} x ${BOARD_START_ROWS} + ${unlockedCount}`;
+  }
+
   if (unlockedCount >= 15) {
     return "6 x 4";
   }
@@ -177,7 +181,6 @@ function hasBossInWave(wave: WaveConfig) {
 
 type BattleEndingState = "wave" | "level" | "defeat" | "boss" | null;
 type SectorOutcome = "victory" | "defeat" | null;
-type BattlefieldSize = { width: number; height: number };
 type BattlefieldPoint = { x: number; y: number };
 type FtueStepId =
   | "matrix"
@@ -207,10 +210,10 @@ type FtueTarget =
   | "mutation-card"
   | "next-sector";
 
-function toBattlefieldPixels(point: CellCoord, size: BattlefieldSize): BattlefieldPoint {
+function clampBattlefieldPoint(point: BattlefieldPoint): BattlefieldPoint {
   return {
-    x: (point.x / 100) * size.width,
-    y: (point.y / 100) * size.height,
+    x: clamp(point.x, 0, 100),
+    y: clamp(point.y, 0, 100),
   };
 }
 
@@ -223,12 +226,6 @@ function getPerpendicularOffset(from: BattlefieldPoint, to: BattlefieldPoint, am
     x: (-dy / length) * amount,
     y: (dx / length) * amount,
   };
-}
-
-function getBeamTargetPoint(beam: BattleBeam, battle: BattleState) {
-  const liveTarget = beam.source === "patch" && beam.targetId ? battle.enemies.find((enemy) => enemy.id === beam.targetId) : null;
-
-  return liveTarget ? { x: liveTarget.x, y: liveTarget.y } : { x: beam.toX, y: beam.toY };
 }
 
 function GameHUD({
@@ -297,8 +294,6 @@ function Battlefield({
   sectorTitle: string;
   endingState: BattleEndingState;
 }) {
-  const battlefieldRef = useRef<HTMLDivElement | null>(null);
-  const [battlefieldSize, setBattlefieldSize] = useState<BattlefieldSize>({ width: 0, height: 0 });
   const coreStyle = {
     "--organizm-core-health": `${maxHealth > 0 ? Math.max(0, (health / maxHealth) * 100) : 0}%`,
   } as CSSProperties;
@@ -312,41 +307,8 @@ function Battlefield({
   ]
     .filter(Boolean)
     .join(" ");
-  const beamViewportWidth = Math.max(1, battlefieldSize.width);
-  const beamViewportHeight = Math.max(1, battlefieldSize.height);
-
-  useEffect(() => {
-    const element = battlefieldRef.current;
-
-    if (!element) {
-      return undefined;
-    }
-
-    const syncBattlefieldSize = () => {
-      const rect = element.getBoundingClientRect();
-      setBattlefieldSize((current) => {
-        const width = Math.max(1, Math.round(rect.width));
-        const height = Math.max(1, Math.round(rect.height));
-
-        return current.width === width && current.height === height ? current : { width, height };
-      });
-    };
-
-    syncBattlefieldSize();
-
-    if (typeof ResizeObserver === "undefined") {
-      window.addEventListener("resize", syncBattlefieldSize);
-      return () => window.removeEventListener("resize", syncBattlefieldSize);
-    }
-
-    const observer = new ResizeObserver(syncBattlefieldSize);
-    observer.observe(element);
-
-    return () => observer.disconnect();
-  }, []);
-
   return (
-    <div ref={battlefieldRef} className="organizm-battlefield" aria-label={sectorTitle}>
+    <div className="organizm-battlefield" aria-label={sectorTitle}>
       <div className="organizm-battlefield__scanline" aria-hidden="true" />
       <div className="organizm-battlefield__edge organizm-battlefield__edge--top" aria-hidden="true" />
       <div className="organizm-battlefield__edge organizm-battlefield__edge--right" aria-hidden="true" />
@@ -365,14 +327,15 @@ function Battlefield({
       {battle.beams.length > 0 ? (
         <svg
           className="organizm-beam-svg"
-          viewBox={`0 0 ${beamViewportWidth} ${beamViewportHeight}`}
+          viewBox="0 0 100 100"
+          preserveAspectRatio="none"
           aria-hidden="true"
         >
           {battle.beams.map((beam) => {
-            const fromPoint = toBattlefieldPixels({ x: beam.fromX, y: beam.fromY }, battlefieldSize);
-            const targetPoint = toBattlefieldPixels(getBeamTargetPoint(beam, battle), battlefieldSize);
-            const doubleOffset = getPerpendicularOffset(fromPoint, targetPoint, 5);
-            const enemyOffset = getPerpendicularOffset(fromPoint, targetPoint, beam.visual === "boss" ? 9 : 4);
+            const fromPoint = clampBattlefieldPoint({ x: beam.fromX, y: beam.fromY });
+            const targetPoint = clampBattlefieldPoint({ x: beam.toX, y: beam.toY });
+            const doubleOffset = getPerpendicularOffset(fromPoint, targetPoint, 0.9);
+            const enemyOffset = getPerpendicularOffset(fromPoint, targetPoint, beam.visual === "boss" ? 1.8 : 1);
 
             return (
               <g
@@ -407,7 +370,7 @@ function Battlefield({
                     y2={targetPoint.y + doubleOffset.y}
                   />
                 ) : null}
-                <circle className="organizm-beam-impact" cx={targetPoint.x} cy={targetPoint.y} r={beam.source === "enemy" ? 4 : 5} />
+                <circle className="organizm-beam-impact" cx={targetPoint.x} cy={targetPoint.y} r={beam.source === "enemy" ? 0.75 : 0.95} />
               </g>
             );
           })}
@@ -614,7 +577,6 @@ function PatchCard({
   selectedItem,
   mergeCandidateUid,
   highlighted,
-  shelfHidden,
   disabled,
   onSelect,
   onPointerDown,
@@ -624,13 +586,11 @@ function PatchCard({
   selectedItem: SelectedItem | null;
   mergeCandidateUid?: string | null;
   highlighted?: boolean;
-  shelfHidden?: boolean;
   disabled: boolean;
   onSelect: (origin: PatchZone, uid: string) => void;
   onPointerDown: (event: PointerEvent<HTMLElement>, item: PatchInstance, origin: PatchZone) => void;
 }) {
   const patch = getPatchConfig(item);
-  const stats = getPatchStats(item);
   const isSelected = selectedItem?.origin === zone && selectedItem.uid === item.uid;
   const isMergeCandidate = mergeCandidateUid === item.uid;
 
@@ -643,8 +603,6 @@ function PatchCard({
         isMergeCandidate ? " organizm-patch-card--merge-target" : ""
       }${
         highlighted ? " organizm-ftue-target" : ""
-      }${
-        shelfHidden ? " organizm-patch-card--shelf-hidden" : ""
       }`}
       data-organizm-patch-uid={item.uid}
       data-organizm-patch-zone={zone}
@@ -655,14 +613,6 @@ function PatchCard({
     >
       <span className="organizm-patch-card__visual">
         <PatchModule item={item} variant="card" />
-      </span>
-      <span className="organizm-patch-card__copy">
-        <strong>
-          {patch.title} {levelToRoman(item.level)}
-        </strong>
-        <small>
-          {getPatchKindLabel(patch)} · {formatCooldown(stats.cooldownMs)}
-        </small>
       </span>
       <i>{getPatchCategoryLabel(patch)}</i>
     </button>
@@ -675,11 +625,9 @@ function PatchStash({
   selectedItem,
   mergeCandidateUid,
   mode,
-  expanded,
   ftueTarget,
   ftuePatchUid,
   ftueMergeUids,
-  onToggleExpanded,
   onSelect,
   onPatchPointerDown,
 }: {
@@ -688,22 +636,16 @@ function PatchStash({
   selectedItem: SelectedItem | null;
   mergeCandidateUid?: string | null;
   mode: GameMode;
-  expanded: boolean;
   ftueTarget: FtueTarget | null;
   ftuePatchUid: string | null;
   ftueMergeUids: Set<string>;
-  onToggleExpanded: () => void;
   onSelect: (origin: PatchZone, uid: string) => void;
   onPatchPointerDown: (event: PointerEvent<HTMLElement>, item: PatchInstance, origin: PatchZone) => void;
 }) {
-  const hiddenCount = Math.max(0, stashItems.length - 2);
-
   return (
     <div
       ref={stashRef}
-      className={`organizm-palette organizm-stash${expanded ? " organizm-stash--expanded" : ""}${
-        ftueTarget === "new-patches" ? " organizm-ftue-target" : ""
-      }`}
+      className={`organizm-palette organizm-stash${ftueTarget === "new-patches" ? " organizm-ftue-target" : ""}`}
     >
       <div className="organizm-palette__top">
         <div>
@@ -714,36 +656,19 @@ function PatchStash({
       </div>
       <div className="organizm-palette__list">
         {stashItems.length > 0 ? (
-          <>
-            {stashItems.map((item, index) => (
-              <PatchCard
-                key={item.uid}
-                item={item}
-                zone="stash"
-                selectedItem={selectedItem}
-                mergeCandidateUid={mergeCandidateUid}
-                highlighted={ftuePatchUid === item.uid || ftueMergeUids.has(item.uid)}
-                shelfHidden={index >= 2}
-                disabled={mode !== "prep"}
-                onSelect={onSelect}
-                onPointerDown={onPatchPointerDown}
-              />
-            ))}
-            {hiddenCount > 0 ? (
-              <button
-                type="button"
-                className={`organizm-stash-more${ftueTarget === "new-patches" ? " organizm-ftue-target" : ""}`}
-                onClick={onToggleExpanded}
-                disabled={mode !== "prep"}
-                aria-label={expanded ? "Свернуть новые патчи" : `Показать все новые патчи, скрыто ${hiddenCount}`}
-                aria-expanded={expanded}
-              >
-                <Layers className="organizm-button-icon" aria-hidden="true" />
-                <strong>{expanded ? "Свернуть" : `+${hiddenCount} ещё`}</strong>
-                <span>{expanded ? "Компактно" : "Все новые патчи"}</span>
-              </button>
-            ) : null}
-          </>
+          stashItems.map((item) => (
+            <PatchCard
+              key={item.uid}
+              item={item}
+              zone="stash"
+              selectedItem={selectedItem}
+              mergeCandidateUid={mergeCandidateUid}
+              highlighted={ftuePatchUid === item.uid || ftueMergeUids.has(item.uid)}
+              disabled={mode !== "prep"}
+              onSelect={onSelect}
+              onPointerDown={onPatchPointerDown}
+            />
+          ))
         ) : (
           <div className="organizm-stash__empty">Новых патчей нет. Запусти следующую волну.</div>
         )}
@@ -844,7 +769,6 @@ function MutationScreen({
   ftueTarget,
   onBuyMutation,
   onNextSector,
-  onNewSession,
 }: {
   sectorIndex: number;
   mutagens: number;
@@ -856,7 +780,6 @@ function MutationScreen({
   ftueTarget: FtueTarget | null;
   onBuyMutation: () => void;
   onNextSector: () => void;
-  onNewSession: () => void;
 }) {
   const lastMutation = lastMutationId ? getMutationConfig(lastMutationId) : null;
   const canBuyMutation = mutagens >= mutationCost;
@@ -926,12 +849,7 @@ function MutationScreen({
         })}
       </div>
 
-      <div className="organizm-mutations__roll">
-        <div>
-          <span>Открыто мутаций</span>
-          <strong>{purchasedCount} выпадений</strong>
-          <small>{canBuyMutation ? mutationFeedback : `Нужно ${mutationCost} мутагенов`}</small>
-        </div>
+      <div className="organizm-mutations__action-bar" role="group" aria-label="Действия эволюции">
         <button
           type="button"
           className={`organizm-mutations__mutate${ftueTarget === "mutation-button" ? " organizm-ftue-target" : ""}`}
@@ -941,21 +859,15 @@ function MutationScreen({
           <Sparkles className="organizm-button-icon" aria-hidden="true" />
           <span>Мутация</span>
           <strong>{mutationCost}</strong>
+          <small>{canBuyMutation ? `${purchasedCount} выпадений` : `Нужно ${mutationCost}`}</small>
         </button>
-      </div>
-
-      <div className="organizm-mutations__actions">
         <button
           type="button"
-          className={ftueTarget === "next-sector" ? "organizm-ftue-target" : ""}
+          className={`organizm-mutations__next${ftueTarget === "next-sector" ? " organizm-ftue-target" : ""}`}
           onClick={onNextSector}
         >
           <Play className="organizm-button-icon" aria-hidden="true" />
           {sectorOutcome === "defeat" ? "Повторить сектор" : "Следующий сектор"}
-        </button>
-        <button type="button" onClick={onNewSession}>
-          <RotateCcw className="organizm-button-icon" aria-hidden="true" />
-          Новая сессия
         </button>
       </div>
     </div>
@@ -1061,7 +973,6 @@ export function OrganizmGame() {
   const [tooltipItem, setTooltipItem] = useState<SelectedItem | null>(null);
   const [battleEnding, setBattleEnding] = useState<BattleEndingState>(null);
   const [sectorOutcome, setSectorOutcome] = useState<SectorOutcome>(null);
-  const [patchShelfExpanded, setPatchShelfExpanded] = useState(false);
   const [ftueStep, setFtueStep] = useState<FtueStepId>("matrix");
   const [ftueDone, setFtueDone] = useState(false);
 
@@ -1211,23 +1122,14 @@ export function OrganizmGame() {
 
   useEffect(() => {
     maxHealthRef.current = maxHealth;
-
-    if (mode === "start") {
-      previousMaxHealthRef.current = maxHealth;
-      return;
-    }
-
     const previousMax = previousMaxHealthRef.current;
 
-    if (maxHealth > previousMax) {
-      const delta = maxHealth - previousMax;
-      setHealthValue((current) => Math.min(maxHealth, current + delta));
-    } else if (maxHealth < previousMax) {
+    if (maxHealth < previousMax) {
       setHealthValue((current) => Math.min(current, maxHealth));
     }
 
     previousMaxHealthRef.current = maxHealth;
-  }, [maxHealth, mode]);
+  }, [maxHealth]);
 
   useEffect(() => {
     const selectedStillExists = selectedItem ? resolveSelectedItem(selectedItem, boardPatches, stashItems) : null;
@@ -1244,12 +1146,6 @@ export function OrganizmGame() {
 
     setSelectedItem(fallback);
   }, [boardCount, boardPatches, selectedItem, stashItems]);
-
-  useEffect(() => {
-    if (mode !== "prep" || stashItems.length === 0) {
-      setPatchShelfExpanded(false);
-    }
-  }, [mode, stashItems.length]);
 
   useEffect(() => {
     if (ftueDone || sectorIndex !== 1) {
@@ -1297,6 +1193,52 @@ export function OrganizmGame() {
       return current;
     });
   }, [activeFtuePatchUid, boardEntries, currentWaveIndex, ftueDone, lastMutationId, mode, resultMode, sectorIndex, stashItems]);
+
+  useEffect(() => {
+    if (ftueDone || sectorIndex !== 1 || mode !== "prep") {
+      return undefined;
+    }
+
+    if (ftueStep !== "matrix" && ftueStep !== "active" && ftueStep !== "rewards" && ftueStep !== "merged") {
+      return undefined;
+    }
+
+    const timer = window.setTimeout(() => {
+      setFtueStep((current) => {
+        if (current === "matrix") {
+          return "install";
+        }
+
+        if (current === "active") {
+          return "wave";
+        }
+
+        if (current === "rewards") {
+          return ftueMergePair ? "merge" : "wave";
+        }
+
+        if (current === "merged") {
+          return "wave";
+        }
+
+        return current;
+      });
+    }, ftueStep === "matrix" ? 1800 : 2400);
+
+    return () => window.clearTimeout(timer);
+  }, [ftueDone, ftueMergePair, ftueStep, mode, sectorIndex]);
+
+  useEffect(() => {
+    if (ftueDone || sectorIndex !== 1 || mode !== "prep" || ftueStep !== "merge") {
+      return undefined;
+    }
+
+    const timer = window.setTimeout(() => {
+      setFtueStep((current) => (current === "merge" ? "wave" : current));
+    }, 4200);
+
+    return () => window.clearTimeout(timer);
+  }, [ftueDone, ftueStep, mode, sectorIndex]);
 
   useEffect(() => {
     if (ftueDone || sectorIndex !== 1 || ftueStep !== "core" || mode !== "battle") {
@@ -1496,7 +1438,6 @@ export function OrganizmGame() {
 
     if (origin === "stash") {
       setStashItems((current) => current.filter((patch) => patch.uid !== item.uid));
-      setPatchShelfExpanded(false);
       setBoardPatches((current) => ({
         ...current,
         [item.uid]: { ...item, position },
@@ -1593,7 +1534,6 @@ export function OrganizmGame() {
     battleRef.current = nextBattle;
     setBattle(nextBattle);
     setTooltipItem(null);
-    setPatchShelfExpanded(false);
     setSectorOutcome(null);
     clearLongPressTimer();
     longPressOpenedRef.current = false;
@@ -1635,7 +1575,6 @@ export function OrganizmGame() {
       setSelectedItem(null);
     }
     setTooltipItem(null);
-    setPatchShelfExpanded(false);
     setHealthValue((current) => Math.min(current, maxHealth));
     setFeedback(`Волна ${currentWave.waveNumber}: ${currentWave.title}. Новые патчи очищены из буфера.`);
     setMode("battle");
@@ -1685,15 +1624,18 @@ export function OrganizmGame() {
     const candidate = getCandidateFromPointer(event, boardRef.current, anchor);
     const validation = getPlacementValidation(item, candidate, boardPatches, origin === "board" ? item.uid : undefined, unlockedCells);
 
-    try {
-      rootRef.current?.setPointerCapture(event.pointerId);
-    } catch {
-      // Pointer capture improves touch dragging, but browsers can decline it.
+    if (origin !== "stash" || event.pointerType === "mouse") {
+      try {
+        rootRef.current?.setPointerCapture(event.pointerId);
+      } catch {
+        // Pointer capture improves touch dragging, but browsers can decline it.
+      }
     }
 
     const nextDrag = {
       item,
       pointerId: event.pointerId,
+      pointerType: event.pointerType,
       origin,
       anchor,
       startX: event.clientX,
@@ -1733,6 +1675,23 @@ export function OrganizmGame() {
       return;
     }
 
+    const dx = event.clientX - activeDrag.startX;
+    const dy = event.clientY - activeDrag.startY;
+    const distance = Math.hypot(dx, dy);
+
+    if (
+      activeDrag.origin === "stash" &&
+      activeDrag.pointerType !== "mouse" &&
+      !activeDrag.hasMoved &&
+      distance > 8 &&
+      Math.abs(dy) > Math.abs(dx) * 1.35
+    ) {
+      clearLongPressTimer();
+      dragRef.current = null;
+      setDrag(null);
+      return;
+    }
+
     event.preventDefault();
 
     const candidate = getCandidateFromPointer(event, boardRef.current, activeDrag.anchor);
@@ -1744,11 +1703,17 @@ export function OrganizmGame() {
       unlockedCells,
     );
 
-    const hasMoved =
-      activeDrag.hasMoved || Math.hypot(event.clientX - activeDrag.startX, event.clientY - activeDrag.startY) > 6;
+    const hasMoved = activeDrag.hasMoved || distance > 6;
 
     if (hasMoved) {
       clearLongPressTimer();
+      if (activeDrag.origin === "stash" && activeDrag.pointerType !== "mouse") {
+        try {
+          rootRef.current?.setPointerCapture(event.pointerId);
+        } catch {
+          // The browser can ignore late capture after touch scrolling starts.
+        }
+      }
     }
 
     const nextDrag = {
@@ -1926,7 +1891,6 @@ export function OrganizmGame() {
   function handleOpenMutations() {
     setMode("mutations");
     setTooltipItem(null);
-    setPatchShelfExpanded(false);
     setMutationFeedback(canBuyMutation ? "Мутационная колода готова к новому выпадению." : "Недостаточно мутагенов");
     setFtueStep((current) => (current === "evolution" ? (canBuyMutation ? "mutation" : "next-sector") : current));
   }
@@ -1971,36 +1935,6 @@ export function OrganizmGame() {
       setFtueDone(true);
       setFtueStep("done");
     }
-  }
-
-  function handleFtuePrimary() {
-    setFtueStep((current) => {
-      if (current === "matrix") {
-        return "install";
-      }
-
-      if (current === "active") {
-        return "wave";
-      }
-
-      if (current === "rewards") {
-        return ftueMergePair ? "merge" : "evolution";
-      }
-
-      if (current === "merge") {
-        return "evolution";
-      }
-
-      if (current === "merged") {
-        return "evolution";
-      }
-
-      if (current === "mutation-card") {
-        return "next-sector";
-      }
-
-      return current;
-    });
   }
 
   const resultTitle = mode === "level-cleared" ? "Сектор очищен" : "Ядро заражено";
@@ -2059,7 +1993,6 @@ export function OrganizmGame() {
               ftueTarget={ftueTarget}
               onBuyMutation={handleBuyMutation}
               onNextSector={handleNextSector}
-              onNewSession={() => resetPrototype("prep", true)}
             />
           ) : (
             <div ref={layoutRef} className={`organizm-game__layout organizm-game__layout--${mode}`}>
@@ -2092,10 +2025,10 @@ export function OrganizmGame() {
                   className={`organizm-command-panel__start${ftueTarget === "start-wave" ? " organizm-ftue-target" : ""}`}
                   onClick={handleStartWave}
                   disabled={!canStartWave}
-                  aria-label={`Запустить волну ${currentWave.waveNumber}`}
+                  aria-label={`Битва: волна ${currentWave.waveNumber}`}
                 >
                   <Zap className="organizm-button-icon" aria-hidden="true" />
-                  Запустить волну {currentWave.waveNumber}
+                  Битва
                 </button>
                 <div className="organizm-command-panel__mini">
                   <span>Установлено в матрице</span>
@@ -2127,6 +2060,22 @@ export function OrganizmGame() {
                 />
               </aside>
 
+              {mode === "prep" ? (
+                <div className="organizm-mobile-action" aria-label="Быстрый запуск волны">
+                  <span>{feedback}</span>
+                  <button
+                    type="button"
+                    className={ftueTarget === "start-wave" ? "organizm-ftue-target" : ""}
+                    onClick={handleStartWave}
+                    disabled={!canStartWave}
+                    aria-label={`Битва: волна ${currentWave.waveNumber}`}
+                  >
+                    <Zap className="organizm-button-icon" aria-hidden="true" />
+                    Битва
+                  </button>
+                </div>
+              ) : null}
+
               <div className="organizm-workbench">
                 <OrganizmBoard
                   boardRef={boardRef}
@@ -2152,11 +2101,9 @@ export function OrganizmGame() {
                     selectedItem={selectedItem}
                     mergeCandidateUid={stashMergeTarget?.uid ?? null}
                     mode={mode}
-                    expanded={patchShelfExpanded}
                     ftueTarget={ftueTarget}
                     ftuePatchUid={ftuePatchUid}
                     ftueMergeUids={ftueMergeUids}
-                    onToggleExpanded={() => setPatchShelfExpanded((current) => !current)}
                     onSelect={handlePatchSelect}
                     onPatchPointerDown={beginPatchDrag}
                   />
@@ -2164,22 +2111,6 @@ export function OrganizmGame() {
               </div>
             </div>
           )}
-
-          {mode === "prep" ? (
-            <div className="organizm-mobile-action" aria-label="Быстрый запуск волны">
-              <span>{feedback}</span>
-              <button
-                type="button"
-                className={ftueTarget === "start-wave" ? "organizm-ftue-target" : ""}
-                onClick={handleStartWave}
-                disabled={!canStartWave}
-                aria-label={`Запустить волну ${currentWave.waveNumber}`}
-              >
-                <Zap className="organizm-button-icon" aria-hidden="true" />
-                Запустить волну {currentWave.waveNumber}
-              </button>
-            </div>
-          ) : null}
 
           {resultMode ? (
             <div className={`organizm-result organizm-result--${mode}`} role="status" aria-live="assertive">
@@ -2224,9 +2155,10 @@ export function OrganizmGame() {
         step={ftueStep}
         canBuyMutation={canBuyMutation}
         missingMutagens={Math.max(0, mutationCost - mutagens)}
-        hasHiddenPatches={stashItems.length > 2}
-        onPrimary={handleFtuePrimary}
-        onOpenPatches={() => setPatchShelfExpanded(true)}
+        onClose={() => {
+          setFtueDone(true);
+          setFtueStep("done");
+        }}
       />
 
       {drag ? (
@@ -2259,23 +2191,19 @@ function FtueCoach({
   step,
   canBuyMutation,
   missingMutagens,
-  hasHiddenPatches,
-  onPrimary,
-  onOpenPatches,
+  onClose,
 }: {
   visible: boolean;
   step: FtueStepId;
   canBuyMutation: boolean;
   missingMutagens: number;
-  hasHiddenPatches: boolean;
-  onPrimary: () => void;
-  onOpenPatches: () => void;
+  onClose: () => void;
 }) {
   if (!visible) {
     return null;
   }
 
-  const copy = getFtueCopy(step, canBuyMutation, missingMutagens, hasHiddenPatches);
+  const copy = getFtueCopy(step, canBuyMutation, missingMutagens);
 
   if (!copy) {
     return null;
@@ -2290,118 +2218,96 @@ function FtueCoach({
           <p key={line}>{line}</p>
         ))}
       </div>
-      {copy.primaryLabel || copy.openPatchesLabel ? (
-        <div className="organizm-ftue-coach__actions">
-          {copy.openPatchesLabel ? (
-            <button type="button" onClick={onOpenPatches}>
-              <Layers className="organizm-button-icon" aria-hidden="true" />
-              {copy.openPatchesLabel}
-            </button>
-          ) : null}
-          {copy.primaryLabel ? (
-            <button type="button" onClick={onPrimary}>
-              {copy.primaryLabel}
-            </button>
-          ) : null}
-        </div>
-      ) : null}
+      <button type="button" className="organizm-ftue-coach__close" onClick={onClose} aria-label="Закрыть подсказку">
+        <X className="organizm-button-icon" aria-hidden="true" />
+      </button>
     </div>
   );
 }
 
-function getFtueCopy(step: FtueStepId, canBuyMutation: boolean, missingMutagens: number, hasHiddenPatches: boolean) {
+function getFtueCopy(step: FtueStepId, canBuyMutation: boolean, missingMutagens: number) {
   switch (step) {
     case "matrix":
       return {
         kicker: "Обучение",
-        title: "Это Матрица адаптации.",
-        lines: ["Сюда устанавливаются патчи Organizm.", "Свободное место ограничено - размещай патчи аккуратно."],
-        primaryLabel: "Далее",
+        title: "Матрица адаптации.",
+        lines: ["Сюда ставятся патчи.", "Место ограничено."],
       };
     case "install":
       return {
         kicker: "Патч",
-        title: "Перетащи патч в Матрицу.",
-        lines: ["На mobile: тапни патч, затем тапни клетку Матрицы.", "Подсвечены клетки, куда можно установить патч."],
+        title: "Поставь первый патч.",
+        lines: ["Тапни патч, затем клетку.", "Можно и перетащить."],
       };
     case "active":
       return {
         kicker: "Активный патч",
-        title: "Активные патчи срабатывают сами.",
-        lines: ["Зарядка - мягкий прогресс по патчу.", "Срабатывание - яркая вспышка во время боя."],
-        primaryLabel: "Понятно",
+        title: "Патчи работают сами.",
+        lines: ["Заряд показывает готовность.", "В бою будет вспышка."],
       };
     case "wave":
       return {
         kicker: "Волна",
-        title: "Запусти волну.",
-        lines: ["Organizm будет защищаться автоматически."],
+        title: "Нажми Битва.",
+        lines: ["Organizm начнёт защиту."],
       };
     case "core":
       return {
         kicker: "Ядро",
-        title: "Следи за ядром.",
-        lines: ["Если HP упадёт до 0, сектор будет заражён."],
+        title: "Следи за HP.",
+        lines: ["Если здоровье упадёт до нуля, сектор заражён."],
       };
     case "enemy":
       return {
         kicker: "Вирусы",
         title: "Вирусы идут к ядру.",
-        lines: ["Некоторые враги атакуют вблизи, другие - издалека."],
+        lines: ["Одни бьют рядом, другие издалека."],
       };
     case "rewards":
       return {
         kicker: "Новые патчи",
-        title: "После волны появляются новые патчи.",
-        lines: [
-          "Установи их или объедини с такими же.",
-          hasHiddenPatches ? "В +N ещё лежат остальные патчи. Они исчезнут после запуска волны." : "Неиспользованные патчи исчезнут после запуска волны.",
-        ],
-        openPatchesLabel: hasHiddenPatches ? "Открыть все" : undefined,
-        primaryLabel: "Далее",
+        title: "Новые патчи исчезнут после боя.",
+        lines: ["Поставь нужные сразу.", "Одинаковые можно объединить."],
       };
     case "merge":
       return {
         kicker: "Слияние",
-        title: "Одинаковые патчи одного уровня можно объединить.",
-        lines: ["На mobile: тапни первый патч, затем подсвеченный такой же патч.", "Новый уровень сильнее."],
-        primaryLabel: "Пропустить",
+        title: "Объедини одинаковые.",
+        lines: ["Тапни первый патч.", "Потом подсвеченный такой же."],
       };
     case "merged":
       return {
         kicker: "Уровень",
         title: "Патч стал сильнее.",
-        lines: ["Уровни отличаются цветом, текстурой и эффектом."],
-        primaryLabel: "Понятно",
+        lines: ["Следующий уровень бьёт мощнее."],
       };
     case "evolution":
       return {
         kicker: "Эволюция",
-        title: canBuyMutation ? "Доступна мутация." : "Мутагены нужны для Эволюции.",
+        title: canBuyMutation ? "Доступна мутация." : "Нужны мутагены.",
         lines: [
           canBuyMutation
-            ? "За уничтожение вирусов ты получаешь мутагены. Потрать их на Эволюцию Organizm."
+            ? "Потрать мутагены на Эволюцию Organizm."
             : `Нужно ещё ${missingMutagens} мутагенов. Получишь больше в следующих попытках.`,
         ],
       };
     case "mutation":
       return {
-        kicker: "Мутационная карта",
-        title: "Мутация открывает новую карту.",
-        lines: ["Повтор уже найденной карты усиливает её уровень."],
+        kicker: "Мутация",
+        title: "Открой карту.",
+        lines: ["Повтор карты усиливает её уровень."],
       };
     case "mutation-card":
       return {
         kicker: "Новая сила",
-        title: "Эта мутация усилит Organizm.",
-        lines: ["Бонус действует в следующих секторах текущей сессии."],
-        primaryLabel: "Понятно",
+        title: "Мутация усилит Organizm.",
+        lines: ["Бонус действует дальше в сессии."],
       };
     case "next-sector":
       return {
         kicker: "Продолжение",
-        title: "Победа ведёт дальше, поражение повторяет сектор.",
-        lines: ["После поражения новые усиления помогают пройти ту же попытку."],
+        title: "Продолжай сектор.",
+        lines: ["Победа ведёт дальше.", "Поражение повторяет попытку."],
       };
     default:
       return null;

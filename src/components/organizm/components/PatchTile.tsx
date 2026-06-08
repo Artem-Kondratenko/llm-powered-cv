@@ -32,7 +32,7 @@ function PatchShape({ item, variant = "card" }: { item: PatchInstance; variant?:
           <span className="organizm-patch-cell__node" />
           <span className="organizm-patch-cell__trace" />
           <span className="organizm-patch-cell__motif" />
-          {cell.x === labelAnchor.x && cell.y === labelAnchor.y ? (
+          {variant !== "card" && cell.x === labelAnchor.x && cell.y === labelAnchor.y ? (
             <>
               <span className="organizm-patch-cell__level">{levelToRoman(item.level)}</span>
               <span className="organizm-patch-cell__mode">{patch.kind === "active" ? "A" : "P"}</span>
@@ -40,7 +40,7 @@ function PatchShape({ item, variant = "card" }: { item: PatchInstance; variant?:
           ) : null}
         </span>
       ))}
-      <span className="organizm-patch-shape__glyph">{patch.kind === "active" ? "A" : "P"}</span>
+      {variant !== "card" ? <span className="organizm-patch-shape__glyph">{patch.kind === "active" ? "A" : "P"}</span> : null}
     </span>
   );
 }
@@ -53,7 +53,7 @@ export function PatchModule({ item, variant = "card" }: { item: PatchInstance; v
       className={`organizm-patch-module organizm-patch-module--${variant} organizm-patch-module--${patch.tone} organizm-patch-module--${patch.motif} organizm-patch-module--level-${item.level}`}
     >
       <PatchShape item={item} variant={variant} />
-      <span className="organizm-patch-module__label">{patch.shortTitle}</span>
+      {variant !== "card" ? <span className="organizm-patch-module__label">{patch.shortTitle}</span> : null}
     </span>
   );
 }

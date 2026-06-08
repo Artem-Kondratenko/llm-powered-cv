@@ -318,14 +318,14 @@ export function getPatchKindLabel(patch: PatchConfig) {
 
 export function getPatchCategoryLabel(patch: PatchConfig) {
   if (patch.category === "attack") {
-    return "атака";
+    return "Атака";
   }
 
   if (patch.category === "defense") {
-    return "защита";
+    return "Защита";
   }
 
-  return "особый";
+  return "Особый";
 }
 
 export function formatCooldown(ms?: number) {

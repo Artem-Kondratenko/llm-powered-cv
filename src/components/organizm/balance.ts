@@ -37,7 +37,6 @@ export const VISIBLE_BATTLE_BOUNDS = { minX: 7, maxX: 93, minY: 7, maxY: 93 };
 export const ATTACK_RADIUS = 64;
 export const BASE_HEALTH = 100;
 export const MAX_PATCH_LEVEL = 3;
-export const MATRIX_GROWTH_BATCH_SIZE = 3;
 export const WAVE_END_DELAY_MS = 800;
 export const LEVEL_END_DELAY_MS = 900;
 export const BOSS_END_DELAY_MS = 1600;

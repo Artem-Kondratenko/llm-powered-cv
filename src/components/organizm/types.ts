@@ -84,6 +84,7 @@ export type BoardPatches = Record<string, PlacedPatch>;
 export type DragState = {
   item: PatchInstance;
   pointerId: number;
+  pointerType: string;
   origin: PatchZone;
   anchor: CellCoord;
   startX: number;
