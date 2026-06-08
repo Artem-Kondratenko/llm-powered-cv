@@ -8,6 +8,7 @@ type PatchTileVariant = "card" | "board" | "ghost";
 function PatchShape({ item, variant = "card" }: { item: PatchInstance; variant?: PatchTileVariant }) {
   const patch = getPatchConfig(item);
   const bounds = getPatchBounds(item);
+  const labelAnchor = patch.labelAnchor ?? patch.shape[0];
   const style = {
     "--organizm-patch-cols": bounds.width,
     "--organizm-patch-rows": bounds.height,
@@ -31,6 +32,12 @@ function PatchShape({ item, variant = "card" }: { item: PatchInstance; variant?:
           <span className="organizm-patch-cell__node" />
           <span className="organizm-patch-cell__trace" />
           <span className="organizm-patch-cell__motif" />
+          {cell.x === labelAnchor.x && cell.y === labelAnchor.y ? (
+            <>
+              <span className="organizm-patch-cell__level">{levelToRoman(item.level)}</span>
+              <span className="organizm-patch-cell__mode">{patch.kind === "active" ? "A" : "P"}</span>
+            </>
+          ) : null}
         </span>
       ))}
       <span className="organizm-patch-shape__glyph">{patch.kind === "active" ? "A" : "P"}</span>
@@ -47,8 +54,6 @@ export function PatchModule({ item, variant = "card" }: { item: PatchInstance; v
     >
       <PatchShape item={item} variant={variant} />
       <span className="organizm-patch-module__label">{patch.shortTitle}</span>
-      <span className="organizm-patch-module__level">{levelToRoman(item.level)}</span>
-      <span className="organizm-patch-module__mode">{patch.kind === "active" ? "A" : "P"}</span>
     </span>
   );
 }

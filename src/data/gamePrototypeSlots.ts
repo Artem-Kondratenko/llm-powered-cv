@@ -22,8 +22,8 @@ export const gamePrototypeSlots: GamePrototypeSlot[] = [
     status: "prototype",
     statusLabel: "MVP",
     description:
-      "Пиксельный автобатлер про цифровой организм. Размещай патчи, запускай защиту и переживи волну вирусов.",
-    ctaLabel: "Запустить",
+      "Размещай патчи в матрице, объединяй их в сильные версии, отбивай волны вирусов и усиливай Organizm мутациями.",
+    ctaLabel: "Играть",
     previewKind: "organizm",
     previewImage: organizmPreview,
     previewAlt: "Неоновое пиксельное превью игры Organizm с ядром организма, патчами и атакующими вирусами",

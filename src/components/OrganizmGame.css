@@ -758,6 +758,10 @@
   z-index: 7;
 }
 
+.organizm-virus--boss .organizm-virus__body {
+  overflow: visible;
+}
+
 .organizm-virus--boss .organizm-virus__aura {
   inset: -18px;
   border-width: 2px;
@@ -805,9 +809,153 @@
   transform: rotate(-38deg);
 }
 
+.organizm-virus__boss-node,
+.organizm-virus__boss-spike-ring {
+  position: absolute;
+  pointer-events: none;
+}
+
+.organizm-virus__boss-node {
+  z-index: 4;
+  width: 24%;
+  height: 24%;
+  display: none;
+  border: 1px solid rgba(255, 255, 255, 0.44);
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 34% 28%, rgba(255, 255, 255, 0.9), transparent 18%),
+    linear-gradient(135deg, var(--organizm-virus-alt), var(--organizm-virus-color));
+  box-shadow: 0 0 12px currentColor;
+}
+
+.organizm-virus__boss-node--one {
+  left: 10%;
+  top: 24%;
+}
+
+.organizm-virus__boss-node--two {
+  right: 8%;
+  top: 30%;
+}
+
+.organizm-virus__boss-node--three {
+  left: 39%;
+  bottom: 2%;
+}
+
+.organizm-virus__boss-spike-ring {
+  left: 50%;
+  top: 50%;
+  z-index: 0;
+  width: 128%;
+  height: 128%;
+  border-radius: 50%;
+  background:
+    repeating-conic-gradient(from 7deg, currentColor 0deg 8deg, transparent 8deg 24deg),
+    radial-gradient(circle, transparent 0 52%, rgba(255, 255, 255, 0.12) 53% 57%, transparent 58%);
+  opacity: 0.48;
+  transform: translate(-50%, -50%);
+  filter: drop-shadow(0 0 10px currentColor);
+  mask: radial-gradient(circle, transparent 0 54%, #000 55% 68%, transparent 70%);
+}
+
+.organizm-virus--boss-capsule {
+  --organizm-virus-color: var(--organizm-purple);
+  --organizm-virus-alt: var(--organizm-pink);
+  --organizm-virus-clip: polygon(50% 0, 83% 11%, 100% 50%, 83% 88%, 50% 100%, 17% 88%, 0 50%, 17% 11%);
+}
+
+.organizm-virus--boss-capsule .organizm-virus__body::before {
+  border-width: 3px;
+  box-shadow:
+    inset 0 0 14px rgba(255, 79, 154, 0.2),
+    0 0 14px rgba(54, 215, 255, 0.2);
+}
+
+.organizm-virus--boss-colony {
+  --organizm-virus-color: var(--organizm-green);
+  --organizm-virus-alt: #d8ff5f;
+  --organizm-virus-clip: none;
+  color: var(--organizm-green);
+}
+
+.organizm-virus--boss-colony .organizm-virus__fill,
+.organizm-virus--boss-colony .organizm-virus__grid {
+  border-radius: 44% 56% 50% 48%;
+  clip-path: none;
+}
+
+.organizm-virus--boss-colony .organizm-virus__body::before,
+.organizm-virus--boss-colony .organizm-virus__body::after {
+  border-radius: 44% 56% 50% 48%;
+  clip-path: none;
+}
+
+.organizm-virus--boss-colony .organizm-virus__boss-node {
+  display: block;
+}
+
+.organizm-virus--boss-colony .organizm-virus__boss-core {
+  background: #eaff87;
+  box-shadow:
+    0 0 12px var(--organizm-green),
+    0 0 22px var(--organizm-purple);
+}
+
+.organizm-virus--boss-colony .organizm-virus__boss-spike-ring {
+  opacity: 0.2;
+}
+
+.organizm-virus--boss-corona {
+  --organizm-virus-color: var(--organizm-pink);
+  --organizm-virus-alt: var(--organizm-orange);
+  --organizm-virus-clip: circle(48% at 50% 50%);
+  color: var(--organizm-pink);
+}
+
+.organizm-virus--boss-corona .organizm-virus__aura {
+  color: var(--organizm-orange);
+}
+
+.organizm-virus--boss-corona .organizm-virus__boss-core {
+  width: 34%;
+  height: 34%;
+  background: #fff3b5;
+  box-shadow:
+    0 0 14px var(--organizm-orange),
+    0 0 24px var(--organizm-pink);
+}
+
+.organizm-virus--boss-corona .organizm-virus__boss-spike-ring {
+  width: 146%;
+  height: 146%;
+  opacity: 0.78;
+  background:
+    repeating-conic-gradient(from 4deg, var(--organizm-orange) 0deg 5deg, transparent 5deg 18deg),
+    radial-gradient(circle, transparent 0 50%, rgba(255, 230, 109, 0.2) 51% 58%, transparent 59%);
+}
+
 .organizm-virus--boss-fractured .organizm-virus__boss-crack--one,
 .organizm-virus--boss-critical .organizm-virus__boss-crack {
   opacity: 0.88;
+}
+
+.organizm-virus--boss-fractured .organizm-virus__boss-spike-ring {
+  opacity: 0.36;
+  transform: translate(-50%, -50%) rotate(11deg);
+}
+
+.organizm-virus--boss-critical .organizm-virus__boss-core {
+  animation: organizm-boss-core-collapse 480ms steps(2, end) infinite;
+}
+
+.organizm-virus--boss-critical .organizm-virus__boss-spike-ring {
+  opacity: 0.2;
+  transform: translate(-50%, -50%) rotate(22deg) scale(0.88);
+}
+
+.organizm-virus--boss-critical .organizm-virus__boss-node--two {
+  opacity: 0.22;
 }
 
 .organizm-virus--boss-critical {
@@ -955,6 +1103,70 @@
   box-shadow: 0 0 18px currentColor, 0 0 28px rgba(54, 215, 255, 0.38);
 }
 
+.organizm-beam-svg {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  width: 100%;
+  height: 100%;
+  display: block;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.organizm-beam-vector {
+  opacity: 0;
+  animation: organizm-beam-flash 430ms ease-out both;
+}
+
+.organizm-beam-line {
+  stroke: currentColor;
+  stroke-width: 3;
+  stroke-linecap: round;
+  filter: drop-shadow(0 0 4px currentColor) drop-shadow(0 0 10px currentColor);
+  vector-effect: non-scaling-stroke;
+}
+
+.organizm-beam-impact {
+  fill: currentColor;
+  filter: drop-shadow(0 0 5px currentColor) drop-shadow(0 0 12px currentColor);
+}
+
+.organizm-beam-line--offset {
+  opacity: 0.68;
+  stroke-width: 0.42;
+}
+
+.organizm-beam--enemy .organizm-beam-line,
+.organizm-beam--enemy-shot .organizm-beam-line,
+.organizm-beam--parasite .organizm-beam-line {
+  stroke-width: 2.4;
+  stroke-dasharray: 7 5;
+}
+
+.organizm-beam--impulse .organizm-beam-line,
+.organizm-beam--shard .organizm-beam-line {
+  stroke-dasharray: 10 6;
+}
+
+.organizm-beam--laser .organizm-beam-line {
+  stroke-width: 2.4;
+}
+
+.organizm-beam--plasma .organizm-beam-line {
+  stroke-width: 5;
+}
+
+.organizm-beam--double .organizm-beam-line {
+  stroke-width: 3.4;
+}
+
+.organizm-beam--boss .organizm-beam-line {
+  stroke-width: 5.2;
+  stroke-dasharray: 12 5;
+  filter: drop-shadow(0 0 6px currentColor) drop-shadow(0 0 16px rgba(54, 215, 255, 0.6));
+}
+
 .organizm-effect {
   position: absolute;
   z-index: 7;
@@ -1037,18 +1249,22 @@
 }
 
 .organizm-effect--boss-collapse {
-  width: 58px;
-  height: 58px;
-  border: 2px solid currentColor;
+  width: 76px;
+  height: 76px;
+  border: 3px solid currentColor;
   border-radius: 50%;
   background:
-    radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.9) 0 8%, transparent 9%),
+    radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.95) 0 7%, rgba(54, 215, 255, 0.72) 8% 12%, transparent 13%),
+    radial-gradient(circle at 50% 50%, transparent 0 34%, rgba(255, 79, 154, 0.34) 35% 39%, transparent 40%),
     repeating-linear-gradient(90deg, currentColor 0 3px, transparent 3px 9px),
     repeating-linear-gradient(0deg, rgba(54, 215, 255, 0.44) 0 2px, transparent 2px 8px);
   box-shadow:
-    0 0 24px currentColor,
-    0 0 42px rgba(54, 215, 255, 0.32);
-  animation: organizm-boss-collapse 1080ms ease-out both;
+    -28px -14px 0 -25px currentColor,
+    23px 18px 0 -24px var(--organizm-cyan),
+    -18px 28px 0 -24px var(--organizm-pink),
+    0 0 30px currentColor,
+    0 0 56px rgba(54, 215, 255, 0.42);
+  animation: organizm-boss-collapse 1680ms ease-out both;
 }
 
 .organizm-effect--pink {
@@ -1450,10 +1666,10 @@
   position: relative;
   width: min(100%, 420px);
   justify-self: center;
-  aspect-ratio: 6 / 5;
+  aspect-ratio: 6 / 4;
   display: grid;
   grid-template-columns: repeat(6, minmax(0, 1fr));
-  grid-template-rows: repeat(5, minmax(0, 1fr));
+  grid-template-rows: repeat(4, minmax(0, 1fr));
   gap: 5px;
   padding: 8px;
   border: 2px solid rgba(54, 215, 255, 0.44);
@@ -1466,6 +1682,21 @@
   background-size: 100% 100%, 24px 24px, 24px 24px, 100% 100%;
   touch-action: none;
   user-select: none;
+}
+
+.organizm-board__cell--locked {
+  border-color: rgba(255, 255, 255, 0.08);
+  background:
+    repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.06) 0 2px, transparent 2px 7px),
+    rgba(4, 8, 16, 0.86);
+  cursor: not-allowed;
+  opacity: 0.66;
+}
+
+.organizm-board__cell--locked::after {
+  border-style: solid;
+  border-color: rgba(255, 79, 154, 0.12);
+  background: radial-gradient(circle at 50% 50%, rgba(255, 79, 154, 0.18), transparent 48%);
 }
 
 .organizm-board__cell {
@@ -1487,6 +1718,22 @@
   inset: 6px;
   border: 1px dashed rgba(103, 232, 249, 0.12);
   border-radius: 3px;
+}
+
+.organizm-board__cell.organizm-board__cell--locked {
+  border-color: rgba(103, 232, 249, 0.035);
+  background:
+    radial-gradient(circle at 50% 50%, rgba(77, 255, 177, 0.035), transparent 48%),
+    repeating-linear-gradient(135deg, rgba(103, 232, 249, 0.035) 0 1px, transparent 1px 8px),
+    rgba(2, 6, 13, 0.44);
+  box-shadow: none;
+  cursor: default;
+  opacity: 0.42;
+  pointer-events: none;
+}
+
+.organizm-board__cell.organizm-board__cell--locked::after {
+  display: none;
 }
 
 .organizm-board-patch,
@@ -1526,7 +1773,24 @@
 }
 
 .organizm-board-patch--active::before {
-  opacity: 0.72;
+  opacity: 0.88;
+}
+
+.organizm-board-patch--active::after {
+  content: "";
+  position: absolute;
+  right: 6px;
+  top: 6px;
+  z-index: 9;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background:
+    conic-gradient(var(--organizm-cyan) var(--organizm-cooldown-progress, 0%), rgba(255, 255, 255, 0.1) 0),
+    rgba(2, 8, 18, 0.78);
+  box-shadow: 0 0 12px rgba(54, 215, 255, 0.24);
+  mask: radial-gradient(circle, transparent 43%, #000 45%);
+  pointer-events: none;
 }
 
 .organizm-board-patch--support::before {
@@ -1568,6 +1832,15 @@
   box-shadow:
     inset 0 0 12px rgba(77, 255, 177, 0.12),
     0 0 14px rgba(77, 255, 177, 0.22);
+}
+
+.organizm-board-patch--ready::after {
+  background:
+    conic-gradient(var(--organizm-green) 100%, rgba(255, 255, 255, 0.1) 0),
+    rgba(2, 8, 18, 0.78);
+  box-shadow:
+    0 0 12px rgba(77, 255, 177, 0.38),
+    0 0 22px rgba(54, 215, 255, 0.16);
 }
 
 .organizm-board-patch--ready .organizm-patch-module {
@@ -1749,6 +2022,37 @@
   pointer-events: none;
 }
 
+.organizm-patch-cell__level,
+.organizm-patch-cell__mode {
+  position: absolute;
+  z-index: 7;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(2, 8, 18, 0.8);
+  color: #f8fdff;
+  font-size: 8px;
+  font-weight: 900;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.organizm-patch-cell__level {
+  right: 4px;
+  top: 4px;
+  min-width: 19px;
+  padding: 2px 4px;
+  border-radius: 999px;
+}
+
+.organizm-patch-cell__mode {
+  left: 4px;
+  bottom: 4px;
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+}
+
 .organizm-patch-cell__motif::before,
 .organizm-patch-cell__motif::after {
   content: "";
@@ -1865,7 +2169,11 @@
 }
 
 .organizm-patch-module--level-2 .organizm-patch-cell {
-  filter: saturate(1.16) brightness(1.1);
+  border-color: rgba(255, 255, 255, 0.5);
+  filter: saturate(1.24) brightness(1.12);
+  box-shadow:
+    inset 0 0 10px rgba(255, 255, 255, 0.11),
+    0 0 14px currentColor !important;
 }
 
 .organizm-patch-module--level-2 .organizm-patch-cell::after {
@@ -1873,7 +2181,16 @@
   border-style: dashed;
 }
 
+.organizm-patch-module--level-2 .organizm-patch-cell::before {
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.34), transparent 42%),
+    linear-gradient(90deg, transparent 31%, rgba(255, 255, 255, 0.18) 32% 34%, transparent 35% 65%, rgba(255, 255, 255, 0.16) 66% 68%, transparent 69%),
+    linear-gradient(0deg, transparent 43%, rgba(2, 8, 18, 0.3) 44% 47%, transparent 48%),
+    repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.16) 0 2px, transparent 2px 6px);
+}
+
 .organizm-patch-module--level-3 .organizm-patch-cell {
+  border-color: rgba(255, 255, 255, 0.66);
   filter: saturate(1.28) brightness(1.18);
   box-shadow:
     inset 0 0 12px rgba(255, 255, 255, 0.14),
@@ -1883,6 +2200,15 @@
 .organizm-patch-module--level-3 .organizm-patch-cell::after {
   inset: 3px;
   border-width: 2px;
+  border-style: double;
+}
+
+.organizm-patch-module--level-3 .organizm-patch-cell::before {
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.44), transparent 38%),
+    linear-gradient(90deg, transparent 24%, rgba(255, 255, 255, 0.22) 25% 28%, transparent 29% 48%, rgba(2, 8, 18, 0.26) 49% 52%, transparent 53% 72%, rgba(255, 255, 255, 0.2) 73% 76%, transparent 77%),
+    linear-gradient(0deg, transparent 24%, rgba(255, 255, 255, 0.18) 25% 28%, transparent 29% 71%, rgba(255, 255, 255, 0.18) 72% 75%, transparent 76%),
+    repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.15) 0 2px, transparent 2px 5px);
 }
 
 .organizm-patch-module--level-3 .organizm-patch-cell__node {
@@ -2142,6 +2468,16 @@
   box-shadow: 0 0 0 2px rgba(77, 255, 177, 0.18);
 }
 
+.organizm-patch-card--merge-target {
+  border-color: rgba(77, 255, 177, 0.82) !important;
+  background:
+    linear-gradient(90deg, rgba(77, 255, 177, 0.16), rgba(54, 215, 255, 0.08)),
+    rgba(8, 18, 36, 0.94) !important;
+  box-shadow:
+    0 0 0 2px rgba(77, 255, 177, 0.2),
+    0 0 20px rgba(77, 255, 177, 0.12);
+}
+
 .organizm-patch-card--placed {
   opacity: 0.62;
 }
@@ -2285,6 +2621,616 @@
   color: var(--organizm-muted);
   font-size: 14px;
   line-height: 1.45;
+}
+
+.organizm-result__stats {
+  width: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px 14px;
+  padding: 12px;
+  border: 1px solid rgba(103, 232, 249, 0.18);
+  border-radius: 8px;
+  background: rgba(2, 8, 18, 0.42);
+  text-align: left;
+}
+
+.organizm-result__stats span,
+.organizm-result__stats strong {
+  font-size: 13px;
+  line-height: 1.1;
+}
+
+.organizm-result__stats strong {
+  color: #f8fdff;
+  text-align: right;
+}
+
+.organizm-result__actions {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.organizm-patch-tooltip-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  padding: 14px;
+  background: rgba(2, 6, 14, 0.44);
+  backdrop-filter: blur(2px);
+}
+
+.organizm-patch-tooltip {
+  width: min(100%, 360px);
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid rgba(103, 232, 249, 0.28);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(54, 215, 255, 0.1), transparent 52%),
+    rgba(4, 10, 21, 0.97);
+  box-shadow:
+    0 24px 70px rgba(0, 0, 0, 0.48),
+    0 0 36px rgba(54, 215, 255, 0.14);
+}
+
+.organizm-patch-tooltip__top {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.organizm-patch-tooltip__top span,
+.organizm-patch-tooltip__grid span {
+  color: var(--organizm-muted);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+
+.organizm-patch-tooltip__top strong {
+  display: block;
+  margin-top: 3px;
+  color: #f8fdff;
+  font-size: 17px;
+  font-weight: 900;
+  line-height: 1.05;
+}
+
+.organizm-patch-tooltip__close {
+  width: 42px;
+  min-height: 42px !important;
+  padding: 0 !important;
+}
+
+.organizm-patch-tooltip__grid {
+  display: grid;
+  grid-template-columns: repeat(2, auto);
+  justify-content: start;
+  gap: 5px 12px;
+}
+
+.organizm-patch-tooltip__grid strong {
+  color: var(--organizm-text);
+  font-size: 12px;
+  line-height: 1.1;
+}
+
+.organizm-patch-tooltip p {
+  margin: 0;
+  color: #cdece5;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.organizm-patch-tooltip__actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.organizm-floating-number--mutagen {
+  color: var(--organizm-green);
+  text-shadow:
+    0 0 10px rgba(77, 255, 177, 0.88),
+    1px 0 rgba(182, 108, 255, 0.42);
+}
+
+.organizm-mutations {
+  display: grid;
+  gap: 14px;
+  padding: 0 22px 22px;
+}
+
+.organizm-mutations__header,
+.organizm-mutations__roll,
+.organizm-mutations__result,
+.organizm-mutation-list,
+.organizm-mutations__catalog,
+.organizm-mutations__actions {
+  border: 1px solid rgba(103, 232, 249, 0.18);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(77, 255, 177, 0.08), transparent 50%),
+    var(--organizm-panel);
+}
+
+.organizm-mutations__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px;
+}
+
+.organizm-mutations__header span,
+.organizm-mutations__roll span,
+.organizm-mutation-card span,
+.organizm-mutation-chip small {
+  color: var(--organizm-muted);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+
+.organizm-mutations__header h3 {
+  margin: 4px 0 0;
+  color: #f8fdff;
+  font-size: clamp(24px, 4vw, 38px);
+  font-weight: 900;
+  line-height: 0.95;
+}
+
+.organizm-mutations__currency {
+  min-width: 150px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 4px 8px;
+  align-items: center;
+  padding: 10px;
+  border: 1px solid rgba(77, 255, 177, 0.28);
+  border-radius: 8px;
+  background: rgba(2, 8, 18, 0.5);
+}
+
+.organizm-mutations__currency strong {
+  grid-column: 2;
+  color: #f8fdff;
+  font-size: 24px;
+  line-height: 1;
+}
+
+.organizm-mutations__roll {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  padding: 14px;
+}
+
+.organizm-mutations__roll strong {
+  display: block;
+  margin-top: 4px;
+  color: #f8fdff;
+  font-size: 20px;
+  line-height: 1;
+}
+
+.organizm-mutations__roll small {
+  display: block;
+  margin-top: 7px;
+  color: #cdece5;
+  font-size: 12px;
+  line-height: 1.25;
+}
+
+.organizm-mutations__roll button,
+.organizm-mutations__actions button {
+  min-height: 52px;
+  border-color: rgba(77, 255, 177, 0.58);
+  background:
+    linear-gradient(90deg, rgba(77, 255, 177, 0.24), rgba(54, 215, 255, 0.14)),
+    #07131e;
+}
+
+.organizm-mutations__result,
+.organizm-mutation-list,
+.organizm-mutations__catalog,
+.organizm-mutations__actions {
+  padding: 12px;
+}
+
+.organizm-mutation-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.organizm-mutation-card {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  padding: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 8px;
+  background: rgba(2, 8, 18, 0.54);
+}
+
+.organizm-mutation-card strong {
+  display: block;
+  margin-top: 3px;
+  color: #f8fdff;
+  font-size: 15px;
+  font-weight: 900;
+  line-height: 1.05;
+}
+
+.organizm-mutation-card small {
+  display: block;
+  margin-top: 4px;
+  color: #cdece5;
+  font-size: 12px;
+  line-height: 1.25;
+}
+
+.organizm-mutation-card i {
+  max-width: 112px;
+  color: var(--organizm-green);
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 900;
+  line-height: 1.2;
+  text-align: right;
+}
+
+.organizm-mutation-card__icon {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border: 1px solid currentColor;
+  border-radius: 8px;
+  color: var(--organizm-cyan);
+  background:
+    radial-gradient(circle at 38% 28%, rgba(255, 255, 255, 0.62), transparent 13%),
+    rgba(255, 255, 255, 0.08);
+  box-shadow: 0 0 16px currentColor;
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.organizm-mutation-card--green .organizm-mutation-card__icon,
+.organizm-mutation-chip--green span {
+  color: var(--organizm-green);
+}
+
+.organizm-mutation-card--pink .organizm-mutation-card__icon,
+.organizm-mutation-chip--pink span {
+  color: var(--organizm-pink);
+}
+
+.organizm-mutation-card--purple .organizm-mutation-card__icon,
+.organizm-mutation-chip--purple span {
+  color: var(--organizm-purple);
+}
+
+.organizm-mutation-card--orange .organizm-mutation-card__icon,
+.organizm-mutation-chip--orange span {
+  color: var(--organizm-orange);
+}
+
+.organizm-mutation-card--blue .organizm-mutation-card__icon,
+.organizm-mutation-chip--blue span {
+  color: var(--organizm-blue);
+}
+
+.organizm-mutation-card--yellow .organizm-mutation-card__icon,
+.organizm-mutation-chip--yellow span {
+  color: var(--organizm-yellow);
+}
+
+.organizm-mutation-card--teal .organizm-mutation-card__icon,
+.organizm-mutation-chip--teal span {
+  color: var(--organizm-teal);
+}
+
+.organizm-mutation-card--cyan .organizm-mutation-card__icon,
+.organizm-mutation-chip--cyan span {
+  color: var(--organizm-cyan);
+}
+
+.organizm-mutations__catalog {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.organizm-mutation-chip {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+  padding: 9px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  background: rgba(2, 8, 18, 0.44);
+}
+
+.organizm-mutation-chip span {
+  font-size: 11px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.organizm-mutation-chip strong {
+  overflow-wrap: anywhere;
+  color: #f8fdff;
+  font-size: 12px;
+  line-height: 1.1;
+}
+
+.organizm-mutations__actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.organizm-mutations__empty {
+  display: grid;
+  place-items: center;
+  min-height: 72px;
+  padding: 12px;
+  border: 1px dashed rgba(103, 232, 249, 0.18);
+  border-radius: 8px;
+  color: var(--organizm-muted);
+  font-size: 13px;
+  line-height: 1.35;
+  text-align: center;
+}
+
+.organizm-mutations__header {
+  align-items: stretch;
+}
+
+.organizm-mutations__header p {
+  max-width: 620px;
+  margin: 8px 0 0;
+  color: #cdece5;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.organizm-mutations__stats {
+  min-width: 250px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.organizm-mutations__stats div,
+.organizm-mutations__notice,
+.organizm-mutations__deck {
+  border: 1px solid rgba(103, 232, 249, 0.18);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(77, 255, 177, 0.08), transparent 50%),
+    var(--organizm-panel);
+}
+
+.organizm-mutations__stats div {
+  min-width: 0;
+  display: grid;
+  gap: 5px;
+  padding: 10px;
+}
+
+.organizm-mutations__stats span,
+.organizm-mutations__notice span,
+.organizm-mutation-card__copy span,
+.organizm-mutation-card__bonus small {
+  color: var(--organizm-muted);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+
+.organizm-mutations__stats strong {
+  color: #f8fdff;
+  font-size: 22px;
+  line-height: 1;
+}
+
+.organizm-mutations__notice {
+  display: grid;
+  grid-template-columns: auto minmax(0, auto) minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+}
+
+.organizm-mutations__notice strong {
+  color: #f8fdff;
+  font-size: 15px;
+  line-height: 1.1;
+}
+
+.organizm-mutations__notice span:last-child {
+  min-width: 0;
+  color: #cdece5;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.organizm-mutations__deck {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  padding: 12px;
+}
+
+.organizm-mutations__deck .organizm-mutation-card {
+  position: relative;
+  min-height: 172px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  align-content: stretch;
+  gap: 9px;
+  padding: 12px;
+  overflow: hidden;
+  border-color: rgba(103, 232, 249, 0.18);
+  background:
+    radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.08), transparent 55%),
+    rgba(2, 8, 18, 0.66);
+}
+
+.organizm-mutations__deck .organizm-mutation-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background:
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.07) 0 1px, transparent 1px 8px),
+    repeating-linear-gradient(0deg, currentColor 0 1px, transparent 1px 14px);
+  opacity: 0.08;
+  pointer-events: none;
+}
+
+.organizm-mutations__deck .organizm-mutation-card--revealed {
+  animation: organizm-mutation-reveal 780ms ease-out both;
+}
+
+.organizm-mutation-card--locked {
+  color: rgba(103, 232, 249, 0.38);
+  border-style: dashed;
+  background:
+    linear-gradient(135deg, rgba(103, 232, 249, 0.05), transparent 54%),
+    rgba(2, 6, 13, 0.58) !important;
+  opacity: 0.78;
+}
+
+.organizm-mutation-card--locked .organizm-mutation-card__icon {
+  color: rgba(103, 232, 249, 0.56);
+  box-shadow: 0 0 14px rgba(103, 232, 249, 0.16);
+}
+
+.organizm-mutation-card--locked strong,
+.organizm-mutation-card--locked small {
+  color: rgba(205, 236, 229, 0.58);
+}
+
+.organizm-mutations__deck .organizm-mutation-card__icon {
+  width: 48px;
+  height: 48px;
+  justify-self: start;
+}
+
+.organizm-mutation-card__copy {
+  min-width: 0;
+  display: grid;
+  gap: 5px;
+}
+
+.organizm-mutation-card__copy strong {
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-size: 15px;
+  line-height: 1.05;
+}
+
+.organizm-mutation-card__copy small {
+  margin: 0;
+  color: #cdece5;
+  font-size: 11px;
+  line-height: 1.25;
+}
+
+.organizm-mutation-card__bonus {
+  min-height: 46px;
+  display: grid;
+  align-content: start;
+  gap: 4px;
+  padding-top: 9px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.organizm-mutation-card__bonus strong {
+  margin: 0;
+  color: var(--organizm-green);
+  font-size: 12px;
+  line-height: 1.2;
+}
+
+.organizm-mutation-card--pink {
+  border-color: rgba(255, 79, 154, 0.32);
+}
+
+.organizm-mutation-card--orange {
+  border-color: rgba(255, 138, 61, 0.32);
+}
+
+.organizm-mutation-card--cyan {
+  border-color: rgba(54, 215, 255, 0.32);
+}
+
+.organizm-mutation-card--green {
+  border-color: rgba(77, 255, 177, 0.32);
+}
+
+.organizm-mutation-card--purple {
+  border-color: rgba(182, 108, 255, 0.34);
+}
+
+.organizm-mutation-card--yellow {
+  border-color: rgba(255, 230, 109, 0.34);
+}
+
+.organizm-mutation-card--blue {
+  border-color: rgba(95, 157, 255, 0.34);
+}
+
+.organizm-mutation-card--teal {
+  border-color: rgba(57, 246, 208, 0.34);
+}
+
+.organizm-mutations__mutate {
+  min-width: 210px;
+  min-height: 64px !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  border-color: rgba(77, 255, 177, 0.74) !important;
+  background:
+    linear-gradient(90deg, rgba(77, 255, 177, 0.3), rgba(54, 215, 255, 0.2)),
+    rgba(6, 20, 30, 0.96) !important;
+  box-shadow: 0 0 28px rgba(77, 255, 177, 0.16);
+}
+
+.organizm-mutations__mutate strong {
+  margin: 0;
+  color: #f8fdff;
+  font-size: 18px;
+}
+
+.organizm-mutations__mutate:disabled {
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  background: rgba(7, 12, 22, 0.82) !important;
+  box-shadow: none;
 }
 
 @keyframes organizm-core-pulse {
@@ -2452,6 +3398,19 @@
   }
 }
 
+@keyframes organizm-boss-core-collapse {
+  0%,
+  100% {
+    filter: brightness(1);
+    transform: translate(-50%, -50%) scale(1);
+  }
+
+  50% {
+    filter: brightness(1.8) saturate(1.4);
+    transform: translate(-50%, -50%) scale(0.78);
+  }
+}
+
 @keyframes organizm-floating-number {
   0% {
     opacity: 0;
@@ -2511,25 +3470,31 @@
 @keyframes organizm-boss-collapse {
   0% {
     opacity: 0;
-    transform: translate(-50%, -50%) scale(0.72) rotate(0deg);
+    transform: translate(-50%, -50%) scale(0.54) rotate(0deg);
     filter: brightness(1.1);
   }
 
-  28% {
+  18% {
     opacity: 1;
-    transform: translate(-50%, -50%) scale(1.05) rotate(12deg);
-    filter: brightness(1.6);
+    transform: translate(-50%, -50%) scale(1.08) rotate(12deg);
+    filter: brightness(1.7);
   }
 
-  58% {
+  42% {
     opacity: 0.9;
     transform: translate(-50%, -50%) scale(0.72) rotate(-18deg);
-    filter: brightness(2);
+    filter: brightness(2.25) saturate(1.4);
+  }
+
+  68% {
+    opacity: 0.95;
+    transform: translate(-50%, -50%) scale(1.55) rotate(32deg);
+    filter: brightness(2.6) saturate(1.7);
   }
 
   100% {
     opacity: 0;
-    transform: translate(-50%, -50%) scale(2.25) rotate(44deg);
+    transform: translate(-50%, -50%) scale(3.1) rotate(72deg);
     filter: brightness(0.8);
   }
 }
@@ -2553,6 +3518,28 @@
 
   50% {
     filter: saturate(1.28) brightness(1.14);
+  }
+}
+
+@keyframes organizm-mutation-reveal {
+  0% {
+    filter: brightness(0.74) saturate(0.8);
+    transform: translateY(0) scale(0.96);
+  }
+
+  28% {
+    filter: brightness(1.9) saturate(1.5);
+    transform: translateY(-3px) scale(1.03);
+  }
+
+  54% {
+    filter: brightness(1.25) saturate(1.2);
+    transform: translateY(0) scale(1);
+  }
+
+  100% {
+    filter: brightness(1) saturate(1);
+    transform: translateY(0) scale(1);
   }
 }
 
@@ -2734,7 +3721,8 @@
   .organizm-game--battle,
   .organizm-game--victory,
   .organizm-game--level-cleared,
-  .organizm-game--defeat {
+  .organizm-game--defeat,
+  .organizm-game--mutations {
     grid-template-rows: auto auto minmax(0, 1fr);
   }
 
@@ -2790,10 +3778,11 @@
 
   .organizm-game__layout {
     min-height: 0;
-    overflow: auto;
+    overflow: hidden;
     display: grid;
     grid-template-columns: 1fr;
-    gap: 8px;
+    align-content: start;
+    gap: 7px;
     padding: 0 0 calc(86px + env(safe-area-inset-bottom));
   }
 
@@ -2808,7 +3797,7 @@
   }
 
   .organizm-game__layout--prep .organizm-command-panel {
-    order: 2;
+    display: none;
   }
 
   .organizm-game__layout--battle .organizm-battle-shell {
@@ -2820,7 +3809,7 @@
   }
 
   .organizm-game__layout--battle .organizm-command-panel {
-    order: 3;
+    display: none;
   }
 
   .organizm-battle-shell,
@@ -2953,8 +3942,7 @@
   }
 
   .organizm-details {
-    gap: 7px;
-    padding: 8px;
+    display: none;
   }
 
   .organizm-details__title strong {
@@ -2973,6 +3961,18 @@
 
   .organizm-workbench {
     gap: 8px;
+  }
+
+  .organizm-game__layout--battle .organizm-workbench {
+    justify-items: center;
+  }
+
+  .organizm-game__layout--battle .organizm-board-shell {
+    width: min(100%, 330px);
+  }
+
+  .organizm-game__layout--battle .organizm-board-shell__top {
+    display: none;
   }
 
   .organizm-board-shell,
@@ -2997,10 +3997,14 @@
   }
 
   .organizm-board {
-    width: min(100%, 380px);
+    width: min(100%, 356px);
     gap: 4px;
     padding: 5px;
     border-width: 2px;
+  }
+
+  .organizm-game__layout--battle .organizm-board {
+    width: min(100%, 312px);
   }
 
   .organizm-board__cell {
@@ -3054,9 +4058,118 @@
   }
 
   .organizm-patch-card {
-    flex: 0 0 214px;
+    flex: 0 0 204px;
     min-height: 74px !important;
     padding: 8px !important;
+  }
+
+  .organizm-patch-cell__level {
+    right: 2px;
+    top: 2px;
+    min-width: 16px;
+    padding: 1px 3px;
+    font-size: 7px;
+  }
+
+  .organizm-patch-cell__mode {
+    left: 2px;
+    bottom: 2px;
+    width: 13px;
+    height: 13px;
+    font-size: 7px;
+  }
+
+  .organizm-board-patch--active::after {
+    right: 3px;
+    top: 3px;
+    width: 18px;
+    height: 18px;
+  }
+
+  .organizm-patch-tooltip-backdrop {
+    position: fixed;
+    padding: 10px;
+  }
+
+  .organizm-patch-tooltip {
+    align-self: center;
+    gap: 8px;
+    padding: 10px;
+  }
+
+  .organizm-patch-tooltip__top strong {
+    font-size: 15px;
+  }
+
+  .organizm-patch-tooltip p {
+    font-size: 12px;
+  }
+
+  .organizm-patch-tooltip__actions {
+    gap: 6px;
+  }
+
+  .organizm-patch-tooltip__actions button {
+    min-height: 42px;
+    padding: 0 8px !important;
+    font-size: 12px;
+  }
+
+  .organizm-mutations {
+    min-height: 0;
+    overflow: auto;
+    gap: 8px;
+    padding: 0 0 calc(10px + env(safe-area-inset-bottom));
+  }
+
+  .organizm-mutations__header,
+  .organizm-mutations__roll {
+    padding: 10px;
+  }
+
+  .organizm-mutations__header {
+    align-items: stretch;
+  }
+
+  .organizm-mutations__header h3 {
+    font-size: 24px;
+  }
+
+  .organizm-mutations__currency {
+    min-width: 112px;
+    padding: 8px;
+  }
+
+  .organizm-mutations__currency strong {
+    font-size: 18px;
+  }
+
+  .organizm-mutations__roll {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .organizm-mutations__roll button {
+    width: 100%;
+  }
+
+  .organizm-mutation-list,
+  .organizm-mutations__catalog {
+    grid-template-columns: 1fr;
+  }
+
+  .organizm-mutation-card {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .organizm-mutation-card i {
+    grid-column: 2;
+    max-width: none;
+    text-align: left;
+  }
+
+  .organizm-mutations__actions,
+  .organizm-result__actions {
+    grid-template-columns: 1fr;
   }
 
   .organizm-patch-card__copy strong {
@@ -3105,6 +4218,81 @@
   }
 
   .organizm-patch-card {
-    flex-basis: 198px;
+    flex-basis: 190px;
+  }
+}
+
+@media (max-width: 720px) {
+  .organizm-mutations__header {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .organizm-mutations__header p {
+    font-size: 12px;
+  }
+
+  .organizm-mutations__stats {
+    min-width: 0;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .organizm-mutations__stats div {
+    padding: 8px;
+  }
+
+  .organizm-mutations__stats strong {
+    font-size: 17px;
+  }
+
+  .organizm-mutations__notice {
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 8px;
+    padding: 9px;
+  }
+
+  .organizm-mutations__notice span:last-child {
+    grid-column: 1 / -1;
+  }
+
+  .organizm-mutations__deck {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 7px;
+    padding: 7px;
+  }
+
+  .organizm-mutations__deck .organizm-mutation-card {
+    min-height: 150px;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 7px;
+    padding: 9px;
+  }
+
+  .organizm-mutations__deck .organizm-mutation-card__icon {
+    width: 38px;
+    height: 38px;
+  }
+
+  .organizm-mutation-card__copy strong {
+    font-size: 13px;
+  }
+
+  .organizm-mutation-card__copy small,
+  .organizm-mutation-card__bonus strong {
+    font-size: 10px;
+  }
+
+  .organizm-mutation-card__bonus {
+    min-height: 40px;
+    padding-top: 7px;
+  }
+
+  .organizm-mutations__roll {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .organizm-mutations__mutate {
+    width: 100%;
+    min-width: 0;
   }
 }

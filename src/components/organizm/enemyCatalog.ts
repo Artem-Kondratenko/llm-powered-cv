@@ -12,6 +12,8 @@ export const ENEMIES: Record<EnemyTypeId, EnemyConfig> = {
     damage: 6,
     hitRadius: 3.2,
     size: 24,
+    mutagens: 1,
+    mutagenEveryKills: 3,
   },
   "square-brute": {
     id: "square-brute",
@@ -24,6 +26,7 @@ export const ENEMIES: Record<EnemyTypeId, EnemyConfig> = {
     damage: 11,
     hitRadius: 4.1,
     size: 30,
+    mutagens: 2,
   },
   "spiked-star": {
     id: "spiked-star",
@@ -36,6 +39,7 @@ export const ENEMIES: Record<EnemyTypeId, EnemyConfig> = {
     damage: 15,
     hitRadius: 4,
     size: 30,
+    mutagens: 1,
   },
   "worm-parasite": {
     id: "worm-parasite",
@@ -51,6 +55,7 @@ export const ENEMIES: Record<EnemyTypeId, EnemyConfig> = {
     attackIntervalMs: 1700,
     firstAttackDelayMs: 900,
     swerve: 0.55,
+    mutagens: 2,
   },
   "glitch-shard": {
     id: "glitch-shard",
@@ -66,6 +71,7 @@ export const ENEMIES: Record<EnemyTypeId, EnemyConfig> = {
     stopDistance: 34,
     attackIntervalMs: 1450,
     firstAttackDelayMs: 640,
+    mutagens: 1,
   },
   "glitch-capsule": {
     id: "glitch-capsule",
@@ -83,6 +89,7 @@ export const ENEMIES: Record<EnemyTypeId, EnemyConfig> = {
     firstAttackDelayMs: 780,
     boss: true,
     glitchIntervalMs: 4700,
+    mutagens: 8,
   },
 };
 

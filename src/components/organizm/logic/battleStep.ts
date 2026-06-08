@@ -7,6 +7,7 @@ import type {
   BattleFloatNumber,
   BattleState,
   EnemyState,
+  MutationCombatStats,
   PassiveStats,
   PatchCooldowns,
   PatchTone,
@@ -31,6 +32,7 @@ export type BattleStepInput = {
   health: number;
   maxHealth: number;
   passiveStats: PassiveStats;
+  mutationStats: MutationCombatStats;
   cooldowns: PatchCooldowns;
   idFactory: IdFactory;
   random?: () => number;
@@ -40,6 +42,7 @@ export type BattleStepResult = {
   battle: BattleState;
   health: number;
   cooldowns: PatchCooldowns;
+  mutagensEarned: number;
 };
 
 export function createEnemy(index: number, wave: WaveConfig, frameNow = 0): EnemyState {
@@ -61,17 +64,18 @@ export function createEnemy(index: number, wave: WaveConfig, frameNow = 0): Enem
     id: index + 1,
     typeId,
     ...coordinates,
-    hp: config.hp,
-    maxHp: config.hp,
+    hp: Math.ceil(config.hp * (wave.enemyHpMultiplier ?? 1)),
+    maxHp: Math.ceil(config.hp * (wave.enemyHpMultiplier ?? 1)),
     hitRadius: config.hitRadius,
-    damage: config.damage,
-    speed: config.speed,
+    damage: Math.ceil(config.damage * (wave.enemyDamageMultiplier ?? 1)),
+    speed: config.speed * (wave.enemySpeedMultiplier ?? 1),
     lastKnownX: coordinates.x,
     lastKnownY: coordinates.y,
     isVisible: false,
     isAlive: true,
     nextAttackAt: frameNow + (config.firstAttackDelayMs ?? config.attackIntervalMs ?? 1200),
     nextGlitchAt: config.glitchIntervalMs ? frameNow + config.glitchIntervalMs : undefined,
+    bossVariant: config.boss ? wave.bossVariant ?? "capsule" : undefined,
     pathSeed: (index * 1.618 + wave.waveNumber * 0.73) % (Math.PI * 2),
     damageFlashUntil: 0,
   };
@@ -100,7 +104,7 @@ export function createBattleState(wave: WaveConfig, loadout: PlacedPatch[] = [],
 
 function getEffectLifetime(effect: BattleEffect) {
   if (effect.type === "boss-collapse") {
-    return 1120;
+    return 1720;
   }
 
   if (effect.type === "shatter" || effect.type === "boss-glitch") {
@@ -162,8 +166,10 @@ function applyDamageToEnemy(
   idFactory: IdFactory,
   tone: PatchTone,
   visual: AttackVisual,
+  valueLabel?: string,
 ) {
   let killed = 0;
+  let mutagensEarned = 0;
   const nextEnemies = enemies
     .map((enemy) => {
       if (enemy.id !== targetId) {
@@ -171,7 +177,7 @@ function applyDamageToEnemy(
       }
 
       addEffect(effects, idFactory, "hit", enemy.x, enemy.y, frameNow, tone, visual);
-      addFloatingNumber(floaters, idFactory, `-${damage}`, enemy.x, enemy.y - enemy.hitRadius - 2, frameNow, tone, "damage");
+      addFloatingNumber(floaters, idFactory, valueLabel ?? `-${damage}`, enemy.x, enemy.y - enemy.hitRadius - 2, frameNow, tone, "damage");
 
       return {
         ...enemy,
@@ -188,7 +194,12 @@ function applyDamageToEnemy(
 
       killed += 1;
       const config = getEnemyConfig(enemy.typeId);
+      const mutagenReward = config.mutagenEveryKills && enemy.id % config.mutagenEveryKills !== 0 ? 0 : config.mutagens;
+      mutagensEarned += mutagenReward;
       addEffect(effects, idFactory, "shatter", enemy.lastKnownX, enemy.lastKnownY, frameNow, config.tone, visual);
+      if (mutagenReward > 0) {
+        addFloatingNumber(floaters, idFactory, `+${mutagenReward}`, enemy.lastKnownX + 3, enemy.lastKnownY - 7, frameNow, "green", "mutagen");
+      }
 
       if (config.boss) {
         addEffect(effects, idFactory, "boss-collapse", enemy.lastKnownX, enemy.lastKnownY, frameNow, config.tone, "boss");
@@ -197,7 +208,7 @@ function applyDamageToEnemy(
       return false;
     });
 
-  return { enemies: nextEnemies, killed };
+  return { enemies: nextEnemies, killed, mutagensEarned };
 }
 
 function markPatchReady(patchReady: Partial<Record<string, boolean>>, uid: string) {
@@ -241,6 +252,7 @@ export function runBattleStep({
   health,
   maxHealth,
   passiveStats,
+  mutationStats,
   cooldowns,
   idFactory,
   random = Math.random,
@@ -251,6 +263,7 @@ export function runBattleStep({
   let lastSpawnAt = current.lastSpawnAt;
   let breachedDelta = 0;
   let killedDelta = 0;
+  let mutagensEarnedDelta = 0;
   let slowUntil = current.slowUntil;
   let slowMultiplier = current.slowMultiplier;
   const beams = current.beams.filter((beam) => frameNow - beam.createdAt < BEAM_LIFETIME_MS);
@@ -263,7 +276,7 @@ export function runBattleStep({
   let nextHealth = health;
 
   function applyCoreDamage(rawDamage: number, tone: PatchTone, x = CORE_POINT.x, y = CORE_POINT.y) {
-    const incomingDamage = Math.max(1, rawDamage - passiveStats.damageReduction);
+    const incomingDamage = Math.max(1, rawDamage - passiveStats.damageReduction - mutationStats.armorBonus);
     nextHealth = Math.max(0, nextHealth - incomingDamage);
     breachedDelta += 1;
     addEffect(effects, idFactory, "breach", CORE_POINT.x, CORE_POINT.y, frameNow, tone);
@@ -333,7 +346,7 @@ export function runBattleStep({
             return;
           }
 
-          const hasteMultiplier = Math.max(0.65, 1 - passiveStats.hastePercent / 100);
+          const hasteMultiplier = Math.max(0.55, 1 - (passiveStats.hastePercent + mutationStats.hastePercent) / 100);
           const cooldownMs = stats.cooldownMs * hasteMultiplier;
 
           if (patchReady[item.uid]) {
@@ -394,7 +407,7 @@ export function runBattleStep({
       return;
     }
 
-    const hasteMultiplier = Math.max(0.65, 1 - passiveStats.hastePercent / 100);
+    const hasteMultiplier = Math.max(0.55, 1 - (passiveStats.hastePercent + mutationStats.hastePercent) / 100);
     const cooldownMs = stats.cooldownMs * hasteMultiplier;
     const previousTrigger = nextCooldowns[item.uid] ?? Number.NEGATIVE_INFINITY;
     const chargeProgress = Math.max(0, Math.min(1, (frameNow - previousTrigger) / cooldownMs));
@@ -467,22 +480,29 @@ export function runBattleStep({
           createdAt: frameNow,
         });
 
+        const baseDamage = Math.max(1, Math.round(stats.damage! * (1 + mutationStats.damagePercent / 100)));
+        const isCrit = mutationStats.critChancePercent > 0 && random() * 100 < mutationStats.critChancePercent;
+        const damage = isCrit ? Math.max(1, Math.round(baseDamage * (1.5 + mutationStats.critDamagePercent / 100))) : baseDamage;
         const damageResult = applyDamageToEnemy(
           enemies,
           targetId,
-          stats.damage!,
+          damage,
           frameNow,
           effects,
           floaters,
           idFactory,
           patch.tone,
           visual,
+          isCrit ? `CRIT -${damage}` : undefined,
         );
         enemies = damageResult.enemies;
         killedDelta += damageResult.killed;
+        mutagensEarnedDelta += damageResult.mutagensEarned;
       });
 
-      if (passiveStats.doubleShotChance > 0 && random() * 100 < passiveStats.doubleShotChance) {
+      const doubleShotChance = passiveStats.doubleShotChance + mutationStats.doubleShotChancePercent;
+
+      if (doubleShotChance > 0 && random() * 100 < doubleShotChance) {
         const extraTarget = sortTargetableByDistance(enemies, CORE_POINT)[0] ?? null;
 
         if (extraTarget) {
@@ -498,10 +518,11 @@ export function runBattleStep({
             visual: "double",
             createdAt: frameNow,
           });
+          const doubleDamage = Math.max(1, Math.round(stats.damage * (1 + mutationStats.damagePercent / 100)));
           const damageResult = applyDamageToEnemy(
             enemies,
             extraTarget.id,
-            stats.damage,
+            doubleDamage,
             frameNow,
             effects,
             floaters,
@@ -511,6 +532,7 @@ export function runBattleStep({
           );
           enemies = damageResult.enemies;
           killedDelta += damageResult.killed;
+          mutagensEarnedDelta += damageResult.mutagensEarned;
         }
       }
 
@@ -538,6 +560,7 @@ export function runBattleStep({
   return {
     health: Math.round(nextHealth),
     cooldowns: nextCooldowns,
+    mutagensEarned: mutagensEarnedDelta,
     battle: {
       wave: current.wave,
       loadout: current.loadout,

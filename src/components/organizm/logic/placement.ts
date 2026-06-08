@@ -1,4 +1,4 @@
-import { BOARD_COLS, BOARD_ROWS } from "../balance";
+import { BOARD_COLS, BOARD_ROWS, BOARD_START_COLS, BOARD_START_ROWS } from "../balance";
 import { getPatchConfig } from "../patchCatalog";
 import type { BoardPatches, BoardPosition, CellCoord, PatchInstance, PlacementValidation, PlacedPatch } from "../types";
 
@@ -8,6 +8,10 @@ export function cellKey(cell: CellCoord) {
 
 export function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
+}
+
+export function isCellAvailable(cell: CellCoord, unlockedCells: Set<string>) {
+  return (cell.x < BOARD_START_COLS && cell.y < BOARD_START_ROWS) || unlockedCells.has(cellKey(cell));
 }
 
 export function getBoardEntries(boardPatches: BoardPatches) {
@@ -26,6 +30,7 @@ export function getPlacementValidation(
   position: BoardPosition | null,
   boardPatches: BoardPatches,
   ignoreUid?: string,
+  unlockedCells: Set<string> = new Set(),
 ): PlacementValidation {
   if (!position) {
     return { valid: false, reason: "Перетащи патч в матрицу адаптации." };
@@ -35,7 +40,13 @@ export function getPlacementValidation(
   const isInside = cells.every((cell) => cell.x >= 0 && cell.x < BOARD_COLS && cell.y >= 0 && cell.y < BOARD_ROWS);
 
   if (!isInside) {
-    return { valid: false, reason: "Форма выходит за границы поля 6 x 5." };
+    return { valid: false, reason: "Форма выходит за границы матрицы." };
+  }
+
+  const isUnlocked = cells.every((cell) => isCellAvailable(cell, unlockedCells));
+
+  if (!isUnlocked) {
+    return { valid: false, reason: "Клетка роста ткани ещё заблокирована." };
   }
 
   const occupiedCells = new Map<string, string>();

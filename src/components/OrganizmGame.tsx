@@ -9,10 +9,26 @@ import {
   Shield,
   Sparkles,
   Trash2,
+  X,
   Zap,
 } from "lucide-react";
 import { type CSSProperties, type PointerEvent, type RefObject, useEffect, useMemo, useRef, useState } from "react";
-import { BASE_HEALTH, BOARD_COLS, BOARD_ROWS, LEVEL_TITLE, MUTAGENS, WAVE_CONFIGS } from "./organizm/balance";
+import {
+  BASE_HEALTH,
+  BOSS_END_DELAY_MS,
+  BOARD_COLS,
+  BOARD_ROWS,
+  BOARD_START_COLS,
+  BOARD_START_ROWS,
+  DEFEAT_DELAY_MS,
+  EXPANSION_CELLS,
+  LEVEL_END_DELAY_MS,
+  WAVE_END_DELAY_MS,
+  getScaledWaveConfig,
+  getSectorTitle,
+  getShortSectorTitle,
+  WAVE_CONFIGS,
+} from "./organizm/balance";
 import { EnemySprite } from "./organizm/components/EnemySprite";
 import { PatchModule } from "./organizm/components/PatchTile";
 import { createBattleState, runBattleStep as advanceBattleStep } from "./organizm/logic/battleStep";
@@ -23,8 +39,8 @@ import {
   getBoardEntries,
   getOverlappingBoardPatch,
   getPlacementValidation,
+  isCellAvailable,
 } from "./organizm/logic/placement";
-import { getDistance } from "./organizm/logic/targeting";
 import {
   canMergeItems,
   formatCooldown,
@@ -34,14 +50,23 @@ import {
   getPatchConfig,
   getPatchKindLabel,
   getPatchStats,
+  getStarterPatchIdsForSector,
+  getWaveRewardPatchIds,
   levelToRoman,
   levelUp,
-  PATCH_ORDER,
-  REWARD_TABLE,
-  STARTER_PATCHES,
 } from "./organizm/patchCatalog";
+import {
+  describeMutationLevel,
+  getMutationConfig,
+  getMutationCost,
+  getMutationStats,
+  MUTATION_ORDER,
+  type MutationCounts,
+  type MutationId,
+} from "./organizm/mutationCatalog";
 import type {
   BattleState,
+  BattleBeam,
   BoardPatches,
   BoardPosition,
   CellCoord,
@@ -52,6 +77,7 @@ import type {
   PatchLevel,
   PatchZone,
   SelectedItem,
+  WaveConfig,
 } from "./organizm/types";
 import "./OrganizmGame.css";
 
@@ -120,14 +146,76 @@ function getPatchAtElementPoint(clientX: number, clientY: number) {
   return uid && zone ? { uid, zone } : null;
 }
 
+function getUnlockedCellSet(unlockedCount: number) {
+  return new Set(EXPANSION_CELLS.slice(0, unlockedCount).map(cellKey));
+}
+
+function getMatrixLabel(unlockedCells: Set<string>) {
+  const unlockedCount = Math.min(unlockedCells.size, EXPANSION_CELLS.length);
+
+  if (unlockedCount >= 15) {
+    return "6 x 4";
+  }
+
+  if (unlockedCount >= 9) {
+    return "6 x 3";
+  }
+
+  if (unlockedCount >= 6) {
+    return "5 x 3";
+  }
+
+  if (unlockedCount >= 3) {
+    return "4 x 3";
+  }
+
+  return `${BOARD_START_COLS} x ${BOARD_START_ROWS}`;
+}
+
+function hasBossInWave(wave: WaveConfig) {
+  return wave.groups.some((group) => group.typeId === "glitch-capsule");
+}
+
+type BattleEndingState = "wave" | "level" | "defeat" | "boss" | null;
+type BattlefieldSize = { width: number; height: number };
+type BattlefieldPoint = { x: number; y: number };
+
+function toBattlefieldPixels(point: CellCoord, size: BattlefieldSize): BattlefieldPoint {
+  return {
+    x: (point.x / 100) * size.width,
+    y: (point.y / 100) * size.height,
+  };
+}
+
+function getPerpendicularOffset(from: BattlefieldPoint, to: BattlefieldPoint, amount: number): BattlefieldPoint {
+  const dx = to.x - from.x;
+  const dy = to.y - from.y;
+  const length = Math.max(0.001, Math.hypot(dx, dy));
+
+  return {
+    x: (-dy / length) * amount,
+    y: (dx / length) * amount,
+  };
+}
+
+function getBeamTargetPoint(beam: BattleBeam, battle: BattleState) {
+  const liveTarget = beam.source === "patch" && beam.targetId ? battle.enemies.find((enemy) => enemy.id === beam.targetId) : null;
+
+  return liveTarget ? { x: liveTarget.x, y: liveTarget.y } : { x: beam.toX, y: beam.toY };
+}
+
 function GameHUD({
   health,
   maxHealth,
   waveNumber,
+  sectorIndex,
+  mutagens,
 }: {
   health: number;
   maxHealth: number;
   waveNumber: number;
+  sectorIndex: number;
+  mutagens: number;
 }) {
   const healthPercent = maxHealth > 0 ? Math.max(0, Math.min(100, (health / maxHealth) * 100)) : 0;
   const style = { "--organizm-health": `${healthPercent}%` } as CSSProperties;
@@ -138,7 +226,7 @@ function GameHUD({
         <Activity className="organizm-hud__brand-icon" aria-hidden="true" />
         <div>
           <span>Organizm</span>
-          <strong>Сектор 01</strong>
+          <strong>{getShortSectorTitle(sectorIndex)}</strong>
         </div>
       </div>
       <div className="organizm-hud__stat organizm-hud__stat--health" style={style}>
@@ -157,7 +245,7 @@ function GameHUD({
       <div className="organizm-hud__stat">
         <span className="organizm-mutagen-icon" aria-hidden="true" />
         <span>Мутагены</span>
-        <strong>{MUTAGENS}</strong>
+        <strong>{mutagens}</strong>
       </div>
     </div>
   );
@@ -169,13 +257,19 @@ function Battlefield({
   maxHealth,
   mode,
   now,
+  sectorTitle,
+  endingState,
 }: {
   battle: BattleState;
   health: number;
   maxHealth: number;
   mode: GameMode;
   now: number;
+  sectorTitle: string;
+  endingState: BattleEndingState;
 }) {
+  const battlefieldRef = useRef<HTMLDivElement | null>(null);
+  const [battlefieldSize, setBattlefieldSize] = useState<BattlefieldSize>({ width: 0, height: 0 });
   const coreStyle = {
     "--organizm-core-health": `${maxHealth > 0 ? Math.max(0, (health / maxHealth) * 100) : 0}%`,
   } as CSSProperties;
@@ -188,9 +282,41 @@ function Battlefield({
   ]
     .filter(Boolean)
     .join(" ");
+  const beamViewportWidth = Math.max(1, battlefieldSize.width);
+  const beamViewportHeight = Math.max(1, battlefieldSize.height);
+
+  useEffect(() => {
+    const element = battlefieldRef.current;
+
+    if (!element) {
+      return undefined;
+    }
+
+    const syncBattlefieldSize = () => {
+      const rect = element.getBoundingClientRect();
+      setBattlefieldSize((current) => {
+        const width = Math.max(1, Math.round(rect.width));
+        const height = Math.max(1, Math.round(rect.height));
+
+        return current.width === width && current.height === height ? current : { width, height };
+      });
+    };
+
+    syncBattlefieldSize();
+
+    if (typeof ResizeObserver === "undefined") {
+      window.addEventListener("resize", syncBattlefieldSize);
+      return () => window.removeEventListener("resize", syncBattlefieldSize);
+    }
+
+    const observer = new ResizeObserver(syncBattlefieldSize);
+    observer.observe(element);
+
+    return () => observer.disconnect();
+  }, []);
 
   return (
-    <div className="organizm-battlefield" aria-label="Сектор заражения">
+    <div ref={battlefieldRef} className="organizm-battlefield" aria-label={sectorTitle}>
       <div className="organizm-battlefield__scanline" aria-hidden="true" />
       <div className="organizm-battlefield__edge organizm-battlefield__edge--top" aria-hidden="true" />
       <div className="organizm-battlefield__edge organizm-battlefield__edge--right" aria-hidden="true" />
@@ -206,26 +332,38 @@ function Battlefield({
         </span>
       </div>
 
-      {battle.beams.map((beam) => {
-        const liveTarget = beam.source === "patch" && beam.targetId ? battle.enemies.find((enemy) => enemy.id === beam.targetId) : null;
-        const targetPoint = liveTarget ? { x: liveTarget.x, y: liveTarget.y } : { x: beam.toX, y: beam.toY };
-        const length = getDistance({ x: beam.fromX, y: beam.fromY }, targetPoint);
-        const angle = Math.atan2(targetPoint.y - beam.fromY, targetPoint.x - beam.fromX) * (180 / Math.PI);
+      {battle.beams.length > 0 ? (
+        <svg
+          className="organizm-beam-svg"
+          viewBox={`0 0 ${beamViewportWidth} ${beamViewportHeight}`}
+          aria-hidden="true"
+        >
+          {battle.beams.map((beam) => {
+            const fromPoint = toBattlefieldPixels({ x: beam.fromX, y: beam.fromY }, battlefieldSize);
+            const targetPoint = toBattlefieldPixels(getBeamTargetPoint(beam, battle), battlefieldSize);
+            const doubleOffset = getPerpendicularOffset(fromPoint, targetPoint, 5);
 
-        return (
-          <span
-            key={beam.id}
-            className={`organizm-beam organizm-beam--${beam.source} organizm-beam--${beam.tone} organizm-beam--${beam.visual}`}
-            style={{
-              left: `${beam.fromX}%`,
-              top: `${beam.fromY}%`,
-              width: `${length}%`,
-              transform: `rotate(${angle}deg)`,
-            }}
-            aria-hidden="true"
-          />
-        );
-      })}
+            return (
+              <g
+                key={beam.id}
+                className={`organizm-beam-vector organizm-beam--${beam.source} organizm-beam--${beam.tone} organizm-beam--${beam.visual}`}
+              >
+                <line className="organizm-beam-line" x1={fromPoint.x} y1={fromPoint.y} x2={targetPoint.x} y2={targetPoint.y} />
+                {beam.visual === "double" ? (
+                  <line
+                    className="organizm-beam-line organizm-beam-line--offset"
+                    x1={fromPoint.x + doubleOffset.x}
+                    y1={fromPoint.y + doubleOffset.y}
+                    x2={targetPoint.x + doubleOffset.x}
+                    y2={targetPoint.y + doubleOffset.y}
+                  />
+                ) : null}
+                <circle className="organizm-beam-impact" cx={targetPoint.x} cy={targetPoint.y} r={beam.source === "enemy" ? 4 : 5} />
+              </g>
+            );
+          })}
+        </svg>
+      ) : null}
 
       {battle.effects.map((effect) => (
         <span
@@ -254,7 +392,19 @@ function Battlefield({
       ))}
 
       <div className="organizm-battlefield__meta">
-        <span>{mode === "battle" ? "Волна активна" : "Буфер установки"}</span>
+        <span>
+          {endingState === "boss"
+            ? "Коллапс босса"
+            : endingState === "wave"
+              ? "Волна подавлена"
+              : endingState === "level"
+                ? "Сектор стабилизируется"
+                : endingState === "defeat"
+                  ? "Ядро разрушено"
+                  : mode === "battle"
+                    ? "Волна активна"
+                    : "Буфер установки"}
+        </span>
         <strong>
           {battle.killedCount}/{battle.wave.enemyCount} очищено
         </strong>
@@ -271,6 +421,7 @@ function OrganizmBoard({
   mode,
   battle,
   now,
+  unlockedCells,
   onPatchPointerDown,
   onPatchSelect,
   onCellClick,
@@ -282,15 +433,18 @@ function OrganizmBoard({
   mode: GameMode;
   battle: BattleState;
   now: number;
+  unlockedCells: Set<string>;
   onPatchPointerDown: (event: PointerEvent<HTMLElement>, item: PatchInstance, origin: PatchZone) => void;
   onPatchSelect: (origin: PatchZone, uid: string) => void;
   onCellClick: (position: BoardPosition) => void;
 }) {
+  const matrixLabel = getMatrixLabel(unlockedCells);
+  const activeCellCount = BOARD_START_COLS * BOARD_START_ROWS + unlockedCells.size;
   const canRenderGhost =
     Boolean(drag?.candidate) &&
     drag &&
     getAbsolutePatchCells(drag.item, drag.candidate!).every(
-      (cell) => cell.x >= 0 && cell.x < BOARD_COLS && cell.y >= 0 && cell.y < BOARD_ROWS,
+      (cell) => cell.x >= 0 && cell.x < BOARD_COLS && cell.y >= 0 && cell.y < BOARD_ROWS && isCellAvailable(cell, unlockedCells),
     );
 
   return (
@@ -298,22 +452,33 @@ function OrganizmBoard({
       <div className="organizm-board-shell__top">
         <div>
           <span>Матрица адаптации</span>
-          <strong>6 x 5 клеток</strong>
+          <strong>{matrixLabel} клеток</strong>
         </div>
-        <small>{mode === "battle" ? "сборка зафиксирована" : "drag или tap по ячейке"}</small>
+        <small>{mode === "battle" ? "сборка зафиксирована" : `${activeCellCount} активных · drag/tap`}</small>
       </div>
-      <div ref={boardRef} className="organizm-board" role="grid" aria-label="Матрица адаптации 6 на 5">
+      <div
+        ref={boardRef}
+        className="organizm-board"
+        role="grid"
+        aria-label={`Матрица адаптации ${matrixLabel.replace(" x ", " на ")} с клетками роста ткани`}
+      >
         {Array.from({ length: BOARD_ROWS }).flatMap((_, y) =>
-          Array.from({ length: BOARD_COLS }).map((__, x) => (
-            <div
-              key={`${x}-${y}`}
-              className="organizm-board__cell"
-              style={{ gridColumn: `${x + 1} / span 1`, gridRow: `${y + 1} / span 1` }}
-              role="gridcell"
-              aria-label={`Клетка ${x + 1}, ${y + 1}`}
-              onClick={() => onCellClick({ x, y })}
-            />
-          )),
+          Array.from({ length: BOARD_COLS }).map((__, x) => {
+            const available = isCellAvailable({ x, y }, unlockedCells);
+
+            return (
+              <div
+                key={`${x}-${y}`}
+                className={`organizm-board__cell${available ? "" : " organizm-board__cell--locked"}`}
+                style={{ gridColumn: `${x + 1} / span 1`, gridRow: `${y + 1} / span 1` }}
+                role="gridcell"
+                aria-disabled={!available}
+                aria-label={`${available ? "Клетка" : "Закрытая клетка роста ткани"} ${x + 1}, ${y + 1}`}
+                title={available ? undefined : "Откроется через мутацию Рост ткани"}
+                onClick={available ? () => onCellClick({ x, y }) : undefined}
+              />
+            );
+          }),
         )}
 
         {getBoardEntries(boardPatches).map((item) => {
@@ -381,6 +546,7 @@ function PatchCard({
   item,
   zone,
   selectedItem,
+  mergeCandidateUid,
   disabled,
   onSelect,
   onPointerDown,
@@ -388,6 +554,7 @@ function PatchCard({
   item: PatchInstance;
   zone: PatchZone;
   selectedItem: SelectedItem | null;
+  mergeCandidateUid?: string | null;
   disabled: boolean;
   onSelect: (origin: PatchZone, uid: string) => void;
   onPointerDown: (event: PointerEvent<HTMLElement>, item: PatchInstance, origin: PatchZone) => void;
@@ -395,12 +562,15 @@ function PatchCard({
   const patch = getPatchConfig(item);
   const stats = getPatchStats(item);
   const isSelected = selectedItem?.origin === zone && selectedItem.uid === item.uid;
+  const isMergeCandidate = mergeCandidateUid === item.uid;
 
   return (
     <button
       type="button"
       className={`organizm-patch-card organizm-patch-card--${patch.tone}${
         isSelected ? " organizm-patch-card--selected" : ""
+      }${
+        isMergeCandidate ? " organizm-patch-card--merge-target" : ""
       }`}
       data-organizm-patch-uid={item.uid}
       data-organizm-patch-zone={zone}
@@ -429,6 +599,7 @@ function PatchStash({
   stashRef,
   stashItems,
   selectedItem,
+  mergeCandidateUid,
   mode,
   onSelect,
   onPatchPointerDown,
@@ -436,6 +607,7 @@ function PatchStash({
   stashRef: RefObject<HTMLDivElement>;
   stashItems: PatchInstance[];
   selectedItem: SelectedItem | null;
+  mergeCandidateUid?: string | null;
   mode: GameMode;
   onSelect: (origin: PatchZone, uid: string) => void;
   onPatchPointerDown: (event: PointerEvent<HTMLElement>, item: PatchInstance, origin: PatchZone) => void;
@@ -457,6 +629,7 @@ function PatchStash({
               item={item}
               zone="stash"
               selectedItem={selectedItem}
+              mergeCandidateUid={mergeCandidateUid}
               disabled={mode !== "prep"}
               onSelect={onSelect}
               onPointerDown={onPatchPointerDown}
@@ -465,6 +638,207 @@ function PatchStash({
         ) : (
           <div className="organizm-stash__empty">Новых патчей нет. Запусти следующую волну.</div>
         )}
+      </div>
+    </div>
+  );
+}
+
+function PatchTooltip({
+  selected,
+  boardMergeTarget,
+  stashMergeTarget,
+  mode,
+  onInstall,
+  onMergeBoard,
+  onMergeStash,
+  onMoveToStash,
+  onDelete,
+  onClose,
+}: {
+  selected: { item: PatchInstance; origin: PatchZone } | null;
+  boardMergeTarget: PatchInstance | null;
+  stashMergeTarget: PatchInstance | null;
+  mode: GameMode;
+  onInstall: () => void;
+  onMergeBoard: () => void;
+  onMergeStash: () => void;
+  onMoveToStash: () => void;
+  onDelete: () => void;
+  onClose: () => void;
+}) {
+  if (!selected) {
+    return null;
+  }
+
+  const { item, origin } = selected;
+  const patch = getPatchConfig(item);
+  const stats = getPatchStats(item);
+
+  return (
+    <div className="organizm-patch-tooltip-backdrop" onPointerDown={onClose} role="presentation">
+      <div className={`organizm-patch-tooltip organizm-patch-tooltip--${patch.tone}`} onPointerDown={(event) => event.stopPropagation()}>
+        <div className="organizm-patch-tooltip__top">
+          <PatchModule item={item} variant="card" />
+          <div>
+            <span>
+              {levelToRoman(item.level)} · {getPatchKindLabel(patch)} · {origin === "board" ? "в матрице" : "новый"}
+            </span>
+            <strong>{patch.title}</strong>
+          </div>
+          <button type="button" className="organizm-patch-tooltip__close" onClick={onClose} aria-label="Закрыть описание патча">
+            <X className="organizm-button-icon" aria-hidden="true" />
+          </button>
+        </div>
+        <div className="organizm-patch-tooltip__grid">
+          <span>Тип</span>
+          <strong>{getPatchCategoryLabel(patch)}</strong>
+          <span>Таймер</span>
+          <strong>{formatCooldown(stats.cooldownMs)}</strong>
+        </div>
+        <p>{stats.effect}</p>
+        <div className="organizm-patch-tooltip__actions">
+          {origin === "stash" ? (
+            <button type="button" onClick={onInstall} disabled={mode !== "prep"}>
+              <Layers className="organizm-button-icon" aria-hidden="true" />
+              Установить
+            </button>
+          ) : (
+            <button type="button" onClick={onMoveToStash} disabled={mode !== "prep"}>
+              <Layers className="organizm-button-icon" aria-hidden="true" />
+              Снять
+            </button>
+          )}
+          <button type="button" onClick={onMergeStash} disabled={mode !== "prep" || !stashMergeTarget}>
+            <GitMerge className="organizm-button-icon" aria-hidden="true" />
+            Слияние
+          </button>
+          <button type="button" onClick={onMergeBoard} disabled={mode !== "prep" || !boardMergeTarget}>
+            <GitMerge className="organizm-button-icon" aria-hidden="true" />
+            С матрицей
+          </button>
+          <button type="button" className="organizm-details__delete" onClick={onDelete} disabled={mode !== "prep"}>
+            <Trash2 className="organizm-button-icon" aria-hidden="true" />
+            Утилизировать
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function getPurchasedMutationCount(counts: MutationCounts) {
+  return MUTATION_ORDER.reduce((total, id) => total + (counts[id] ?? 0), 0);
+}
+
+function MutationScreen({
+  sectorIndex,
+  mutagens,
+  mutationCost,
+  mutationCounts,
+  lastMutationId,
+  mutationFeedback,
+  onBuyMutation,
+  onNextSector,
+  onNewSession,
+}: {
+  sectorIndex: number;
+  mutagens: number;
+  mutationCost: number;
+  mutationCounts: MutationCounts;
+  lastMutationId: MutationId | null;
+  mutationFeedback: string;
+  onBuyMutation: () => void;
+  onNextSector: () => void;
+  onNewSession: () => void;
+}) {
+  const lastMutation = lastMutationId ? getMutationConfig(lastMutationId) : null;
+  const canBuyMutation = mutagens >= mutationCost;
+  const purchasedCount = getPurchasedMutationCount(mutationCounts);
+
+  return (
+    <div className="organizm-mutations" aria-label="Экран эволюции Organizm">
+      <div className="organizm-mutations__header">
+        <div>
+          <span>Сессия · {getShortSectorTitle(sectorIndex)}</span>
+          <h3>Экран эволюции</h3>
+          <p>Мутационная колода усиливает следующий сектор. Повтор карточки повышает её уровень.</p>
+        </div>
+        <div className="organizm-mutations__stats" aria-label="Баланс мутаций">
+          <div>
+            <span>Мутагены</span>
+            <strong>{mutagens}</strong>
+          </div>
+          <div>
+            <span>Следующая</span>
+            <strong>{mutationCost}</strong>
+          </div>
+          <div>
+            <span>Сектор</span>
+            <strong>{String(sectorIndex).padStart(2, "0")}</strong>
+          </div>
+        </div>
+      </div>
+
+      <div className="organizm-mutations__notice" role="status" aria-live="polite">
+        <span className="organizm-mutagen-icon" aria-hidden="true" />
+        <strong>{lastMutation ? lastMutation.title : "Мутационная колода"}</strong>
+        <span>{lastMutation ? mutationFeedback : "Открой первую карточку мутации после сектора."}</span>
+      </div>
+
+      <div className="organizm-mutations__deck" aria-label="Мутационная колода">
+        {MUTATION_ORDER.map((id) => {
+          const mutation = getMutationConfig(id);
+          const count = mutationCounts[id] ?? 0;
+          const isOpen = count > 0;
+          const isLast = lastMutationId === id;
+          const currentBonus = count === 0 ? "Слот закрыт" : count === 1 ? mutation.firstBonus : `${mutation.firstBonus} · x${count}`;
+
+          return (
+            <div
+              key={id}
+              className={`organizm-mutation-card${isOpen ? ` organizm-mutation-card--${mutation.tone}` : " organizm-mutation-card--locked"}${
+                isLast ? " organizm-mutation-card--revealed" : ""
+              }`}
+            >
+              <span className={`organizm-mutation-card__icon organizm-mutation-card__icon--${isOpen ? mutation.icon : "locked"}`}>
+                {isOpen ? mutation.shortTitle : "?"}
+              </span>
+              <div className="organizm-mutation-card__copy">
+                <span>{isOpen ? `Уровень ${count}` : "Закрытая карта"}</span>
+                <strong>{isOpen ? mutation.title : "Неизвестная мутация"}</strong>
+                <small>{isOpen ? mutation.description : "Выпадение проявит карту и применит первый бонус."}</small>
+              </div>
+              <div className="organizm-mutation-card__bonus">
+                <strong>{currentBonus}</strong>
+                <small>{isOpen ? describeMutationLevel(id, count) : mutation.firstBonus}</small>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="organizm-mutations__roll">
+        <div>
+          <span>Открыто мутаций</span>
+          <strong>{purchasedCount} выпадений</strong>
+          <small>{canBuyMutation ? mutationFeedback : `Нужно ${mutationCost} мутагенов`}</small>
+        </div>
+        <button type="button" className="organizm-mutations__mutate" onClick={onBuyMutation} disabled={!canBuyMutation}>
+          <Sparkles className="organizm-button-icon" aria-hidden="true" />
+          <span>Мутация</span>
+          <strong>{mutationCost}</strong>
+        </button>
+      </div>
+
+      <div className="organizm-mutations__actions">
+        <button type="button" onClick={onNextSector}>
+          <Play className="organizm-button-icon" aria-hidden="true" />
+          Следующий сектор
+        </button>
+        <button type="button" onClick={onNewSession}>
+          <RotateCcw className="organizm-button-icon" aria-hidden="true" />
+          Новая сессия
+        </button>
       </div>
     </div>
   );
@@ -562,33 +936,8 @@ function PatchDetails({
   );
 }
 
-function StartScreen({ onStart }: { onStart: () => void }) {
-  return (
-    <div className="organizm-start">
-      <div className="organizm-start__matrix" aria-hidden="true">
-        <span />
-        <span />
-        <span />
-        <span />
-      </div>
-      <div className="organizm-start__copy">
-        <p className="organizm-start__eyebrow">Playable MVP · Iteration 3</p>
-        <h3>Organizm</h3>
-        <p>Пиксельный автобатлер про цифровой организм. Размещай патчи, объединяй уровни и очисти 5 волн сектора.</p>
-      </div>
-      <div className="organizm-start__actions">
-        <button type="button" onClick={onStart} aria-label="Запустить защиту Organizm">
-          <Play className="organizm-button-icon" aria-hidden="true" />
-          Запустить защиту
-        </button>
-        <span>Размести стартовые патчи, подави волну, получи новые модули и усиливай сборку через слияние.</span>
-      </div>
-    </div>
-  );
-}
-
 export function OrganizmGame() {
-  const [mode, setMode] = useState<GameMode>("start");
+  const [mode, setMode] = useState<GameMode>("prep");
   const [currentWaveIndex, setCurrentWaveIndex] = useState(0);
   const [boardPatches, setBoardPatches] = useState<BoardPatches>({});
   const [stashItems, setStashItems] = useState<PatchInstance[]>([]);
@@ -596,7 +945,15 @@ export function OrganizmGame() {
   const [drag, setDrag] = useState<DragState | null>(null);
   const [health, setHealth] = useState(BASE_HEALTH);
   const [battle, setBattle] = useState<BattleState>(() => createBattleState(WAVE_CONFIGS[0]));
-  const [feedback, setFeedback] = useState("Запусти прототип и собери защитный контур.");
+  const [feedback, setFeedback] = useState("Подготовка к волне 1: Сектор 01.");
+  const [sectorIndex, setSectorIndex] = useState(1);
+  const [mutagens, setMutagens] = useState(0);
+  const [sectorMutagens, setSectorMutagens] = useState(0);
+  const [mutationCounts, setMutationCounts] = useState<MutationCounts>({});
+  const [lastMutationId, setLastMutationId] = useState<MutationId | null>(null);
+  const [mutationFeedback, setMutationFeedback] = useState("Мутагены появятся за уничтожение вирусов.");
+  const [tooltipItem, setTooltipItem] = useState<SelectedItem | null>(null);
+  const [battleEnding, setBattleEnding] = useState<BattleEndingState>(null);
 
   const rootRef = useRef<HTMLElement | null>(null);
   const layoutRef = useRef<HTMLDivElement | null>(null);
@@ -614,15 +971,26 @@ export function OrganizmGame() {
   const lastFrameRef = useRef(0);
   const effectIdRef = useRef(1);
   const uidRef = useRef(1);
+  const longPressRef = useRef<number | null>(null);
+  const longPressOpenedRef = useRef(false);
+  const battleEndTimerRef = useRef<number | null>(null);
+  const battleEndKeyRef = useRef<string | null>(null);
+  const bootstrappedRef = useRef(false);
 
-  const currentWave = WAVE_CONFIGS[currentWaveIndex];
+  const currentWave = useMemo(() => getScaledWaveConfig(WAVE_CONFIGS[currentWaveIndex], sectorIndex), [currentWaveIndex, sectorIndex]);
+  const sectorTitle = getSectorTitle(sectorIndex);
+  const mutationStats = useMemo(() => getMutationStats(mutationCounts), [mutationCounts]);
+  const unlockedCells = useMemo(() => getUnlockedCellSet(mutationStats.unlockedCells), [mutationStats.unlockedCells]);
   const passiveStats = useMemo(() => getPassiveStats(getBoardEntries(boardPatches)), [boardPatches]);
-  const maxHealth = BASE_HEALTH + passiveStats.maxHealthBonus;
+  const maxHealth = Math.round((BASE_HEALTH + passiveStats.maxHealthBonus) * (1 + mutationStats.maxHealthPercent / 100));
   const now = typeof performance === "undefined" ? 0 : performance.now();
   const boardCount = getBoardEntries(boardPatches).length;
-  const canStartWave = mode === "prep";
+  const canStartWave = mode === "prep" && battleEnding === null;
   const resultMode = mode === "level-cleared" || mode === "defeat";
+  const purchasedMutationCount = getPurchasedMutationCount(mutationCounts);
+  const mutationCost = getMutationCost(purchasedMutationCount);
   const selectedResolved = resolveSelectedItem(selectedItem, boardPatches, stashItems);
+  const tooltipResolved = resolveSelectedItem(tooltipItem, boardPatches, stashItems);
   const boardMergeTarget = selectedResolved
     ? findCompatibleBoardPatch(selectedResolved.item, selectedResolved.origin, boardPatches)
     : null;
@@ -637,21 +1005,49 @@ export function OrganizmGame() {
     return { uid, patchId, level };
   }
 
-  function createStarterStash() {
-    return STARTER_PATCHES.map((patchId) => createPatchInstance(patchId));
+  function createStarterStash(targetSectorIndex = sectorIndex) {
+    return getStarterPatchIdsForSector(targetSectorIndex).map((patchId) => createPatchInstance(patchId));
   }
 
-  function createWaveRewards(completedWaveIndex: number) {
-    const ids = REWARD_TABLE[completedWaveIndex] ?? [];
+  function createWaveRewards(completedWaveIndex: number, targetSectorIndex = sectorIndex) {
     const rewardCount = WAVE_CONFIGS[completedWaveIndex].rewardCount;
-    const rewards = ids.slice(0, rewardCount).map((patchId) => createPatchInstance(patchId));
+    return getWaveRewardPatchIds(targetSectorIndex, completedWaveIndex, rewardCount).map((patchId) => createPatchInstance(patchId));
+  }
 
-    while (rewards.length < rewardCount) {
-      const fallback = PATCH_ORDER[(completedWaveIndex + rewards.length) % PATCH_ORDER.length];
-      rewards.push(createPatchInstance(fallback));
+  function clearLongPressTimer() {
+    if (longPressRef.current !== null) {
+      window.clearTimeout(longPressRef.current);
+      longPressRef.current = null;
+    }
+  }
+
+  function clearBattleEndTransition(resetState = true) {
+    if (battleEndTimerRef.current !== null) {
+      window.clearTimeout(battleEndTimerRef.current);
+      battleEndTimerRef.current = null;
     }
 
-    return rewards;
+    battleEndKeyRef.current = null;
+    if (resetState) {
+      setBattleEnding(null);
+    }
+  }
+
+  function scheduleBattleEndTransition(key: string, state: Exclude<BattleEndingState, null>, delayMs: number, complete: () => void) {
+    if (battleEndKeyRef.current === key) {
+      return;
+    }
+
+    clearBattleEndTransition();
+    battleEndKeyRef.current = key;
+    setBattleEnding(state);
+
+    battleEndTimerRef.current = window.setTimeout(() => {
+      battleEndTimerRef.current = null;
+      battleEndKeyRef.current = null;
+      setBattleEnding(null);
+      complete();
+    }, delayMs);
   }
 
   useEffect(() => {
@@ -665,6 +1061,23 @@ export function OrganizmGame() {
   useEffect(() => {
     dragRef.current = drag;
   }, [drag]);
+
+  useEffect(
+    () => () => {
+      clearLongPressTimer();
+      clearBattleEndTransition(false);
+    },
+    [],
+  );
+
+  useEffect(() => {
+    if (bootstrappedRef.current) {
+      return;
+    }
+
+    bootstrappedRef.current = true;
+    resetPrototype("prep", true);
+  }, []);
 
   useEffect(() => {
     maxHealthRef.current = maxHealth;
@@ -708,10 +1121,12 @@ export function OrganizmGame() {
     }
 
     if (health <= 0) {
-      setMode("defeat");
-      setFeedback("Ядро заражено: вирусы прорвали защиту.");
+      scheduleBattleEndTransition(`defeat-${sectorIndex}-${currentWaveIndex}`, "defeat", DEFEAT_DELAY_MS, () => {
+        setMode("defeat");
+        setFeedback("Ядро заражено: вирусы прорвали защиту.");
+      });
     }
-  }, [health, mode]);
+  }, [currentWaveIndex, health, mode, sectorIndex]);
 
   useEffect(() => {
     if (mode !== "battle") {
@@ -725,25 +1140,37 @@ export function OrganizmGame() {
     }
 
     if (health <= 0) {
-      setMode("defeat");
-      setFeedback("Ядро заражено: вирусы прорвали защиту.");
+      scheduleBattleEndTransition(`defeat-${sectorIndex}-${currentWaveIndex}`, "defeat", DEFEAT_DELAY_MS, () => {
+        setMode("defeat");
+        setFeedback("Ядро заражено: вирусы прорвали защиту.");
+      });
       return;
     }
 
     if (currentWaveIndex >= WAVE_CONFIGS.length - 1) {
-      setMode("level-cleared");
-      setFeedback("Сектор очищен. Все 5 волн подавлены.");
+      const bossWave = hasBossInWave(battle.wave);
+      scheduleBattleEndTransition(
+        `level-${sectorIndex}-${currentWaveIndex}`,
+        bossWave ? "boss" : "level",
+        bossWave ? BOSS_END_DELAY_MS : LEVEL_END_DELAY_MS,
+        () => {
+          setMode("level-cleared");
+          setFeedback("Сектор очищен. Все 5 волн подавлены.");
+        },
+      );
       return;
     }
 
-    const rewards = createWaveRewards(currentWaveIndex);
-    const nextWaveIndex = currentWaveIndex + 1;
+    scheduleBattleEndTransition(`wave-${sectorIndex}-${currentWaveIndex}`, "wave", WAVE_END_DELAY_MS, () => {
+      const rewards = createWaveRewards(currentWaveIndex, sectorIndex);
+      const nextWaveIndex = currentWaveIndex + 1;
 
-    setStashItems(rewards);
-    setCurrentWaveIndex(nextWaveIndex);
-    setMode("prep");
-    setFeedback(`Подготовка к волне ${nextWaveIndex + 1}: заражение подавлено, новые патчи: ${rewards.length}.`);
-  }, [battle.enemies.length, battle.spawnedCount, currentWave.waveNumber, currentWaveIndex, health, mode]);
+      setStashItems(rewards);
+      setCurrentWaveIndex(nextWaveIndex);
+      setMode("prep");
+      setFeedback(`Подготовка к волне ${nextWaveIndex + 1}: заражение подавлено, новые патчи: ${rewards.length}.`);
+    });
+  }, [battle.enemies.length, battle.spawnedCount, battle.wave, currentWaveIndex, health, mode, sectorIndex]);
 
   useEffect(() => {
     if (mode !== "battle") {
@@ -780,6 +1207,7 @@ export function OrganizmGame() {
       health: healthRef.current,
       maxHealth: maxHealthRef.current,
       passiveStats,
+      mutationStats,
       cooldowns: cooldownsRef.current,
       idFactory: {
         next: () => {
@@ -794,6 +1222,10 @@ export function OrganizmGame() {
     cooldownsRef.current = result.cooldowns;
     healthRef.current = result.health;
     setHealth(result.health);
+    if (result.mutagensEarned > 0) {
+      setMutagens((current) => current + result.mutagensEarned);
+      setSectorMutagens((current) => current + result.mutagensEarned);
+    }
     battleRef.current = result.battle;
     setBattle(result.battle);
   }
@@ -845,11 +1277,12 @@ export function OrganizmGame() {
       return next;
     });
     setSelectedItem(target);
+    setTooltipItem(null);
     setFeedback(`${getPatchConfig(targetItem!).title}: слияние до уровня ${levelToRoman(upgradedTarget.level)}.`);
   }
 
   function placeItemOnBoard(item: PatchInstance, origin: PatchZone, position: BoardPosition) {
-    const validation = getPlacementValidation(item, position, boardRefState.current, origin === "board" ? item.uid : undefined);
+    const validation = getPlacementValidation(item, position, boardRefState.current, origin === "board" ? item.uid : undefined, unlockedCells);
 
     if (!validation.valid) {
       const mergeTarget = getOverlappingBoardPatch(item, position, boardRefState.current, origin === "board" ? item.uid : undefined);
@@ -878,6 +1311,7 @@ export function OrganizmGame() {
       setSelectedItem({ origin: "board", uid: item.uid });
     }
 
+    setTooltipItem(null);
     setFeedback(`${getPatchConfig(item).title} ${levelToRoman(item.level)} установлен в матрицу.`);
   }
 
@@ -899,33 +1333,72 @@ export function OrganizmGame() {
     }
 
     setSelectedItem(null);
+    setTooltipItem(null);
     setFeedback(`${getPatchConfig(item).title} утилизирован.`);
   }
 
-  function resetPrototype(nextMode: GameMode = "prep") {
-    uidRef.current = 1;
-    const starterStash = createStarterStash();
-    const nextBattle = createBattleState(WAVE_CONFIGS[0]);
+  function moveSelectedToStash() {
+    if (!selectedResolved || selectedResolved.origin !== "board") {
+      setFeedback("Выбранный патч уже находится в Новых патчах.");
+      return;
+    }
 
+    const boardItem = boardRefState.current[selectedResolved.item.uid];
+
+    if (!boardItem) {
+      return;
+    }
+
+    setBoardPatches((current) => {
+      const next = { ...current };
+      delete next[boardItem.uid];
+      return next;
+    });
+    setStashItems((current) => [...current, { uid: boardItem.uid, patchId: boardItem.patchId, level: boardItem.level }]);
+    setSelectedItem({ origin: "stash", uid: boardItem.uid });
+    setTooltipItem(null);
+    setFeedback(`${getPatchConfig(boardItem).title} снят в Новые патчи.`);
+  }
+
+  function resetPrototype(nextMode: GameMode = "prep", resetSession = false, sectorOverride?: number) {
+    uidRef.current = 1;
+    const targetSectorIndex = resetSession ? 1 : sectorOverride ?? sectorIndex;
+    const starterStash = createStarterStash(targetSectorIndex);
+    const targetMutationStats = resetSession ? getMutationStats({}) : mutationStats;
+    const targetMaxHealth = Math.round(BASE_HEALTH * (1 + targetMutationStats.maxHealthPercent / 100));
+    const nextBattle = createBattleState(getScaledWaveConfig(WAVE_CONFIGS[0], targetSectorIndex));
+    clearBattleEndTransition();
+
+    if (resetSession || sectorOverride) {
+      setSectorIndex(targetSectorIndex);
+    }
+
+    if (resetSession) {
+      setMutagens(0);
+      setMutationCounts({});
+      setLastMutationId(null);
+      setMutationFeedback("Мутагены появятся за уничтожение вирусов.");
+    }
+
+    setSectorMutagens(0);
     setCurrentWaveIndex(0);
     setBoardPatches({});
     setStashItems(starterStash);
     setSelectedItem(starterStash[0] ? { origin: "stash", uid: starterStash[0].uid } : null);
     dragRef.current = null;
     setDrag(null);
-    previousMaxHealthRef.current = BASE_HEALTH;
-    maxHealthRef.current = BASE_HEALTH;
-    healthRef.current = BASE_HEALTH;
-    setHealth(BASE_HEALTH);
+    previousMaxHealthRef.current = targetMaxHealth;
+    maxHealthRef.current = targetMaxHealth;
+    healthRef.current = targetMaxHealth;
+    setHealth(targetMaxHealth);
     battleRef.current = nextBattle;
     setBattle(nextBattle);
-    setFeedback("Подготовка к волне 1: установи патчи в матрицу адаптации.");
+    setTooltipItem(null);
+    clearLongPressTimer();
+    longPressOpenedRef.current = false;
+    setFeedback(`Подготовка к волне 1: ${getSectorTitle(targetSectorIndex)}.`);
     cooldownsRef.current = {};
     setMode(nextMode);
-  }
-
-  function handleStartPrototype() {
-    resetPrototype("prep");
   }
 
   function handleStartWave() {
@@ -933,6 +1406,7 @@ export function OrganizmGame() {
       return;
     }
 
+    clearBattleEndTransition();
     const frameNow = performance.now();
     const loadout = getBoardEntries(boardPatches);
     const nextCooldowns: Partial<Record<string, number>> = {};
@@ -956,6 +1430,7 @@ export function OrganizmGame() {
     if (selectedItem?.origin === "stash") {
       setSelectedItem(null);
     }
+    setTooltipItem(null);
     setHealthValue((current) => Math.min(current, maxHealth));
     setFeedback(`Волна ${currentWave.waveNumber}: ${currentWave.title}. Новые патчи очищены из буфера.`);
     setMode("battle");
@@ -979,6 +1454,7 @@ export function OrganizmGame() {
       return;
     }
 
+    setTooltipItem(null);
     setSelectedItem({ origin, uid });
   }
 
@@ -989,6 +1465,8 @@ export function OrganizmGame() {
     }
 
     event.stopPropagation();
+    clearLongPressTimer();
+    longPressOpenedRef.current = false;
 
     const existingPlacement = origin === "board" ? boardPatches[item.uid]?.position : undefined;
     const rawBoardCell = origin === "board" ? getBoardCellFromPointer(event, boardRef.current) : null;
@@ -1000,7 +1478,7 @@ export function OrganizmGame() {
           }
         : { x: 0, y: 0 };
     const candidate = getCandidateFromPointer(event, boardRef.current, anchor);
-    const validation = getPlacementValidation(item, candidate, boardPatches, origin === "board" ? item.uid : undefined);
+    const validation = getPlacementValidation(item, candidate, boardPatches, origin === "board" ? item.uid : undefined, unlockedCells);
 
     try {
       rootRef.current?.setPointerCapture(event.pointerId);
@@ -1026,6 +1504,21 @@ export function OrganizmGame() {
     dragRef.current = nextDrag;
     setDrag(nextDrag);
     setFeedback(validation.reason);
+
+    if (event.pointerType !== "mouse") {
+      longPressRef.current = window.setTimeout(() => {
+        const activeDrag = dragRef.current;
+
+        if (!activeDrag || activeDrag.pointerId !== event.pointerId || activeDrag.hasMoved) {
+          return;
+        }
+
+        longPressOpenedRef.current = true;
+        setSelectedItem({ origin, uid: item.uid });
+        setTooltipItem({ origin, uid: item.uid });
+        setFeedback(`${getPatchConfig(item).title}: описание патча открыто.`);
+      }, 560);
+    }
   }
 
   function handlePointerMove(event: PointerEvent<HTMLElement>) {
@@ -1043,10 +1536,16 @@ export function OrganizmGame() {
       candidate,
       boardPatches,
       activeDrag.origin === "board" ? activeDrag.item.uid : undefined,
+      unlockedCells,
     );
 
     const hasMoved =
       activeDrag.hasMoved || Math.hypot(event.clientX - activeDrag.startX, event.clientY - activeDrag.startY) > 6;
+
+    if (hasMoved) {
+      clearLongPressTimer();
+    }
+
     const nextDrag = {
       ...activeDrag,
       screenX: event.clientX,
@@ -1068,6 +1567,9 @@ export function OrganizmGame() {
     if (!activeDrag || activeDrag.pointerId !== event.pointerId) {
       return;
     }
+
+    const keepTooltipOpen = longPressOpenedRef.current;
+    clearLongPressTimer();
 
     try {
       rootRef.current?.releasePointerCapture(event.pointerId);
@@ -1095,11 +1597,15 @@ export function OrganizmGame() {
         mergeItems(source, target);
       } else {
         setSelectedItem({ origin: activeDrag.origin, uid: activeDrag.item.uid });
+        if (!keepTooltipOpen) {
+          setTooltipItem(null);
+        }
         setFeedback(`${getPatchConfig(activeDrag.item).title} ${levelToRoman(activeDrag.item.level)} выбран.`);
       }
 
       dragRef.current = null;
       setDrag(null);
+      longPressOpenedRef.current = false;
       return;
     }
 
@@ -1111,6 +1617,7 @@ export function OrganizmGame() {
       mergeItems({ origin: activeDrag.origin, uid: activeDrag.item.uid }, { origin: pointedPatch.zone, uid: pointedPatch.uid });
       dragRef.current = null;
       setDrag(null);
+      longPressOpenedRef.current = false;
       return;
     }
 
@@ -1118,6 +1625,7 @@ export function OrganizmGame() {
       deleteItem({ origin: activeDrag.origin, uid: activeDrag.item.uid });
       dragRef.current = null;
       setDrag(null);
+      longPressOpenedRef.current = false;
       return;
     }
 
@@ -1132,9 +1640,11 @@ export function OrganizmGame() {
         });
         setStashItems((current) => [...current, { uid: boardItem.uid, patchId: boardItem.patchId, level: boardItem.level }]);
         setSelectedItem({ origin: "stash", uid: boardItem.uid });
+        setTooltipItem(null);
         setFeedback(`${getPatchConfig(boardItem).title} снят в запас.`);
         dragRef.current = null;
         setDrag(null);
+        longPressOpenedRef.current = false;
         return;
       }
     }
@@ -1143,6 +1653,7 @@ export function OrganizmGame() {
       placeItemOnBoard(activeDrag.item, activeDrag.origin, activeDrag.candidate);
       dragRef.current = null;
       setDrag(null);
+      longPressOpenedRef.current = false;
       return;
     }
 
@@ -1161,10 +1672,13 @@ export function OrganizmGame() {
 
     dragRef.current = null;
     setDrag(null);
+    longPressOpenedRef.current = false;
   }
 
   function handlePointerCancel(event: PointerEvent<HTMLElement>) {
     if (dragRef.current?.pointerId === event.pointerId) {
+      clearLongPressTimer();
+      longPressOpenedRef.current = false;
       dragRef.current = null;
       setDrag(null);
       setFeedback("Размещение отменено.");
@@ -1205,11 +1719,64 @@ export function OrganizmGame() {
     deleteItem({ origin: selectedResolved.origin, uid: selectedResolved.item.uid });
   }
 
+  function handleTooltipInstall() {
+    if (!tooltipResolved) {
+      return;
+    }
+
+    setSelectedItem({ origin: tooltipResolved.origin, uid: tooltipResolved.item.uid });
+    setTooltipItem(null);
+
+    if (tooltipResolved.origin === "stash") {
+      setFeedback(`${getPatchConfig(tooltipResolved.item).title}: выбери клетку Матрицы для установки.`);
+    } else {
+      setFeedback(`${getPatchConfig(tooltipResolved.item).title}: патч уже установлен в Матрице.`);
+    }
+  }
+
+  function handleOpenMutations() {
+    setMode("mutations");
+    setTooltipItem(null);
+    setMutationFeedback(mutagens >= mutationCost ? "Мутационная колода готова к новому выпадению." : "Недостаточно мутагенов");
+  }
+
+  function handleRetrySector() {
+    resetPrototype("prep", false);
+  }
+
+  function handleBuyMutation() {
+    const currentPurchasedCount = getPurchasedMutationCount(mutationCounts);
+    const currentCost = getMutationCost(currentPurchasedCount);
+
+    if (mutagens < currentCost) {
+      setMutationFeedback("Недостаточно мутагенов");
+      return;
+    }
+
+    const mutationId = MUTATION_ORDER[Math.floor(Math.random() * MUTATION_ORDER.length)];
+    const currentCount = mutationCounts[mutationId] ?? 0;
+    const mutation = getMutationConfig(mutationId);
+
+    setMutagens((current) => current - currentCost);
+    setMutationCounts((current) => ({
+      ...current,
+      [mutationId]: (current[mutationId] ?? 0) + 1,
+    }));
+    setLastMutationId(mutationId);
+    setMutationFeedback(`${mutation.title}: ${currentCount === 0 ? mutation.firstBonus : mutation.repeatBonus}`);
+  }
+
+  function handleNextSector() {
+    const nextSectorIndex = sectorIndex + 1;
+    resetPrototype("prep", false, nextSectorIndex);
+    setMutationFeedback(`Мутации применены. ${getSectorTitle(nextSectorIndex)} готов к запуску.`);
+  }
+
   const resultTitle = mode === "level-cleared" ? "Сектор очищен" : "Ядро заражено";
   const resultText =
     mode === "level-cleared"
-      ? `Оставшееся здоровье: ${health}/${maxHealth}. Текущая сборка: ${boardCount} патчей.`
-      : `Достигнута волна ${currentWave.waveNumber}. Вирусы прорвали защиту ядра.`;
+      ? `${sectorTitle}. Оставшееся здоровье: ${health}/${maxHealth}.`
+      : `${sectorTitle}. Достигнута волна ${currentWave.waveNumber}.`;
 
   return (
     <section
@@ -1221,15 +1788,12 @@ export function OrganizmGame() {
       onPointerCancel={handlePointerCancel}
       onLostPointerCapture={handlePointerCancel}
     >
-      {mode === "start" ? (
-        <StartScreen onStart={handleStartPrototype} />
-      ) : (
-        <>
+      <>
           <div className="organizm-game__header">
             <div>
               <p className="organizm-game__eyebrow">Pixel autobattler</p>
               <h3>Organizm</h3>
-              <p>{LEVEL_TITLE}. Размещай патчи, объединяй уровни и переживи растущую вирусную волну.</p>
+              <p>{sectorTitle}. Размещай патчи, объединяй уровни и переживи растущую вирусную волну.</p>
             </div>
             <button
               type="button"
@@ -1243,95 +1807,125 @@ export function OrganizmGame() {
             </button>
           </div>
 
-          <GameHUD health={health} maxHealth={maxHealth} waveNumber={currentWave.waveNumber} />
+          <GameHUD
+            health={health}
+            maxHealth={maxHealth}
+            waveNumber={currentWave.waveNumber}
+            sectorIndex={sectorIndex}
+            mutagens={mutagens}
+          />
 
-          <div ref={layoutRef} className={`organizm-game__layout organizm-game__layout--${mode}`}>
-            <div className="organizm-battle-shell">
-              <div className="organizm-section-title">
-                <Crosshair aria-hidden="true" />
-                <span>Сектор заражения</span>
-                <strong>
-                  {battle.spawnedCount}/{currentWave.enemyCount} вирусов
-                </strong>
-              </div>
-              <Battlefield battle={battle} health={health} maxHealth={maxHealth} mode={mode} now={now} />
-            </div>
-
-            <aside className="organizm-command-panel">
-              <div className="organizm-command-panel__status" role="status" aria-live="polite">
-                <Sparkles aria-hidden="true" />
-                <span>{feedback}</span>
-              </div>
-              <button
-                type="button"
-                className="organizm-command-panel__start"
-                onClick={handleStartWave}
-                disabled={!canStartWave}
-                aria-label={`Запустить волну ${currentWave.waveNumber}`}
-              >
-                <Zap className="organizm-button-icon" aria-hidden="true" />
-                Запустить волну {currentWave.waveNumber}
-              </button>
-              <div className="organizm-command-panel__mini">
-                <span>Установлено в матрице</span>
-                <strong>{boardCount}</strong>
-              </div>
-              <div className="organizm-command-panel__mini">
-                <span>Новые патчи</span>
-                <strong>{stashItems.length}</strong>
-              </div>
-              <div className="organizm-command-panel__mini">
-                <span>Текущая волна</span>
-                <strong>{currentWave.title}</strong>
-              </div>
-              <div className="organizm-command-panel__mini">
-                <span>Очищено</span>
-                <strong>{battle.killedCount}</strong>
-              </div>
-              <div className="organizm-command-panel__mini">
-                <span>Прорывы защиты</span>
-                <strong>{battle.breachedCount}</strong>
-              </div>
-              <div ref={deleteRef} className="organizm-delete-zone" aria-label="Зона удаления патчей">
-                <Trash2 className="organizm-button-icon" aria-hidden="true" />
-                <span>Перетащи сюда или нажми “Утилизировать”</span>
-              </div>
-              <PatchDetails
-                selected={selectedResolved}
-                boardMergeTarget={boardMergeTarget}
-                stashMergeTarget={stashMergeTarget}
-                mode={mode}
-                onMergeBoard={handleMergeBoard}
-                onMergeStash={handleMergeStash}
-                onDelete={handleDeleteSelected}
-              />
-            </aside>
-
-            <div className="organizm-workbench">
-              <OrganizmBoard
-                boardRef={boardRef}
-                boardPatches={boardPatches}
-                selectedItem={selectedItem}
-                drag={drag}
-                mode={mode}
-                battle={battle}
-                now={now}
-                onPatchPointerDown={beginPatchDrag}
-                onPatchSelect={handlePatchSelect}
-                onCellClick={handleBoardCellClick}
-              />
-              {mode === "prep" ? (
-                <PatchStash
-                  stashRef={stashRef}
-                  stashItems={stashItems}
-                  selectedItem={selectedItem}
+          {mode === "mutations" ? (
+            <MutationScreen
+              sectorIndex={sectorIndex}
+              mutagens={mutagens}
+              mutationCost={mutationCost}
+              mutationCounts={mutationCounts}
+              lastMutationId={lastMutationId}
+              mutationFeedback={mutationFeedback}
+              onBuyMutation={handleBuyMutation}
+              onNextSector={handleNextSector}
+              onNewSession={() => resetPrototype("prep", true)}
+            />
+          ) : (
+            <div ref={layoutRef} className={`organizm-game__layout organizm-game__layout--${mode}`}>
+              <div className="organizm-battle-shell">
+                <div className="organizm-section-title">
+                  <Crosshair aria-hidden="true" />
+                  <span>{sectorTitle}</span>
+                  <strong>
+                    {battle.spawnedCount}/{currentWave.enemyCount} вирусов
+                  </strong>
+                </div>
+                <Battlefield
+                  battle={battle}
+                  health={health}
+                  maxHealth={maxHealth}
                   mode={mode}
-                  onSelect={handlePatchSelect}
-                  onPatchPointerDown={beginPatchDrag}
+                  now={now}
+                  sectorTitle={sectorTitle}
+                  endingState={battleEnding}
                 />
-              ) : null}
+              </div>
+
+              <aside className="organizm-command-panel">
+                <div className="organizm-command-panel__status" role="status" aria-live="polite">
+                  <Sparkles aria-hidden="true" />
+                  <span>{feedback}</span>
+                </div>
+                <button
+                  type="button"
+                  className="organizm-command-panel__start"
+                  onClick={handleStartWave}
+                  disabled={!canStartWave}
+                  aria-label={`Запустить волну ${currentWave.waveNumber}`}
+                >
+                  <Zap className="organizm-button-icon" aria-hidden="true" />
+                  Запустить волну {currentWave.waveNumber}
+                </button>
+                <div className="organizm-command-panel__mini">
+                  <span>Установлено в матрице</span>
+                  <strong>{boardCount}</strong>
+                </div>
+                <div className="organizm-command-panel__mini">
+                  <span>Новые патчи</span>
+                  <strong>{stashItems.length}</strong>
+                </div>
+                <div className="organizm-command-panel__mini">
+                  <span>Текущая волна</span>
+                  <strong>{currentWave.title}</strong>
+                </div>
+                <div className="organizm-command-panel__mini">
+                  <span>Очищено</span>
+                  <strong>{battle.killedCount}</strong>
+                </div>
+                <div className="organizm-command-panel__mini">
+                  <span>Прорывы защиты</span>
+                  <strong>{battle.breachedCount}</strong>
+                </div>
+                <div ref={deleteRef} className="organizm-delete-zone" aria-label="Зона удаления патчей">
+                  <Trash2 className="organizm-button-icon" aria-hidden="true" />
+                  <span>Перетащи сюда или нажми “Утилизировать”</span>
+                </div>
+                <PatchDetails
+                  selected={selectedResolved}
+                  boardMergeTarget={boardMergeTarget}
+                  stashMergeTarget={stashMergeTarget}
+                  mode={mode}
+                  onMergeBoard={handleMergeBoard}
+                  onMergeStash={handleMergeStash}
+                  onDelete={handleDeleteSelected}
+                />
+              </aside>
+
+              <div className="organizm-workbench">
+                <OrganizmBoard
+                  boardRef={boardRef}
+                  boardPatches={boardPatches}
+                  selectedItem={selectedItem}
+                  drag={drag}
+                  mode={mode}
+                  battle={battle}
+                  now={now}
+                  unlockedCells={unlockedCells}
+                  onPatchPointerDown={beginPatchDrag}
+                  onPatchSelect={handlePatchSelect}
+                  onCellClick={handleBoardCellClick}
+                />
+                {mode === "prep" ? (
+                  <PatchStash
+                    stashRef={stashRef}
+                    stashItems={stashItems}
+                    selectedItem={selectedItem}
+                    mergeCandidateUid={stashMergeTarget?.uid ?? null}
+                    mode={mode}
+                    onSelect={handlePatchSelect}
+                    onPatchPointerDown={beginPatchDrag}
+                  />
+                ) : null}
+              </div>
             </div>
-          </div>
+          )}
 
           {mode === "prep" ? (
             <div className="organizm-mobile-action" aria-label="Быстрый запуск волны">
@@ -1353,15 +1947,26 @@ export function OrganizmGame() {
                 )}
                 <strong>{resultTitle}</strong>
                 <span>{resultText}</span>
-                <button type="button" onClick={() => resetPrototype("prep")}>
-                  <RotateCcw className="organizm-button-icon" aria-hidden="true" />
-                  Попробовать снова
-                </button>
+                <div className="organizm-result__stats">
+                  <span>Мутагены за сектор</span>
+                  <strong>{sectorMutagens}</strong>
+                  <span>Всего в сессии</span>
+                  <strong>{mutagens}</strong>
+                </div>
+                <div className="organizm-result__actions">
+                  <button type="button" onClick={handleOpenMutations}>
+                    <Sparkles className="organizm-button-icon" aria-hidden="true" />
+                    Эволюция
+                  </button>
+                  <button type="button" onClick={handleRetrySector}>
+                    <RotateCcw className="organizm-button-icon" aria-hidden="true" />
+                    Повторить сектор
+                  </button>
+                </div>
               </div>
             </div>
           ) : null}
         </>
-      )}
 
       {drag ? (
         <div
@@ -1372,6 +1977,19 @@ export function OrganizmGame() {
           <PatchModule item={drag.item} variant="ghost" />
         </div>
       ) : null}
+
+      <PatchTooltip
+        selected={tooltipResolved}
+        boardMergeTarget={boardMergeTarget}
+        stashMergeTarget={stashMergeTarget}
+        mode={mode}
+        onInstall={handleTooltipInstall}
+        onMergeBoard={handleMergeBoard}
+        onMergeStash={handleMergeStash}
+        onMoveToStash={moveSelectedToStash}
+        onDelete={handleDeleteSelected}
+        onClose={() => setTooltipItem(null)}
+      />
     </section>
   );
 }

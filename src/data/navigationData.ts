@@ -3,5 +3,5 @@ export const headerLinks = [
   { label: "Опыт", href: "#experience" },
   { label: "Проекты", href: "#projects" },
   { label: "Стек", href: "#stack" },
-  { label: "Мини игра", href: "#proof-game" },
+  { label: "Мои прототипы", href: "#proof-game" },
 ];

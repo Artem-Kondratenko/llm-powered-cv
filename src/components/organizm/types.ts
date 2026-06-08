@@ -1,4 +1,4 @@
-export type GameMode = "start" | "prep" | "battle" | "level-cleared" | "defeat";
+export type GameMode = "start" | "prep" | "battle" | "level-cleared" | "defeat" | "mutations";
 
 export type PatchBaseId =
   | "impulse-node"
@@ -59,6 +59,7 @@ export type PatchConfig = {
   tone: PatchTone;
   motif: PatchVisualMotif;
   shape: CellCoord[];
+  labelAnchor?: CellCoord;
   role: string;
   levels: Record<PatchLevel, PatchStats>;
 };
@@ -109,6 +110,7 @@ export type EnemyTypeId =
   | "glitch-capsule";
 
 export type EnemyAttackKind = "melee" | "ranged" | "moving";
+export type BossVariant = "capsule" | "colony" | "corona";
 
 export type EnemyConfig = {
   id: EnemyTypeId;
@@ -127,6 +129,8 @@ export type EnemyConfig = {
   swerve?: number;
   boss?: boolean;
   glitchIntervalMs?: number;
+  mutagens: number;
+  mutagenEveryKills?: number;
 };
 
 export type WaveEnemyGroup = {
@@ -150,6 +154,7 @@ export type EnemyState = {
   isAlive: boolean;
   nextAttackAt: number;
   nextGlitchAt?: number;
+  bossVariant?: BossVariant;
   pathSeed: number;
   damageFlashUntil: number;
 };
@@ -183,7 +188,7 @@ export type BattleFloatNumber = {
   y: number;
   value: string;
   tone: PatchTone;
-  kind: "damage" | "heal";
+  kind: "damage" | "heal" | "mutagen";
   createdAt: number;
 };
 
@@ -194,6 +199,11 @@ export type WaveConfig = {
   enemyCount: number;
   spawnIntervalMs: number;
   rewardCount: number;
+  sectorIndex?: number;
+  bossVariant?: BossVariant;
+  enemyHpMultiplier?: number;
+  enemyDamageMultiplier?: number;
+  enemySpeedMultiplier?: number;
 };
 
 export type BattleState = {
@@ -225,6 +235,17 @@ export type PassiveStats = {
   damageReduction: number;
   hastePercent: number;
   doubleShotChance: number;
+};
+
+export type MutationCombatStats = {
+  maxHealthPercent: number;
+  damagePercent: number;
+  critChancePercent: number;
+  critDamagePercent: number;
+  armorBonus: number;
+  doubleShotChancePercent: number;
+  hastePercent: number;
+  unlockedCells: number;
 };
 
 export type PatchCooldowns = Partial<Record<string, number>>;

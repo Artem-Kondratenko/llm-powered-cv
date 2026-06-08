@@ -30,6 +30,7 @@ export const PATCHES: Record<PatchBaseId, PatchConfig> = {
       { x: 0, y: 0 },
       { x: 1, y: 0 },
     ],
+    labelAnchor: { x: 0, y: 0 },
     role: "Сильный направленный урон.",
     levels: {
       1: { cooldownMs: 4000, damage: 10, effect: "10 лазерного урона ближайшей цели каждые 4 сек." },
@@ -50,6 +51,7 @@ export const PATCHES: Record<PatchBaseId, PatchConfig> = {
       { x: 0, y: 1 },
       { x: 1, y: 1 },
     ],
+    labelAnchor: { x: 0, y: 0 },
     role: "Урон по небольшой области.",
     levels: {
       1: { cooldownMs: 5000, damage: 10, splashTargets: 3, effect: "10 урона по ближайшей цели и двум рядом." },
@@ -71,6 +73,7 @@ export const PATCHES: Record<PatchBaseId, PatchConfig> = {
       { x: 0, y: 2 },
       { x: 1, y: 2 },
     ],
+    labelAnchor: { x: 0, y: 0 },
     role: "Несколько зарядов по слабым целям.",
     levels: {
       1: { cooldownMs: 3500, damage: 3, hits: 3, effect: "3 заряда по 3 урона разным ближайшим вирусам." },
@@ -90,6 +93,7 @@ export const PATCHES: Record<PatchBaseId, PatchConfig> = {
       { x: 0, y: 0 },
       { x: 1, y: 0 },
     ],
+    labelAnchor: { x: 0, y: 0 },
     role: "Увеличивает здоровье Organizm.",
     levels: {
       1: { maxHealthBonus: 25, effect: "+25 max HP." },
@@ -110,6 +114,7 @@ export const PATCHES: Record<PatchBaseId, PatchConfig> = {
       { x: 0, y: 1 },
       { x: 1, y: 1 },
     ],
+    labelAnchor: { x: 0, y: 0 },
     role: "Снижает входящий урон.",
     levels: {
       1: { damageReduction: 1, effect: "-1 урона от каждого прорыва, минимум 1." },
@@ -130,6 +135,7 @@ export const PATCHES: Record<PatchBaseId, PatchConfig> = {
       { x: 1, y: 0 },
       { x: 0, y: 1 },
     ],
+    labelAnchor: { x: 0, y: 0 },
     role: "Восстанавливает здоровье ядра.",
     levels: {
       1: { cooldownMs: 5000, heal: 4, effect: "+4 HP каждые 5 сек, не выше max HP." },
@@ -167,6 +173,7 @@ export const PATCHES: Record<PatchBaseId, PatchConfig> = {
       { x: 0, y: 1 },
       { x: 1, y: 1 },
     ],
+    labelAnchor: { x: 0, y: 0 },
     role: "Временно замедляет вирусов.",
     levels: {
       1: { cooldownMs: 6000, slowPercent: 15, slowDurationMs: 2000, effect: "Замедляет вирусов на 15% на 2 сек." },
@@ -188,6 +195,7 @@ export const PATCHES: Record<PatchBaseId, PatchConfig> = {
       { x: 2, y: 0 },
       { x: 1, y: 1 },
     ],
+    labelAnchor: { x: 1, y: 0 },
     role: "Даёт шанс дополнительного выстрела.",
     levels: {
       1: { doubleShotChance: 15, effect: "15% шанс дополнительного заряда у атакующих активных патчей." },
@@ -210,7 +218,7 @@ export const PATCH_ORDER: PatchBaseId[] = [
   "double-shot",
 ];
 
-export const STARTER_PATCHES: PatchBaseId[] = ["impulse-node", "laser-channel", "membrane", "regenerator"];
+export const STARTER_PATCHES: PatchBaseId[] = ["impulse-node", "impulse-node", "laser-channel", "membrane"];
 
 export const REWARD_TABLE: PatchBaseId[][] = [
   ["impulse-node", "impulse-node", "plasma-burst"],
@@ -218,6 +226,70 @@ export const REWARD_TABLE: PatchBaseId[][] = [
   ["shard-discharge", "shard-discharge", "armor-loop", "quarantine"],
   ["double-shot", "regenerator", "plasma-burst", "quarantine", "impulse-node"],
 ];
+
+const SECTOR_PATCH_POOLS: Record<number, PatchBaseId[]> = {
+  1: ["impulse-node", "laser-channel", "membrane", "synchronizer"],
+  2: ["impulse-node", "laser-channel", "membrane", "synchronizer", "plasma-burst", "armor-loop", "regenerator", "quarantine"],
+  3: [
+    "impulse-node",
+    "laser-channel",
+    "membrane",
+    "synchronizer",
+    "plasma-burst",
+    "armor-loop",
+    "regenerator",
+    "quarantine",
+    "shard-discharge",
+    "double-shot",
+  ],
+};
+
+const SECTOR_REWARD_TABLES: Record<number, PatchBaseId[][]> = {
+  1: [
+    ["impulse-node", "laser-channel", "synchronizer"],
+    ["membrane", "impulse-node", "laser-channel"],
+    ["synchronizer", "membrane", "impulse-node", "laser-channel"],
+    ["laser-channel", "impulse-node", "membrane", "synchronizer", "impulse-node"],
+  ],
+  2: [
+    ["impulse-node", "laser-channel", "plasma-burst"],
+    ["membrane", "synchronizer", "armor-loop"],
+    ["regenerator", "laser-channel", "quarantine", "impulse-node"],
+    ["plasma-burst", "membrane", "armor-loop", "synchronizer", "laser-channel"],
+  ],
+  3: [
+    ["impulse-node", "laser-channel", "plasma-burst"],
+    ["membrane", "synchronizer", "armor-loop"],
+    ["regenerator", "shard-discharge", "quarantine", "laser-channel"],
+    ["double-shot", "plasma-burst", "shard-discharge", "quarantine", "impulse-node"],
+  ],
+};
+
+export function getStarterPatchIdsForSector(sectorIndex: number) {
+  if (sectorIndex <= 1) {
+    return STARTER_PATCHES;
+  }
+
+  return ["impulse-node", "laser-channel", "membrane", sectorIndex >= 3 ? "plasma-burst" : "synchronizer"] satisfies PatchBaseId[];
+}
+
+export function getRewardPatchPool(sectorIndex: number) {
+  return SECTOR_PATCH_POOLS[sectorIndex] ?? PATCH_ORDER;
+}
+
+export function getWaveRewardPatchIds(sectorIndex: number, completedWaveIndex: number, rewardCount: number) {
+  const sectorTable = SECTOR_REWARD_TABLES[sectorIndex] ?? REWARD_TABLE;
+  const allowedPool = getRewardPatchPool(sectorIndex);
+  const configuredIds = sectorTable[completedWaveIndex] ?? REWARD_TABLE[completedWaveIndex] ?? [];
+  const rewards = configuredIds.filter((patchId) => allowedPool.includes(patchId)).slice(0, rewardCount);
+
+  while (rewards.length < rewardCount) {
+    const fallback = allowedPool[(completedWaveIndex + rewards.length) % allowedPool.length];
+    rewards.push(fallback);
+  }
+
+  return rewards;
+}
 
 export function levelToRoman(level: PatchLevel) {
   return level === 1 ? "I" : level === 2 ? "II" : "III";
