@@ -614,7 +614,6 @@ function PatchCard({
       <span className="organizm-patch-card__visual">
         <PatchModule item={item} variant="card" />
       </span>
-      <i>{getPatchCategoryLabel(patch)}</i>
     </button>
   );
 }
@@ -1121,13 +1120,11 @@ export function OrganizmGame() {
   }, []);
 
   useEffect(() => {
+    const oldMaxHp = previousMaxHealthRef.current;
+    const oldCurrentHp = healthRef.current;
     maxHealthRef.current = maxHealth;
-    const previousMax = previousMaxHealthRef.current;
 
-    if (maxHealth < previousMax) {
-      setHealthValue((current) => Math.min(current, maxHealth));
-    }
-
+    setHealthValue(oldCurrentHp === oldMaxHp && maxHealth > oldMaxHp ? maxHealth : Math.min(oldCurrentHp, maxHealth));
     previousMaxHealthRef.current = maxHealth;
   }, [maxHealth]);
 
@@ -1624,12 +1621,10 @@ export function OrganizmGame() {
     const candidate = getCandidateFromPointer(event, boardRef.current, anchor);
     const validation = getPlacementValidation(item, candidate, boardPatches, origin === "board" ? item.uid : undefined, unlockedCells);
 
-    if (origin !== "stash" || event.pointerType === "mouse") {
-      try {
-        rootRef.current?.setPointerCapture(event.pointerId);
-      } catch {
-        // Pointer capture improves touch dragging, but browsers can decline it.
-      }
+    try {
+      rootRef.current?.setPointerCapture(event.pointerId);
+    } catch {
+      // Pointer capture improves touch dragging, but browsers can decline it.
     }
 
     const nextDrag = {
@@ -1679,19 +1674,6 @@ export function OrganizmGame() {
     const dy = event.clientY - activeDrag.startY;
     const distance = Math.hypot(dx, dy);
 
-    if (
-      activeDrag.origin === "stash" &&
-      activeDrag.pointerType !== "mouse" &&
-      !activeDrag.hasMoved &&
-      distance > 8 &&
-      Math.abs(dy) > Math.abs(dx) * 1.35
-    ) {
-      clearLongPressTimer();
-      dragRef.current = null;
-      setDrag(null);
-      return;
-    }
-
     event.preventDefault();
 
     const candidate = getCandidateFromPointer(event, boardRef.current, activeDrag.anchor);
@@ -1707,13 +1689,6 @@ export function OrganizmGame() {
 
     if (hasMoved) {
       clearLongPressTimer();
-      if (activeDrag.origin === "stash" && activeDrag.pointerType !== "mouse") {
-        try {
-          rootRef.current?.setPointerCapture(event.pointerId);
-        } catch {
-          // The browser can ignore late capture after touch scrolling starts.
-        }
-      }
     }
 
     const nextDrag = {

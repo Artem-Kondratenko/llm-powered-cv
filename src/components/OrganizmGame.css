@@ -1876,6 +1876,7 @@
   box-shadow: inset 0 0 10px rgba(54, 215, 255, 0.08);
   opacity: 0;
   pointer-events: none;
+  display: none;
 }
 
 .organizm-board-patch--active::before {
@@ -1897,6 +1898,7 @@
   box-shadow: 0 0 12px rgba(54, 215, 255, 0.24);
   mask: radial-gradient(circle, transparent 43%, #000 45%);
   pointer-events: none;
+  display: none;
 }
 
 .organizm-board-patch--support::before {
@@ -2129,7 +2131,8 @@
 }
 
 .organizm-patch-cell__level,
-.organizm-patch-cell__mode {
+.organizm-patch-cell__type,
+.organizm-patch-cell__cooldown {
   position: absolute;
   z-index: 7;
   display: grid;
@@ -2151,12 +2154,67 @@
   border-radius: 999px;
 }
 
-.organizm-patch-cell__mode {
+.organizm-patch-cell__type {
   left: 4px;
   bottom: 4px;
   width: 16px;
   height: 16px;
   border-radius: 4px;
+}
+
+.organizm-patch-cell__type svg {
+  width: 10px;
+  height: 10px;
+  stroke-width: 3;
+}
+
+.organizm-patch-cell__type--attack {
+  border-color: rgba(255, 79, 154, 0.4);
+  color: #ffe3ef;
+}
+
+.organizm-patch-cell__type--defense {
+  border-color: rgba(54, 215, 255, 0.42);
+  color: #e0fbff;
+}
+
+.organizm-patch-cell__type--special {
+  border-color: rgba(182, 108, 255, 0.44);
+  color: #f3e8ff;
+}
+
+.organizm-patch-cell__cooldown {
+  left: 4px;
+  top: 4px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background:
+    conic-gradient(var(--organizm-cyan) var(--organizm-cooldown-progress, 0%), rgba(255, 255, 255, 0.12) 0),
+    rgba(2, 8, 18, 0.78);
+  box-shadow: 0 0 12px rgba(54, 215, 255, 0.24);
+  mask: radial-gradient(circle, transparent 43%, #000 45%);
+  opacity: 0;
+}
+
+.organizm-board-patch--active .organizm-patch-cell__cooldown {
+  opacity: 0.88;
+}
+
+.organizm-board-patch--support .organizm-patch-cell__cooldown {
+  background:
+    conic-gradient(var(--organizm-green) var(--organizm-cooldown-progress, 0%), rgba(255, 255, 255, 0.12) 0),
+    rgba(2, 8, 18, 0.78);
+}
+
+.organizm-board-patch--ready .organizm-patch-cell__cooldown {
+  background:
+    conic-gradient(var(--organizm-green) 100%, rgba(255, 255, 255, 0.12) 0),
+    rgba(2, 8, 18, 0.78);
+  box-shadow:
+    0 0 12px rgba(77, 255, 177, 0.38),
+    0 0 22px rgba(54, 215, 255, 0.16);
+  opacity: 1;
 }
 
 .organizm-patch-cell__motif::before,
@@ -2328,45 +2386,23 @@
   animation: organizm-patch-level-pulse 1600ms ease-in-out infinite;
 }
 
-.organizm-patch-shape__glyph {
-  position: absolute;
-  right: -4px;
-  top: -5px;
-  z-index: 5;
-  width: 17px;
-  height: 17px;
-  display: grid;
-  place-items: center;
-  border: 1px solid rgba(255, 255, 255, 0.24);
-  border-radius: 4px;
-  background: rgba(2, 8, 18, 0.78);
-  color: #f8fdff;
-  font-size: 8px;
-  font-weight: 900;
-  line-height: 1;
-  pointer-events: none;
-}
-
-.organizm-board-patch .organizm-patch-shape__glyph,
-.organizm-patch-card .organizm-patch-shape__glyph {
-  display: none;
-}
-
 .organizm-patch-module {
   position: relative;
   min-width: 0;
   min-height: 0;
   display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
   align-self: stretch;
   justify-self: stretch;
   place-items: stretch;
+  gap: 3px;
   width: 100%;
   height: 100%;
 }
 
 .organizm-patch-module--card {
   width: 58px;
-  height: 44px;
+  height: 59px;
 }
 
 .organizm-patch-module--ghost {
@@ -2379,11 +2415,10 @@
 }
 
 .organizm-patch-module__label {
-  position: absolute;
-  left: 7px;
-  bottom: 6px;
+  position: relative;
   z-index: 6;
-  max-width: calc(100% - 28px);
+  justify-self: center;
+  max-width: 100%;
   overflow: hidden;
   color: #f8fdff;
   font-size: 9px;
@@ -2396,56 +2431,10 @@
   pointer-events: none;
 }
 
-.organizm-patch-module__level,
-.organizm-patch-module__mode {
-  position: absolute;
-  z-index: 7;
-  display: grid;
-  place-items: center;
-  border: 1px solid rgba(255, 255, 255, 0.24);
-  background: rgba(2, 8, 18, 0.78);
-  color: #f8fdff;
-  font-size: 8px;
-  font-weight: 900;
-  line-height: 1;
-  pointer-events: none;
-}
-
-.organizm-patch-module__level {
-  right: 6px;
-  top: 6px;
-  min-width: 20px;
-  padding: 2px 4px;
-  border-radius: 999px;
-}
-
-.organizm-patch-module__mode {
-  right: 6px;
-  bottom: 6px;
-  width: 17px;
-  height: 17px;
-  border-radius: 4px;
-}
-
 .organizm-patch-module--card .organizm-patch-module__label,
 .organizm-patch-module--ghost .organizm-patch-module__label {
-  left: 5px;
-  bottom: 5px;
-  max-width: calc(100% - 10px);
-  font-size: 7px;
-}
-
-.organizm-patch-module--card .organizm-patch-module__level,
-.organizm-patch-module--ghost .organizm-patch-module__level {
-  right: -7px;
-  top: -7px;
-}
-
-.organizm-patch-module--card .organizm-patch-module__mode,
-.organizm-patch-module--ghost .organizm-patch-module__mode {
-  left: -7px;
-  right: auto;
-  bottom: -6px;
+  max-width: 100%;
+  font-size: 8px;
 }
 
 .organizm-patch-cell--pink {
@@ -2490,35 +2479,35 @@
 
 .organizm-palette__list {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
-  gap: 9px;
+  grid-template-columns: repeat(auto-fit, minmax(70px, 86px));
+  justify-content: start;
+  align-content: start;
+  gap: 8px;
 }
 
 .organizm-stash .organizm-palette__list {
-  max-height: clamp(180px, 28svh, 340px);
-  align-content: start;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  padding: 1px 4px 1px 1px;
-  touch-action: pan-y;
+  overflow: visible;
+  padding: 1px;
+  touch-action: none;
 }
 
 .organizm-patch-card {
   position: relative;
   min-width: 0;
-  min-height: 82px !important;
+  width: 100%;
+  min-height: 78px !important;
   display: grid !important;
   grid-template-columns: minmax(0, 1fr);
   align-content: center;
   justify-items: center;
-  gap: 8px !important;
-  padding: 9px !important;
+  gap: 0 !important;
+  padding: 8px 6px !important;
   text-align: center;
   touch-action: none;
 }
 
 .organizm-stash .organizm-patch-card {
-  touch-action: pan-y;
+  touch-action: none;
 }
 
 .organizm-patch-card__visual {
@@ -2602,22 +2591,6 @@
 
 .organizm-patch-card--placed {
   opacity: 0.62;
-}
-
-.organizm-patch-card i {
-  justify-self: center;
-  align-self: center;
-  min-width: 58px;
-  padding: 4px 6px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  border-radius: 999px;
-  color: var(--organizm-muted);
-  font-size: 9px;
-  font-style: normal;
-  font-weight: 900;
-  letter-spacing: 0.08em;
-  line-height: 1;
-  text-transform: uppercase;
 }
 
 .organizm-drag-ghost {
@@ -4327,8 +4300,8 @@
   }
 
   .organizm-patch-shape--card {
-    width: 48px;
-    height: 38px;
+    width: 44px;
+    height: 34px;
   }
 
   .organizm-patch-cell {
@@ -4341,21 +4314,22 @@
 
   .organizm-palette__list {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(78px, 1fr));
-    gap: 6px;
+    grid-template-columns: repeat(auto-fit, minmax(56px, 68px));
+    justify-content: start;
+    gap: 5px;
     padding: 1px;
   }
 
   .organizm-stash .organizm-palette__list {
-    max-height: clamp(128px, 24svh, 220px);
-    overflow-y: auto;
-    padding-right: 3px;
+    overflow: visible;
+    padding-right: 1px;
+    touch-action: none;
   }
 
   .organizm-patch-card {
     min-width: 0;
-    min-height: 70px !important;
-    padding: 7px !important;
+    min-height: 64px !important;
+    padding: 5px !important;
   }
 
   .organizm-ftue-coach {
@@ -4398,7 +4372,7 @@
     font-size: 7px;
   }
 
-  .organizm-patch-cell__mode {
+  .organizm-patch-cell__type {
     left: 2px;
     bottom: 2px;
     width: 13px;
@@ -4406,11 +4380,17 @@
     font-size: 7px;
   }
 
-  .organizm-board-patch--active::after {
-    right: 3px;
-    top: 3px;
-    width: 18px;
-    height: 18px;
+  .organizm-patch-cell__type svg {
+    width: 8px;
+    height: 8px;
+  }
+
+  .organizm-patch-cell__cooldown {
+    left: 2px;
+    right: auto;
+    top: 2px;
+    width: 15px;
+    height: 15px;
   }
 
   .organizm-patch-tooltip-backdrop {
@@ -4495,10 +4475,6 @@
     grid-template-columns: 1fr;
   }
 
-  .organizm-patch-card i {
-    font-size: 8px;
-  }
-
   .organizm-result {
     padding: 12px;
   }
@@ -4538,7 +4514,7 @@
   }
 
   .organizm-patch-card {
-    flex-basis: 190px;
+    min-height: 62px !important;
   }
 }
 

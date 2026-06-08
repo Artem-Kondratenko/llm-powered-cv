@@ -11,6 +11,9 @@ export const PATCHES: Record<PatchBaseId, PatchConfig> = {
     tone: "pink",
     motif: "impulse",
     shape: [{ x: 0, y: 0 }],
+    labelAnchor: { x: 0, y: 0 },
+    iconAnchor: { x: 0, y: 0 },
+    cooldownAnchor: { x: 0, y: 0 },
     role: "Базовая атака по одной цели.",
     levels: {
       1: { cooldownMs: 3000, damage: 8, effect: "8 урона ближайшему вирусу каждые 3 сек." },
@@ -31,6 +34,8 @@ export const PATCHES: Record<PatchBaseId, PatchConfig> = {
       { x: 1, y: 0 },
     ],
     labelAnchor: { x: 0, y: 0 },
+    iconAnchor: { x: 1, y: 0 },
+    cooldownAnchor: { x: 1, y: 0 },
     role: "Сильный направленный урон.",
     levels: {
       1: { cooldownMs: 4000, damage: 10, effect: "10 лазерного урона ближайшей цели каждые 4 сек." },
@@ -52,6 +57,8 @@ export const PATCHES: Record<PatchBaseId, PatchConfig> = {
       { x: 1, y: 1 },
     ],
     labelAnchor: { x: 0, y: 0 },
+    iconAnchor: { x: 0, y: 1 },
+    cooldownAnchor: { x: 1, y: 1 },
     role: "Урон по небольшой области.",
     levels: {
       1: { cooldownMs: 5000, damage: 10, splashTargets: 3, effect: "10 урона по ближайшей цели и двум рядом." },
@@ -74,6 +81,8 @@ export const PATCHES: Record<PatchBaseId, PatchConfig> = {
       { x: 1, y: 2 },
     ],
     labelAnchor: { x: 0, y: 0 },
+    iconAnchor: { x: 0, y: 1 },
+    cooldownAnchor: { x: 1, y: 2 },
     role: "Несколько зарядов по слабым целям.",
     levels: {
       1: { cooldownMs: 3500, damage: 3, hits: 3, effect: "3 заряда по 3 урона разным ближайшим вирусам." },
@@ -94,6 +103,7 @@ export const PATCHES: Record<PatchBaseId, PatchConfig> = {
       { x: 1, y: 0 },
     ],
     labelAnchor: { x: 0, y: 0 },
+    iconAnchor: { x: 1, y: 0 },
     role: "Увеличивает здоровье Organizm.",
     levels: {
       1: { maxHealthBonus: 25, effect: "+25 max HP." },
@@ -115,6 +125,7 @@ export const PATCHES: Record<PatchBaseId, PatchConfig> = {
       { x: 1, y: 1 },
     ],
     labelAnchor: { x: 0, y: 0 },
+    iconAnchor: { x: 0, y: 1 },
     role: "Снижает входящий урон.",
     levels: {
       1: { damageReduction: 1, effect: "-1 урона от каждого прорыва, минимум 1." },
@@ -136,6 +147,8 @@ export const PATCHES: Record<PatchBaseId, PatchConfig> = {
       { x: 0, y: 1 },
     ],
     labelAnchor: { x: 0, y: 0 },
+    iconAnchor: { x: 1, y: 0 },
+    cooldownAnchor: { x: 0, y: 1 },
     role: "Восстанавливает здоровье ядра.",
     levels: {
       1: { cooldownMs: 5000, heal: 4, effect: "+4 HP каждые 5 сек, не выше max HP." },
@@ -152,6 +165,8 @@ export const PATCHES: Record<PatchBaseId, PatchConfig> = {
     tone: "teal",
     motif: "sync",
     shape: [{ x: 0, y: 0 }],
+    labelAnchor: { x: 0, y: 0 },
+    iconAnchor: { x: 0, y: 0 },
     role: "Ускоряет активные патчи.",
     levels: {
       1: { hastePercent: 5, effect: "Активные патчи срабатывают на 5% быстрее." },
@@ -174,6 +189,8 @@ export const PATCHES: Record<PatchBaseId, PatchConfig> = {
       { x: 1, y: 1 },
     ],
     labelAnchor: { x: 0, y: 0 },
+    iconAnchor: { x: 1, y: 0 },
+    cooldownAnchor: { x: 1, y: 1 },
     role: "Временно замедляет вирусов.",
     levels: {
       1: { cooldownMs: 6000, slowPercent: 15, slowDurationMs: 2000, effect: "Замедляет вирусов на 15% на 2 сек." },
@@ -196,6 +213,7 @@ export const PATCHES: Record<PatchBaseId, PatchConfig> = {
       { x: 1, y: 1 },
     ],
     labelAnchor: { x: 1, y: 0 },
+    iconAnchor: { x: 0, y: 0 },
     role: "Даёт шанс дополнительного выстрела.",
     levels: {
       1: { doubleShotChance: 15, effect: "15% шанс дополнительного заряда у атакующих активных патчей." },

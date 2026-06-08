@@ -60,6 +60,8 @@ export type PatchConfig = {
   motif: PatchVisualMotif;
   shape: CellCoord[];
   labelAnchor?: CellCoord;
+  iconAnchor?: CellCoord;
+  cooldownAnchor?: CellCoord;
   role: string;
   levels: Record<PatchLevel, PatchStats>;
 };
