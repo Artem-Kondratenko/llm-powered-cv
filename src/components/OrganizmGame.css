@@ -1146,6 +1146,66 @@
   filter: drop-shadow(0 0 5px currentColor) drop-shadow(0 0 12px currentColor);
 }
 
+.organizm-beam-muzzle {
+  fill: currentColor;
+  opacity: 0.9;
+  filter: drop-shadow(0 0 5px currentColor) drop-shadow(0 0 14px currentColor);
+  transform-origin: center;
+  animation: organizm-beam-muzzle-pop 430ms ease-out both;
+}
+
+.organizm-beam--clustered .organizm-beam-line {
+  stroke-width: 2.6;
+  opacity: 0.92;
+}
+
+.organizm-beam--clustered.organizm-beam--plasma .organizm-beam-line {
+  stroke-width: 4.8;
+}
+
+.organizm-beam--clustered.organizm-beam--laser .organizm-beam-line {
+  stroke-width: 2.1;
+}
+
+.organizm-beam--clustered.organizm-beam--shard .organizm-beam-line,
+.organizm-beam--clustered.organizm-beam--impulse .organizm-beam-line {
+  stroke-width: 2.4;
+}
+
+.organizm-beam-line--plasma-shell {
+  opacity: 0.42;
+  stroke-width: 7.2;
+  stroke-dasharray: 4 9 18 7;
+  stroke-linecap: round;
+  filter: drop-shadow(0 0 7px currentColor) drop-shadow(0 0 16px rgba(182, 108, 255, 0.42));
+}
+
+.organizm-beam-line--shard-fragment {
+  opacity: 0.72;
+  stroke-width: 1.55;
+  stroke-dasharray: 2 8 6 6;
+}
+
+.organizm-beam-line--shard-fragment-b {
+  opacity: 0.54;
+  stroke-width: 1.15;
+  stroke-dasharray: 7 7 2 8;
+}
+
+.organizm-beam-line--impulse-core {
+  opacity: 0.74;
+  stroke-width: 1.4;
+  stroke-dasharray: 3 5;
+}
+
+.organizm-beam-impact--echo {
+  opacity: 0.48;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 0.35;
+  animation: organizm-beam-impact-echo 430ms ease-out both;
+}
+
 .organizm-beam-line--offset {
   opacity: 0.68;
   stroke-width: 0.42;
@@ -1173,6 +1233,50 @@
 
 .organizm-beam--double .organizm-beam-line {
   stroke-width: 3.4;
+}
+
+.organizm-beam--impulse {
+  color: #ff4f9a;
+}
+
+.organizm-beam--laser {
+  color: #ff9a3d;
+}
+
+.organizm-beam--plasma {
+  color: #b66cff;
+}
+
+.organizm-beam--shard {
+  color: #ffe66d;
+}
+
+.organizm-beam--double {
+  color: #39f6d0;
+}
+
+.organizm-beam--impulse .organizm-beam-impact {
+  filter:
+    drop-shadow(0 0 6px rgba(255, 79, 154, 0.95))
+    drop-shadow(0 0 18px rgba(255, 79, 154, 0.58));
+}
+
+.organizm-beam--laser .organizm-beam-impact {
+  filter:
+    drop-shadow(0 0 6px rgba(255, 154, 61, 0.95))
+    drop-shadow(0 0 18px rgba(255, 138, 61, 0.52));
+}
+
+.organizm-beam--plasma .organizm-beam-impact {
+  filter:
+    drop-shadow(0 0 8px rgba(182, 108, 255, 0.95))
+    drop-shadow(0 0 22px rgba(54, 215, 255, 0.44));
+}
+
+.organizm-beam--shard .organizm-beam-impact {
+  filter:
+    drop-shadow(0 0 6px rgba(255, 230, 109, 0.96))
+    drop-shadow(0 0 15px rgba(255, 79, 154, 0.45));
 }
 
 .organizm-beam--boss .organizm-beam-line {
@@ -3594,6 +3698,41 @@
   }
 }
 
+
+@keyframes organizm-beam-muzzle-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+
+  30% {
+    opacity: 1;
+    transform: scale(1.24);
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(2.2);
+  }
+}
+
+@keyframes organizm-beam-impact-echo {
+  0% {
+    opacity: 0;
+    transform: scale(0.2);
+  }
+
+  34% {
+    opacity: 0.62;
+    transform: scale(1);
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(2.4);
+  }
+}
+
 @keyframes organizm-beam-flash {
   0% {
     opacity: 0;
@@ -4856,5 +4995,282 @@
     top: 3px;
     width: 17px;
     height: 17px;
+  }
+}
+
+/* Organizm battle chaos FX: arcs, combo pulse, threat edge noise, displacement flights. */
+.organizm-battlefield--threat .organizm-battlefield__edge {
+  opacity: calc(0.24 + var(--organizm-threat, 0) * 0.58);
+  box-shadow:
+    0 0 calc(5px + var(--organizm-threat, 0) * 20px) rgba(255, 79, 154, calc(0.28 + var(--organizm-threat, 0) * 0.38)),
+    0 0 calc(12px + var(--organizm-threat, 0) * 30px) rgba(182, 108, 255, calc(0.14 + var(--organizm-threat, 0) * 0.32));
+  filter: brightness(calc(0.9 + var(--organizm-threat, 0) * 0.52)) saturate(calc(1 + var(--organizm-threat, 0) * 0.8));
+  animation: organizm-threat-edge-glitch calc(1420ms - var(--organizm-threat, 0) * 560ms) steps(4, end) infinite;
+  transition:
+    opacity 520ms ease,
+    box-shadow 680ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    filter 680ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.organizm-battlefield--threat .organizm-battlefield__scanline {
+  opacity: calc(0.36 + var(--organizm-threat, 0) * 0.22);
+  background:
+    repeating-linear-gradient(0deg, rgba(255, 79, 154, calc(0.012 + var(--organizm-threat, 0) * 0.055)) 0 1px, transparent 1px 6px),
+    repeating-linear-gradient(90deg, rgba(182, 108, 255, calc(0.008 + var(--organizm-threat, 0) * 0.04)) 0 1px, transparent 1px 9px),
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.028) 0 1px, transparent 1px 5px);
+  filter: brightness(calc(0.86 + var(--organizm-threat, 0) * 0.34));
+  transition:
+    opacity 680ms ease,
+    filter 740ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.organizm-core__arc {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 6;
+  width: 132px;
+  height: 132px;
+  border-radius: 50%;
+  border: 1px solid transparent;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  filter:
+    drop-shadow(0 0 5px rgba(54, 215, 255, 0.86))
+    drop-shadow(0 0 14px rgba(77, 255, 177, 0.48));
+}
+
+.organizm-core__arc--a {
+  border-top-color: rgba(54, 215, 255, 0.92);
+  border-right-color: rgba(77, 255, 177, 0.5);
+  clip-path: polygon(50% 0, 100% 0, 100% 50%, 56% 50%);
+}
+
+.organizm-core__arc--b {
+  width: 112px;
+  height: 112px;
+  border-bottom-color: rgba(182, 108, 255, 0.78);
+  border-left-color: rgba(54, 215, 255, 0.72);
+  clip-path: polygon(0 46%, 48% 46%, 50% 100%, 0 100%);
+}
+
+.organizm-core__arc--c {
+  width: 148px;
+  height: 148px;
+  border-top-color: rgba(77, 255, 177, 0.62);
+  border-left-color: rgba(54, 215, 255, 0.42);
+  clip-path: polygon(0 0, 44% 0, 44% 45%, 0 45%);
+}
+
+.organizm-core--arc-burst .organizm-core__arc--a {
+  animation: organizm-core-electric-arc-a 220ms steps(3, end) both;
+}
+
+.organizm-core--arc-burst .organizm-core__arc--b {
+  animation: organizm-core-electric-arc-b 190ms steps(2, end) 28ms both;
+}
+
+.organizm-core--arc-burst .organizm-core__arc--c {
+  animation: organizm-core-electric-arc-c 240ms steps(4, end) 52ms both;
+}
+
+.organizm-core--combo-pulse .organizm-core__ring {
+  animation: organizm-core-combo-pulse 720ms ease-out both, organizm-core-pulse 1500ms ease-in-out 720ms infinite;
+}
+
+.organizm-core--combo-pulse .organizm-core__body {
+  animation: organizm-core-combo-body 620ms ease-out both;
+}
+
+.organizm-core--combo-pulse .organizm-core__membrane {
+  animation: organizm-core-combo-membrane 720ms ease-out both;
+}
+
+.organizm-displaced-flight {
+  position: fixed;
+  z-index: 9999;
+  display: grid;
+  place-items: center;
+  padding: 2px;
+  border-radius: 9px;
+  pointer-events: none;
+  transform-origin: center;
+  filter:
+    drop-shadow(0 0 10px currentColor)
+    drop-shadow(0 0 22px rgba(54, 215, 255, 0.34));
+  animation: organizm-displaced-flight 320ms cubic-bezier(0.2, 0.86, 0.28, 1) both;
+}
+
+.organizm-displaced-flight--pink { color: var(--organizm-pink); }
+.organizm-displaced-flight--orange { color: var(--organizm-orange); }
+.organizm-displaced-flight--cyan { color: var(--organizm-cyan); }
+.organizm-displaced-flight--green { color: var(--organizm-green); }
+.organizm-displaced-flight--purple { color: var(--organizm-purple); }
+.organizm-displaced-flight--yellow { color: var(--organizm-yellow); }
+.organizm-displaced-flight--blue { color: var(--organizm-blue); }
+.organizm-displaced-flight--teal { color: var(--organizm-teal); }
+
+@keyframes organizm-core-electric-arc-a {
+  0% { opacity: 0; transform: translate(-50%, -50%) rotate(-18deg) scale(0.76); }
+  24% { opacity: 1; transform: translate(-50%, -50%) rotate(18deg) scale(1.04); }
+  55% { opacity: 0.58; transform: translate(-50%, -50%) rotate(-9deg) scale(0.98); }
+  100% { opacity: 0; transform: translate(-50%, -50%) rotate(34deg) scale(1.18); }
+}
+
+@keyframes organizm-core-electric-arc-b {
+  0% { opacity: 0; transform: translate(-50%, -50%) rotate(36deg) scale(0.82); }
+  34% { opacity: 0.92; transform: translate(-50%, -50%) rotate(-22deg) scale(1.08); }
+  100% { opacity: 0; transform: translate(-50%, -50%) rotate(-48deg) scale(1.16); }
+}
+
+@keyframes organizm-core-electric-arc-c {
+  0% { opacity: 0; transform: translate(-50%, -50%) rotate(80deg) scale(0.7); }
+  28% { opacity: 0.8; transform: translate(-50%, -50%) rotate(122deg) scale(1.08); }
+  64% { opacity: 0.42; transform: translate(-50%, -50%) rotate(92deg) scale(1.0); }
+  100% { opacity: 0; transform: translate(-50%, -50%) rotate(145deg) scale(1.2); }
+}
+
+@keyframes organizm-core-combo-pulse {
+  0% {
+    box-shadow:
+      0 0 30px rgba(77, 255, 177, 0.26),
+      inset 0 0 24px rgba(54, 215, 255, 0.14);
+    transform: scale(1);
+  }
+  35% {
+    box-shadow:
+      0 0 46px rgba(77, 255, 177, 0.7),
+      0 0 92px rgba(54, 215, 255, 0.36),
+      inset 0 0 30px rgba(255, 255, 255, 0.18);
+    transform: scale(1.18);
+  }
+  100% {
+    box-shadow:
+      0 0 26px rgba(77, 255, 177, 0.3),
+      inset 0 0 24px rgba(54, 215, 255, 0.14);
+    transform: scale(1);
+  }
+}
+
+@keyframes organizm-core-combo-body {
+  0% { filter: brightness(1); transform: scale(1); }
+  38% { filter: brightness(1.75) saturate(1.28); transform: scale(1.18); }
+  100% { filter: brightness(1); transform: scale(1); }
+}
+
+@keyframes organizm-core-combo-membrane {
+  0% { opacity: 0.72; transform: rotate(12deg) scale(1); }
+  42% { opacity: 1; transform: rotate(42deg) scale(1.28); border-color: rgba(77, 255, 177, 0.6); }
+  100% { opacity: 0.72; transform: rotate(12deg) scale(1); }
+}
+
+@keyframes organizm-threat-edge-glitch {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  18% { transform: translate3d(0.35px, 0, 0); }
+  42% { transform: translate3d(-0.45px, 0.25px, 0); }
+  67% { transform: translate3d(0, -0.35px, 0); }
+  82% { transform: translate3d(0.25px, 0.25px, 0); }
+}
+
+@keyframes organizm-displaced-flight {
+  0% {
+    opacity: 0.98;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  72% {
+    opacity: 0.92;
+    transform: translate3d(var(--organizm-flight-x), var(--organizm-flight-y), 0) scale(0.86);
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(var(--organizm-flight-x), var(--organizm-flight-y), 0) scale(var(--organizm-flight-scale-x), var(--organizm-flight-scale-y));
+  }
+}
+
+/* Final Organizm UX polish: keep battle matrix vivid, make irregular patch holes truly invisible, and pulse available evolution. */
+.organizm-game .organizm-board-patch:disabled {
+  cursor: default;
+  opacity: 1;
+}
+
+.organizm-game--battle .organizm-board-shell,
+.organizm-game--battle .organizm-board,
+.organizm-game--battle .organizm-board-patch,
+.organizm-game--battle .organizm-patch-module,
+.organizm-game--battle .organizm-patch-cell {
+  opacity: 1;
+  filter: none;
+}
+
+.organizm-board-patch {
+  overflow: visible !important;
+  border-color: transparent !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.organizm-board-patch--selected {
+  outline: none !important;
+}
+
+.organizm-board-patch--selected .organizm-patch-cell {
+  box-shadow:
+    inset 0 0 0 1px rgba(2, 8, 18, 0.2),
+    inset 0 0 12px rgba(255, 255, 255, 0.08),
+    0 0 0 2px rgba(77, 255, 177, 0.72),
+    0 0 18px rgba(77, 255, 177, 0.28) !important;
+}
+
+.organizm-placement-ghost,
+.organizm-placement-ghost--valid,
+.organizm-placement-ghost--invalid {
+  overflow: visible !important;
+  outline: none !important;
+  background: transparent !important;
+}
+
+.organizm-placement-ghost--valid .organizm-patch-cell {
+  box-shadow:
+    inset 0 0 0 1px rgba(2, 8, 18, 0.2),
+    0 0 0 2px rgba(77, 255, 177, 0.74),
+    0 0 18px rgba(77, 255, 177, 0.28) !important;
+}
+
+.organizm-placement-ghost--invalid .organizm-patch-cell {
+  box-shadow:
+    inset 0 0 0 1px rgba(2, 8, 18, 0.2),
+    0 0 0 2px rgba(255, 79, 154, 0.78),
+    0 0 18px rgba(255, 79, 154, 0.28) !important;
+}
+
+.organizm-mutations__mutate,
+.organizm-mutations__next {
+  min-width: 0 !important;
+  min-height: 64px !important;
+  height: 64px;
+}
+
+.organizm-mutations__mutate--available:not(:disabled) {
+  animation: organizm-mutation-button-ready 1600ms ease-in-out infinite;
+}
+
+@keyframes organizm-mutation-button-ready {
+  0%,
+  100% {
+    border-color: rgba(77, 255, 177, 0.62);
+    box-shadow:
+      0 0 0 0 rgba(77, 255, 177, 0.12),
+      0 0 20px rgba(77, 255, 177, 0.14);
+    filter: brightness(1);
+  }
+
+  50% {
+    border-color: rgba(119, 255, 211, 0.95);
+    box-shadow:
+      0 0 0 3px rgba(77, 255, 177, 0.16),
+      0 0 34px rgba(77, 255, 177, 0.34),
+      0 0 18px rgba(54, 215, 255, 0.18);
+    filter: brightness(1.12) saturate(1.15);
   }
 }

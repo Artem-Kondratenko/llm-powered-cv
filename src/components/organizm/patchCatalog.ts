@@ -17,8 +17,8 @@ export const PATCHES: Record<PatchBaseId, PatchConfig> = {
     role: "Базовая атака по одной цели.",
     levels: {
       1: { cooldownMs: 3000, damage: 8, effect: "8 урона ближайшему вирусу каждые 3 сек." },
-      2: { cooldownMs: 2500, damage: 14, effect: "14 урона ближайшему вирусу каждые 2.5 сек." },
-      3: { cooldownMs: 2000, damage: 22, effect: "22 урона ближайшему вирусу каждые 2 сек." },
+      2: { cooldownMs: 2500, damage: 15, effect: "15 урона ближайшему вирусу каждые 2.5 сек. Сильнее двух Узлов I." },
+      3: { cooldownMs: 2000, damage: 28, effect: "28 урона ближайшему вирусу каждые 2 сек. Сильнее двух Узлов II." },
     },
   },
   "laser-channel": {
@@ -39,8 +39,8 @@ export const PATCHES: Record<PatchBaseId, PatchConfig> = {
     role: "Сильный направленный урон.",
     levels: {
       1: { cooldownMs: 4000, damage: 10, effect: "10 лазерного урона ближайшей цели каждые 4 сек." },
-      2: { cooldownMs: 3500, damage: 16, effect: "16 лазерного урона ближайшей цели каждые 3.5 сек." },
-      3: { cooldownMs: 3000, damage: 24, effect: "24 лазерного урона ближайшей цели каждые 3 сек." },
+      2: { cooldownMs: 3500, damage: 19, effect: "19 лазерного урона ближайшей цели каждые 3.5 сек. Сильнее двух Лазеров I." },
+      3: { cooldownMs: 3000, damage: 38, effect: "38 лазерного урона ближайшей цели каждые 3 сек. Сильнее двух Лазеров II." },
     },
   },
   "plasma-burst": {
@@ -62,8 +62,8 @@ export const PATCHES: Record<PatchBaseId, PatchConfig> = {
     role: "Урон по небольшой области.",
     levels: {
       1: { cooldownMs: 5000, damage: 10, splashTargets: 3, effect: "10 урона по ближайшей цели и двум рядом." },
-      2: { cooldownMs: 4500, damage: 16, splashTargets: 3, effect: "16 урона по ближайшей цели и двум рядом." },
-      3: { cooldownMs: 4000, damage: 24, splashTargets: 3, effect: "24 урона по ближайшей цели и двум рядом." },
+      2: { cooldownMs: 4500, damage: 21, splashTargets: 3, effect: "21 урона по ближайшей цели и двум рядом. Сильнее двух Плазм I." },
+      3: { cooldownMs: 4000, damage: 34, splashTargets: 4, effect: "34 урона по ближайшей цели и трём рядом. Новый бонус: +1 цель." },
     },
   },
   "shard-discharge": {
@@ -86,8 +86,8 @@ export const PATCHES: Record<PatchBaseId, PatchConfig> = {
     role: "Несколько зарядов по слабым целям.",
     levels: {
       1: { cooldownMs: 3500, damage: 3, hits: 3, effect: "3 заряда по 3 урона разным ближайшим вирусам." },
-      2: { cooldownMs: 3000, damage: 4, hits: 4, effect: "4 заряда по 4 урона разным ближайшим вирусам." },
-      3: { cooldownMs: 2500, damage: 5, hits: 5, effect: "5 зарядов по 5 урона разным ближайшим вирусам." },
+      2: { cooldownMs: 3000, damage: 5, hits: 4, effect: "4 заряда по 5 урона разным ближайшим вирусам. Сильнее двух Осколков I." },
+      3: { cooldownMs: 2500, damage: 6, hits: 6, effect: "6 зарядов по 6 урона разным ближайшим вирусам. Новый бонус: +1 заряд." },
     },
   },
   membrane: {
@@ -107,8 +107,8 @@ export const PATCHES: Record<PatchBaseId, PatchConfig> = {
     role: "Увеличивает здоровье Organizm.",
     levels: {
       1: { maxHealthBonus: 25, effect: "+25 max HP." },
-      2: { maxHealthBonus: 45, effect: "+45 max HP." },
-      3: { maxHealthBonus: 75, effect: "+75 max HP." },
+      2: { maxHealthBonus: 55, effect: "+55 max HP. Сильнее двух Мембран I." },
+      3: { maxHealthBonus: 120, effect: "+120 max HP. Сильнее двух Мембран II." },
     },
   },
   "armor-loop": {
@@ -129,8 +129,8 @@ export const PATCHES: Record<PatchBaseId, PatchConfig> = {
     role: "Снижает входящий урон.",
     levels: {
       1: { damageReduction: 1, effect: "-1 урона от каждого прорыва, минимум 1." },
-      2: { damageReduction: 2, effect: "-2 урона от каждого прорыва, минимум 1." },
-      3: { damageReduction: 3, effect: "-3 урона от каждого прорыва, минимум 1." },
+      2: { damageReduction: 2, maxHealthBonus: 12, effect: "-2 урона от каждого прорыва +12 max HP. Броня двух Контуров I плюс бонус." },
+      3: { damageReduction: 4, maxHealthBonus: 30, effect: "-4 урона от каждого прорыва +30 max HP. Новый бонус: усиленная бронемембрана." },
     },
   },
   regenerator: {
@@ -152,8 +152,8 @@ export const PATCHES: Record<PatchBaseId, PatchConfig> = {
     role: "Восстанавливает здоровье ядра.",
     levels: {
       1: { cooldownMs: 5000, heal: 4, effect: "+4 HP каждые 5 сек, не выше max HP." },
-      2: { cooldownMs: 4500, heal: 7, effect: "+7 HP каждые 4.5 сек, не выше max HP." },
-      3: { cooldownMs: 4000, heal: 11, effect: "+11 HP каждые 4 сек, не выше max HP." },
+      2: { cooldownMs: 4500, heal: 9, effect: "+9 HP каждые 4.5 сек, не выше max HP. Сильнее двух Регенов I." },
+      3: { cooldownMs: 4000, heal: 19, effect: "+19 HP каждые 4 сек, не выше max HP. Сильнее двух Регенов II." },
     },
   },
   synchronizer: {
@@ -170,8 +170,8 @@ export const PATCHES: Record<PatchBaseId, PatchConfig> = {
     role: "Ускоряет активные патчи.",
     levels: {
       1: { hastePercent: 5, effect: "Активные патчи срабатывают на 5% быстрее." },
-      2: { hastePercent: 8, effect: "Активные патчи срабатывают на 8% быстрее." },
-      3: { hastePercent: 12, effect: "Активные патчи срабатывают на 12% быстрее." },
+      2: { hastePercent: 11, effect: "Активные патчи срабатывают на 11% быстрее. Сильнее двух Синхров I." },
+      3: { hastePercent: 24, effect: "Активные патчи срабатывают на 24% быстрее. Сильнее двух Синхров II." },
     },
   },
   quarantine: {
@@ -194,8 +194,8 @@ export const PATCHES: Record<PatchBaseId, PatchConfig> = {
     role: "Временно замедляет вирусов.",
     levels: {
       1: { cooldownMs: 6000, slowPercent: 15, slowDurationMs: 2000, effect: "Замедляет вирусов на 15% на 2 сек." },
-      2: { cooldownMs: 5500, slowPercent: 20, slowDurationMs: 2500, effect: "Замедляет вирусов на 20% на 2.5 сек." },
-      3: { cooldownMs: 5000, slowPercent: 25, slowDurationMs: 3000, effect: "Замедляет вирусов на 25% на 3 сек." },
+      2: { cooldownMs: 5500, slowPercent: 25, slowDurationMs: 3000, effect: "Замедляет вирусов на 25% на 3 сек. Сильнее двух Карантинов I." },
+      3: { cooldownMs: 5000, slowPercent: 35, slowDurationMs: 4500, effect: "Замедляет вирусов на 35% на 4.5 сек. Новый бонус: почти постоянное подавление волны." },
     },
   },
   "double-shot": {
@@ -217,8 +217,8 @@ export const PATCHES: Record<PatchBaseId, PatchConfig> = {
     role: "Даёт шанс дополнительного выстрела.",
     levels: {
       1: { doubleShotChance: 15, effect: "15% шанс дополнительного заряда у атакующих активных патчей." },
-      2: { doubleShotChance: 25, effect: "25% шанс дополнительного заряда у атакующих активных патчей." },
-      3: { doubleShotChance: 35, effect: "35% шанс дополнительного заряда у атакующих активных патчей." },
+      2: { doubleShotChance: 32, effect: "32% шанс дополнительного заряда. Сильнее двух Дублей I." },
+      3: { doubleShotChance: 65, effect: "65% шанс дополнительного заряда. Сильнее двух Дублей II." },
     },
   },
 };

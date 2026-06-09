@@ -15,6 +15,7 @@ import { type CSSProperties, type PointerEvent, type RefObject, useEffect, useMe
 import {
   BASE_HEALTH,
   BOSS_END_DELAY_MS,
+  CORE_POINT,
   BOARD_COLS,
   BOARD_ROWS,
   BOARD_START_COLS,
@@ -73,6 +74,7 @@ import type {
   GameMode,
   PatchBaseId,
   PatchInstance,
+  PlacedPatch,
   PatchLevel,
   PatchZone,
   SelectedItem,
@@ -169,9 +171,46 @@ function hasBossInWave(wave: WaveConfig) {
   return wave.groups.some((group) => group.typeId === "glitch-capsule");
 }
 
+function canPlaceInsideUnlockedCells(item: PatchInstance, position: BoardPosition | null, unlockedCells: Set<string>) {
+  if (!position) {
+    return false;
+  }
+
+  return getAbsolutePatchCells(item, position).every(
+    (cell) => cell.x >= 0 && cell.x < BOARD_COLS && cell.y >= 0 && cell.y < BOARD_ROWS && isCellAvailable(cell, unlockedCells),
+  );
+}
+
+function getDisplacedBoardPatches(
+  item: PatchInstance,
+  position: BoardPosition | null,
+  boardPatches: BoardPatches,
+  ignoreUid?: string,
+) {
+  if (!position) {
+    return [];
+  }
+
+  const targetCells = new Set(getAbsolutePatchCells(item, position).map(cellKey));
+
+  return getBoardEntries(boardPatches).filter((patch) => {
+    if (patch.uid === ignoreUid) {
+      return false;
+    }
+
+    return getAbsolutePatchCells(patch, patch.position).some((cell) => targetCells.has(cellKey(cell)));
+  });
+}
+
 type BattleEndingState = "wave" | "level" | "defeat" | "boss" | null;
 type SectorOutcome = "victory" | "defeat" | null;
 type BattlefieldPoint = { x: number; y: number };
+type DisplacedPatchFlight = {
+  id: number;
+  item: PatchInstance;
+  from: { x: number; y: number; width: number; height: number };
+  to: { x: number; y: number; width: number; height: number };
+};
 type FtueStepId =
   | "matrix"
   | "install"
@@ -216,6 +255,66 @@ function getPerpendicularOffset(from: BattlefieldPoint, to: BattlefieldPoint, am
     x: (-dy / length) * amount,
     y: (dx / length) * amount,
   };
+}
+
+function getBeamClusterKey(beam: BattleBeam) {
+  if (beam.source === "patch" && beam.targetId) {
+    return `patch:${beam.targetId}`;
+  }
+
+  return `${beam.source}:${Math.round(beam.toX * 10)}:${Math.round(beam.toY * 10)}`;
+}
+
+function getBeamVisualBias(beam: BattleBeam) {
+  const visualBias: Record<BattleBeam["visual"], number> = {
+    impulse: -0.22,
+    laser: 0.18,
+    plasma: 0.55,
+    shard: -0.58,
+    double: 0.86,
+    "enemy-shot": 0,
+    parasite: 0,
+    boss: 0,
+  };
+
+  const toneBias = ((beam.id % 5) - 2) * 0.08;
+
+  return (visualBias[beam.visual] ?? 0) + toneBias;
+}
+
+function getBeamLaneOffset(beam: BattleBeam, beams: BattleBeam[], from: BattlefieldPoint, to: BattlefieldPoint) {
+  if (beam.source !== "patch") {
+    return { from: { x: 0, y: 0 }, to: { x: 0, y: 0 }, lane: 0, clusterSize: 1 };
+  }
+
+  const key = getBeamClusterKey(beam);
+  const cluster = beams
+    .filter((candidate) => candidate.source === "patch" && getBeamClusterKey(candidate) === key)
+    .sort((a, b) => a.createdAt - b.createdAt || a.id - b.id);
+
+  if (cluster.length <= 1) {
+    return { from: { x: 0, y: 0 }, to: { x: 0, y: 0 }, lane: 0, clusterSize: 1 };
+  }
+
+  const index = Math.max(0, cluster.findIndex((candidate) => candidate.id === beam.id));
+  const center = (cluster.length - 1) / 2;
+  const lane = index - center + getBeamVisualBias(beam);
+  const laneWidth = Math.min(1.35, 0.72 + cluster.length * 0.08);
+  const perpendicular = getPerpendicularOffset(from, to, lane * laneWidth);
+
+  return {
+    from: { x: perpendicular.x * 1.16, y: perpendicular.y * 1.16 },
+    to: { x: perpendicular.x * 0.32, y: perpendicular.y * 0.32 },
+    lane,
+    clusterSize: cluster.length,
+  };
+}
+
+function applyPointOffset(point: BattlefieldPoint, offset: BattlefieldPoint): BattlefieldPoint {
+  return clampBattlefieldPoint({
+    x: point.x + offset.x,
+    y: point.y + offset.y,
+  });
 }
 
 function GameHUD({
@@ -275,6 +374,7 @@ function Battlefield({
   now,
   sectorTitle,
   endingState,
+  comboPulseUntil,
 }: {
   battle: BattleState;
   health: number;
@@ -283,9 +383,64 @@ function Battlefield({
   now: number;
   sectorTitle: string;
   endingState: BattleEndingState;
+  comboPulseUntil: number;
 }) {
   const coreStyle = {
     "--organizm-core-health": `${maxHealth > 0 ? Math.max(0, (health / maxHealth) * 100) : 0}%`,
+  } as CSSProperties;
+  const recentPatchBeams = battle.beams.filter((beam) => beam.source === "patch" && now - beam.createdAt < 190);
+  const hasArcBurst = recentPatchBeams.length >= 3;
+  const closestThreatDistance = battle.enemies.reduce((closest, enemy) => {
+    if (!enemy.isVisible || enemy.hp <= 0) {
+      return closest;
+    }
+
+    const distance = Math.hypot(enemy.x - CORE_POINT.x, enemy.y - CORE_POINT.y);
+
+    return Math.min(closest, distance);
+  }, Number.POSITIVE_INFINITY);
+  const threatLevelTarget = Number.isFinite(closestThreatDistance)
+    ? Math.max(0, Math.min(1, (42 - closestThreatDistance) / 28))
+    : 0;
+  const [visualThreatLevel, setVisualThreatLevel] = useState(threatLevelTarget);
+
+  useEffect(() => {
+    let animationFrame = 0;
+    let lastTime = performance.now();
+
+    const tick = (time: number) => {
+      const delta = Math.min(64, Math.max(16, time - lastTime));
+      lastTime = time;
+      let shouldContinue = false;
+
+      setVisualThreatLevel((current) => {
+        const target = threatLevelTarget;
+        const easing = target > current ? 0.22 : 0.07;
+        const frameFactor = Math.min(1, (delta / 16.67) * easing);
+        const next = current + (target - current) * frameFactor;
+
+        if (Math.abs(next - target) > 0.004) {
+          shouldContinue = true;
+          return next;
+        }
+
+        return target;
+      });
+
+      if (shouldContinue) {
+        animationFrame = requestAnimationFrame(tick);
+      }
+    };
+
+    animationFrame = requestAnimationFrame(tick);
+
+    return () => {
+      cancelAnimationFrame(animationFrame);
+    };
+  }, [threatLevelTarget]);
+
+  const battlefieldStyle = {
+    "--organizm-threat": visualThreatLevel.toFixed(3),
   } as CSSProperties;
   const coreClasses = [
     "organizm-core",
@@ -294,11 +449,17 @@ function Battlefield({
     battle.effects.some((effect) => effect.type === "heal" && now - effect.createdAt < 620) ? "organizm-core--heal" : "",
     battle.effects.some((effect) => effect.type === "breach" && now - effect.createdAt < 620) ? "organizm-core--breach" : "",
     mode === "level-cleared" ? "organizm-core--stable" : "",
+    hasArcBurst ? "organizm-core--arc-burst" : "",
+    comboPulseUntil > now ? "organizm-core--combo-pulse" : "",
   ]
     .filter(Boolean)
     .join(" ");
   return (
-    <div className="organizm-battlefield" aria-label={sectorTitle}>
+    <div
+      className="organizm-battlefield organizm-battlefield--threat"
+      style={battlefieldStyle}
+      aria-label={sectorTitle}
+    >
       <div className="organizm-battlefield__scanline" aria-hidden="true" />
       <div className="organizm-battlefield__edge organizm-battlefield__edge--top" aria-hidden="true" />
       <div className="organizm-battlefield__edge organizm-battlefield__edge--right" aria-hidden="true" />
@@ -309,6 +470,9 @@ function Battlefield({
         <span className="organizm-core__body" aria-hidden="true" />
         <span className="organizm-core__health" aria-hidden="true" />
         <span className="organizm-core__membrane" aria-hidden="true" />
+        <span className="organizm-core__arc organizm-core__arc--a" aria-hidden="true" />
+        <span className="organizm-core__arc organizm-core__arc--b" aria-hidden="true" />
+        <span className="organizm-core__arc organizm-core__arc--c" aria-hidden="true" />
         <span className="organizm-core__hp" aria-hidden="true">
           {health}
         </span>
@@ -324,43 +488,89 @@ function Battlefield({
           {battle.beams.map((beam) => {
             const fromPoint = clampBattlefieldPoint({ x: beam.fromX, y: beam.fromY });
             const targetPoint = clampBattlefieldPoint({ x: beam.toX, y: beam.toY });
-            const doubleOffset = getPerpendicularOffset(fromPoint, targetPoint, 0.9);
-            const enemyOffset = getPerpendicularOffset(fromPoint, targetPoint, beam.visual === "boss" ? 1.8 : 1);
+            const laneOffset = getBeamLaneOffset(beam, battle.beams, fromPoint, targetPoint);
+            const renderFrom = applyPointOffset(fromPoint, laneOffset.from);
+            const renderTarget = applyPointOffset(targetPoint, laneOffset.to);
+            const doubleOffset = getPerpendicularOffset(renderFrom, renderTarget, 0.9);
+            const enemyOffset = getPerpendicularOffset(renderFrom, renderTarget, beam.visual === "boss" ? 1.8 : 1);
+            const laneClass = laneOffset.clusterSize > 1 ? " organizm-beam--clustered" : "";
 
             return (
               <g
                 key={beam.id}
-                className={`organizm-beam-vector organizm-beam--${beam.source} organizm-beam--${beam.tone} organizm-beam--${beam.visual}`}
+                className={`organizm-beam-vector organizm-beam--${beam.source} organizm-beam--${beam.tone} organizm-beam--${beam.visual}${laneClass}`}
               >
-                <line className="organizm-beam-line" x1={fromPoint.x} y1={fromPoint.y} x2={targetPoint.x} y2={targetPoint.y} />
+                {beam.source === "patch" ? (
+                  <circle className="organizm-beam-muzzle" cx={renderFrom.x} cy={renderFrom.y} r={beam.visual === "plasma" ? 0.82 : 0.56} />
+                ) : null}
+                <line className="organizm-beam-line" x1={renderFrom.x} y1={renderFrom.y} x2={renderTarget.x} y2={renderTarget.y} />
+                {beam.source === "patch" && beam.visual === "plasma" ? (
+                  <line
+                    className="organizm-beam-line organizm-beam-line--plasma-shell"
+                    x1={renderFrom.x - doubleOffset.x * 0.34}
+                    y1={renderFrom.y - doubleOffset.y * 0.34}
+                    x2={renderTarget.x - doubleOffset.x * 0.18}
+                    y2={renderTarget.y - doubleOffset.y * 0.18}
+                  />
+                ) : null}
+                {beam.source === "patch" && beam.visual === "shard" ? (
+                  <>
+                    <line
+                      className="organizm-beam-line organizm-beam-line--shard-fragment"
+                      x1={renderFrom.x + doubleOffset.x * 0.46}
+                      y1={renderFrom.y + doubleOffset.y * 0.46}
+                      x2={renderTarget.x + doubleOffset.x * 0.14}
+                      y2={renderTarget.y + doubleOffset.y * 0.14}
+                    />
+                    <line
+                      className="organizm-beam-line organizm-beam-line--shard-fragment organizm-beam-line--shard-fragment-b"
+                      x1={renderFrom.x - doubleOffset.x * 0.52}
+                      y1={renderFrom.y - doubleOffset.y * 0.52}
+                      x2={renderTarget.x - doubleOffset.x * 0.18}
+                      y2={renderTarget.y - doubleOffset.y * 0.18}
+                    />
+                  </>
+                ) : null}
+                {beam.source === "patch" && beam.visual === "impulse" ? (
+                  <line
+                    className="organizm-beam-line organizm-beam-line--impulse-core"
+                    x1={renderFrom.x}
+                    y1={renderFrom.y}
+                    x2={(renderFrom.x + renderTarget.x) / 2}
+                    y2={(renderFrom.y + renderTarget.y) / 2}
+                  />
+                ) : null}
                 {beam.source === "enemy" ? (
                   <>
                     <line
                       className="organizm-beam-line organizm-beam-line--glitch-a"
-                      x1={fromPoint.x + enemyOffset.x}
-                      y1={fromPoint.y + enemyOffset.y}
-                      x2={targetPoint.x + enemyOffset.x * 0.25}
-                      y2={targetPoint.y + enemyOffset.y * 0.25}
+                      x1={renderFrom.x + enemyOffset.x}
+                      y1={renderFrom.y + enemyOffset.y}
+                      x2={renderTarget.x + enemyOffset.x * 0.25}
+                      y2={renderTarget.y + enemyOffset.y * 0.25}
                     />
                     <line
                       className="organizm-beam-line organizm-beam-line--glitch-b"
-                      x1={fromPoint.x - enemyOffset.x * 0.6}
-                      y1={fromPoint.y - enemyOffset.y * 0.6}
-                      x2={targetPoint.x - enemyOffset.x}
-                      y2={targetPoint.y - enemyOffset.y}
+                      x1={renderFrom.x - enemyOffset.x * 0.6}
+                      y1={renderFrom.y - enemyOffset.y * 0.6}
+                      x2={renderTarget.x - enemyOffset.x}
+                      y2={renderTarget.y - enemyOffset.y}
                     />
                   </>
                 ) : null}
                 {beam.visual === "double" ? (
                   <line
                     className="organizm-beam-line organizm-beam-line--offset"
-                    x1={fromPoint.x + doubleOffset.x}
-                    y1={fromPoint.y + doubleOffset.y}
-                    x2={targetPoint.x + doubleOffset.x}
-                    y2={targetPoint.y + doubleOffset.y}
+                    x1={renderFrom.x + doubleOffset.x}
+                    y1={renderFrom.y + doubleOffset.y}
+                    x2={renderTarget.x + doubleOffset.x * 0.28}
+                    y2={renderTarget.y + doubleOffset.y * 0.28}
                   />
                 ) : null}
-                <circle className="organizm-beam-impact" cx={targetPoint.x} cy={targetPoint.y} r={beam.source === "enemy" ? 0.75 : 0.95} />
+                <circle className="organizm-beam-impact" cx={renderTarget.x} cy={renderTarget.y} r={beam.source === "enemy" ? 0.75 : beam.visual === "plasma" ? 1.3 : 0.95} />
+                {beam.source === "patch" && laneOffset.clusterSize > 1 ? (
+                  <circle className="organizm-beam-impact organizm-beam-impact--echo" cx={targetPoint.x} cy={targetPoint.y} r={1.55} />
+                ) : null}
               </g>
             );
           })}
@@ -840,7 +1050,7 @@ function MutationScreen({
       <div className="organizm-mutations__action-bar" role="group" aria-label="Действия эволюции">
         <button
           type="button"
-          className={`organizm-mutations__mutate${ftueTarget === "mutation-button" ? " organizm-ftue-target" : ""}`}
+          className={`organizm-mutations__mutate${canBuyMutation ? " organizm-mutations__mutate--available" : ""}${ftueTarget === "mutation-button" ? " organizm-ftue-target" : ""}`}
           onClick={onBuyMutation}
           disabled={!canBuyMutation}
         >
@@ -963,6 +1173,9 @@ export function OrganizmGame() {
   const [sectorOutcome, setSectorOutcome] = useState<SectorOutcome>(null);
   const [ftueStep, setFtueStep] = useState<FtueStepId>("matrix");
   const [ftueDone, setFtueDone] = useState(false);
+  const [dismissedFtueSteps, setDismissedFtueSteps] = useState<Set<FtueStepId>>(() => new Set());
+  const [comboPulseUntil, setComboPulseUntil] = useState(0);
+  const [displacedFlights, setDisplacedFlights] = useState<DisplacedPatchFlight[]>([]);
 
   const rootRef = useRef<HTMLElement | null>(null);
   const layoutRef = useRef<HTMLDivElement | null>(null);
@@ -985,6 +1198,8 @@ export function OrganizmGame() {
   const battleEndTimerRef = useRef<number | null>(null);
   const battleEndKeyRef = useRef<string | null>(null);
   const bootstrappedRef = useRef(false);
+  const recentKillTimesRef = useRef<number[]>([]);
+  const flightIdRef = useRef(1);
 
   const currentWave = useMemo(() => getScaledWaveConfig(WAVE_CONFIGS[currentWaveIndex], sectorIndex), [currentWaveIndex, sectorIndex]);
   const sectorTitle = getSectorTitle(sectorIndex);
@@ -1026,7 +1241,8 @@ export function OrganizmGame() {
     resultMode,
     lastMutationId,
   });
-  const ftueVisible = !ftueDone && sectorIndex === 1 && ftueStep !== "done" && Boolean(ftueTarget);
+  const ftueVisible =
+    !ftueDone && sectorIndex === 1 && ftueStep !== "done" && Boolean(ftueTarget) && !dismissedFtueSteps.has(ftueStep);
 
   function createPatchInstance(patchId: PatchBaseId, level: PatchLevel = 1): PatchInstance {
     const uid = `${patchId}-${uidRef.current}`;
@@ -1337,6 +1553,7 @@ export function OrganizmGame() {
   }
 
   function runBattleStep(frameNow: number) {
+    const previousKilledCount = battleRef.current.killedCount;
     const result = advanceBattleStep({
       current: battleRef.current,
       frameNow,
@@ -1360,12 +1577,110 @@ export function OrganizmGame() {
     healthRef.current = result.health;
     syncHealthRatio(result.health);
     setHealth(result.health);
+    const killedDelta = Math.max(0, result.battle.killedCount - previousKilledCount);
+
+    if (killedDelta > 0) {
+      const recentKills = recentKillTimesRef.current
+        .filter((killTime) => frameNow - killTime <= 1000)
+        .concat(Array.from({ length: killedDelta }, () => frameNow));
+      recentKillTimesRef.current = recentKills;
+
+      if (recentKills.length >= 2) {
+        setComboPulseUntil(frameNow + Math.min(780, 420 + recentKills.length * 90));
+      }
+    }
+
     if (result.mutagensEarned > 0) {
       setMutagens((current) => current + result.mutagensEarned);
       setSectorMutagens((current) => current + result.mutagensEarned);
     }
     battleRef.current = result.battle;
     setBattle(result.battle);
+  }
+
+  function queueDisplacedPatchFlights(items: PlacedPatch[]) {
+    if (items.length === 0 || typeof document === "undefined") {
+      return;
+    }
+
+    const targetRect = stashRef.current?.getBoundingClientRect();
+    const fallbackRect = boardRef.current?.getBoundingClientRect();
+    const targetBase = targetRect ?? fallbackRect;
+
+    if (!targetBase) {
+      return;
+    }
+
+    const flightIds: number[] = [];
+    const flights = items.flatMap((item, index) => {
+      const element = document.querySelector<HTMLElement>(
+        `[data-organizm-patch-uid="${item.uid}"][data-organizm-patch-zone="board"]`,
+      );
+      const fromRect = element?.getBoundingClientRect();
+
+      if (!fromRect) {
+        return [];
+      }
+
+      const id = flightIdRef.current;
+      flightIdRef.current += 1;
+      flightIds.push(id);
+
+      return [
+        {
+          id,
+          item: { uid: item.uid, patchId: item.patchId, level: item.level },
+          from: { x: fromRect.left, y: fromRect.top, width: fromRect.width, height: fromRect.height },
+          to: {
+            x: targetBase.left + 16 + (index % 4) * 18,
+            y: targetBase.top + Math.min(54, targetBase.height * 0.5) + Math.floor(index / 4) * 14,
+            width: Math.max(54, Math.min(72, fromRect.width * 0.82)),
+            height: Math.max(54, Math.min(72, fromRect.height * 0.82)),
+          },
+        },
+      ];
+    });
+
+    if (flights.length === 0) {
+      return;
+    }
+
+    setDisplacedFlights((current) => [...current, ...flights]);
+    window.setTimeout(() => {
+      setDisplacedFlights((current) => current.filter((flight) => !flightIds.includes(flight.id)));
+    }, 360);
+  }
+
+  function placeItemOnBoardWithDisplacement(
+    item: PatchInstance,
+    origin: PatchZone,
+    position: BoardPosition,
+    displaced: PlacedPatch[],
+  ) {
+    const displacedItems = displaced.map((patch) => ({ uid: patch.uid, patchId: patch.patchId, level: patch.level }));
+
+    queueDisplacedPatchFlights(displaced);
+
+    setBoardPatches((current) => {
+      const next = { ...current };
+
+      displaced.forEach((patch) => {
+        delete next[patch.uid];
+      });
+
+      next[item.uid] = { ...(origin === "board" ? next[item.uid] ?? item : item), position };
+
+      return next;
+    });
+
+    setStashItems((current) => {
+      const base = origin === "stash" ? current.filter((patch) => patch.uid !== item.uid) : current;
+
+      return [...base, ...displacedItems];
+    });
+    setSelectedItem({ origin: "board", uid: item.uid });
+    setTooltipItem(null);
+    setFeedback(`${getPatchConfig(item).title}: патч установлен, вытеснено в Новые: ${displaced.length}.`);
   }
 
   function resolveItem(origin: PatchZone, uid: string): PatchInstance | undefined {
@@ -1423,10 +1738,18 @@ export function OrganizmGame() {
     const validation = getPlacementValidation(item, position, boardRefState.current, origin === "board" ? item.uid : undefined, unlockedCells);
 
     if (!validation.valid) {
-      const mergeTarget = getOverlappingBoardPatch(item, position, boardRefState.current, origin === "board" ? item.uid : undefined);
+      const ignoredUid = origin === "board" ? item.uid : undefined;
+      const mergeTarget = getOverlappingBoardPatch(item, position, boardRefState.current, ignoredUid);
 
       if (mergeTarget && canMergeItems(item, mergeTarget)) {
         mergeItems({ origin, uid: item.uid }, { origin: "board", uid: mergeTarget.uid });
+        return;
+      }
+
+      const displaced = getDisplacedBoardPatches(item, position, boardRefState.current, ignoredUid);
+
+      if (displaced.length > 0 && canPlaceInsideUnlockedCells(item, position, unlockedCells)) {
+        placeItemOnBoardWithDisplacement(item, origin, position!, displaced);
         return;
       }
 
@@ -1540,6 +1863,7 @@ export function OrganizmGame() {
     cooldownsRef.current = {};
     if (resetSession && !ftueDone) {
       setFtueStep("matrix");
+      setDismissedFtueSteps(new Set());
     }
     setMode(nextMode);
   }
@@ -1686,6 +2010,18 @@ export function OrganizmGame() {
       activeDrag.origin === "board" ? activeDrag.item.uid : undefined,
       unlockedCells,
     );
+    const canReplaceOccupied =
+      !validation.valid &&
+      canPlaceInsideUnlockedCells(activeDrag.item, candidate, unlockedCells) &&
+      getDisplacedBoardPatches(
+        activeDrag.item,
+        candidate,
+        boardPatches,
+        activeDrag.origin === "board" ? activeDrag.item.uid : undefined,
+      ).length > 0;
+    const effectiveValidation = canReplaceOccupied
+      ? { valid: true, reason: "Патч заменит занятые клетки: прежние уйдут в Новые." }
+      : validation;
 
     const hasMoved = activeDrag.hasMoved || distance > 6;
 
@@ -1698,14 +2034,14 @@ export function OrganizmGame() {
       screenX: event.clientX,
       screenY: event.clientY,
       candidate,
-      valid: validation.valid,
-      reason: validation.reason,
+      valid: effectiveValidation.valid,
+      reason: effectiveValidation.reason,
       hasMoved,
     };
 
     dragRef.current = nextDrag;
     setDrag(nextDrag);
-    setFeedback(validation.reason);
+    setFeedback(effectiveValidation.reason);
   }
 
   function handlePointerUp(event: PointerEvent<HTMLElement>) {
@@ -1806,7 +2142,18 @@ export function OrganizmGame() {
     if (mergeTarget && canMergeItems(activeDrag.item, mergeTarget)) {
       mergeItems({ origin: activeDrag.origin, uid: activeDrag.item.uid }, { origin: "board", uid: mergeTarget.uid });
     } else {
-      setFeedback(activeDrag.reason);
+      const displaced = getDisplacedBoardPatches(
+        activeDrag.item,
+        activeDrag.candidate,
+        boardPatches,
+        activeDrag.origin === "board" ? activeDrag.item.uid : undefined,
+      );
+
+      if (displaced.length > 0 && canPlaceInsideUnlockedCells(activeDrag.item, activeDrag.candidate, unlockedCells)) {
+        placeItemOnBoardWithDisplacement(activeDrag.item, activeDrag.origin, activeDrag.candidate!, displaced);
+      } else {
+        setFeedback(activeDrag.reason);
+      }
     }
 
     dragRef.current = null;
@@ -1989,6 +2336,7 @@ export function OrganizmGame() {
                   now={now}
                   sectorTitle={sectorTitle}
                   endingState={battleEnding}
+                  comboPulseUntil={comboPulseUntil}
                 />
               </div>
 
@@ -2133,8 +2481,11 @@ export function OrganizmGame() {
         canBuyMutation={canBuyMutation}
         missingMutagens={Math.max(0, mutationCost - mutagens)}
         onClose={() => {
-          setFtueDone(true);
-          setFtueStep("done");
+          setDismissedFtueSteps((current) => {
+            const next = new Set(current);
+            next.add(ftueStep);
+            return next;
+          });
         }}
       />
 
@@ -2147,6 +2498,28 @@ export function OrganizmGame() {
           <PatchModule item={drag.item} variant="ghost" />
         </div>
       ) : null}
+
+      {displacedFlights.map((flight) => (
+        <div
+          key={flight.id}
+          className={`organizm-displaced-flight organizm-displaced-flight--${getPatchConfig(flight.item).tone}`}
+          style={
+            {
+              left: flight.from.x,
+              top: flight.from.y,
+              width: flight.from.width,
+              height: flight.from.height,
+              "--organizm-flight-x": `${flight.to.x - flight.from.x}px`,
+              "--organizm-flight-y": `${flight.to.y - flight.from.y}px`,
+              "--organizm-flight-scale-x": `${flight.to.width / Math.max(1, flight.from.width)}`,
+              "--organizm-flight-scale-y": `${flight.to.height / Math.max(1, flight.from.height)}`,
+            } as CSSProperties
+          }
+          aria-hidden="true"
+        >
+          <PatchModule item={flight.item} variant="ghost" />
+        </div>
+      ))}
 
       <PatchTooltip
         selected={tooltipResolved}
