@@ -131,48 +131,38 @@ function isPointerInsideElement(event: PointerEvent, element: HTMLElement | null
   );
 }
 
-function getPatchAtElementPoint(clientX: number, clientY: number) {
-  const element = document.elementFromPoint(clientX, clientY) as HTMLElement | null;
-  const target = element?.closest<HTMLElement>("[data-organizm-patch-uid]");
+function getPatchAtElementPoint(clientX: number, clientY: number, ignored?: { uid: string; zone?: PatchZone }) {
+  const elements = document.elementsFromPoint(clientX, clientY) as HTMLElement[];
+  const checkedTargets = new Set<HTMLElement>();
 
-  if (!target) {
-    return null;
+  for (const element of elements) {
+    const target = element.closest<HTMLElement>("[data-organizm-patch-uid]");
+
+    if (!target || checkedTargets.has(target)) {
+      continue;
+    }
+
+    checkedTargets.add(target);
+
+    const uid = target.dataset.organizmPatchUid;
+    const zone = target.dataset.organizmPatchZone as PatchZone | undefined;
+
+    if (!uid || !zone) {
+      continue;
+    }
+
+    if (ignored && uid === ignored.uid && (!ignored.zone || zone === ignored.zone)) {
+      continue;
+    }
+
+    return { uid, zone };
   }
 
-  const uid = target.dataset.organizmPatchUid;
-  const zone = target.dataset.organizmPatchZone as PatchZone | undefined;
-
-  return uid && zone ? { uid, zone } : null;
+  return null;
 }
 
 function getUnlockedCellSet(unlockedCount: number) {
   return new Set(EXPANSION_CELLS.slice(0, unlockedCount).map(cellKey));
-}
-
-function getMatrixLabel(unlockedCells: Set<string>) {
-  const unlockedCount = Math.min(unlockedCells.size, EXPANSION_CELLS.length);
-
-  if (unlockedCount > 0 && unlockedCount < 3) {
-    return `${BOARD_START_COLS} x ${BOARD_START_ROWS} + ${unlockedCount}`;
-  }
-
-  if (unlockedCount >= 15) {
-    return "6 x 4";
-  }
-
-  if (unlockedCount >= 9) {
-    return "6 x 3";
-  }
-
-  if (unlockedCount >= 6) {
-    return "5 x 3";
-  }
-
-  if (unlockedCount >= 3) {
-    return "4 x 3";
-  }
-
-  return `${BOARD_START_COLS} x ${BOARD_START_ROWS}`;
 }
 
 function hasBossInWave(wave: WaveConfig) {
@@ -418,7 +408,7 @@ function Battlefield({
                     : "Буфер установки"}
         </span>
         <strong>
-          {battle.killedCount}/{battle.wave.enemyCount} очищено
+          {battle.killedCount}/{battle.wave.enemyCount} уничтожено
         </strong>
       </div>
     </div>
@@ -458,7 +448,6 @@ function OrganizmBoard({
   onPatchSelect: (origin: PatchZone, uid: string) => void;
   onCellClick: (position: BoardPosition) => void;
 }) {
-  const matrixLabel = getMatrixLabel(unlockedCells);
   const activeCellCount = BOARD_START_COLS * BOARD_START_ROWS + unlockedCells.size;
   const occupiedCells = new Set(getBoardEntries(boardPatches).flatMap((item) => getAbsolutePatchCells(item, item.position).map(cellKey)));
   const canRenderGhost =
@@ -473,7 +462,7 @@ function OrganizmBoard({
       <div className="organizm-board-shell__top">
         <div>
           <span>Матрица адаптации</span>
-          <strong>{matrixLabel} клеток</strong>
+          <strong>{activeCellCount} клеток</strong>
         </div>
         <small>{mode === "battle" ? "сборка зафиксирована" : `${activeCellCount} активных · drag/tap`}</small>
       </div>
@@ -483,7 +472,7 @@ function OrganizmBoard({
           placementHint ? " organizm-board--placement-hint" : ""
         }`}
         role="grid"
-        aria-label={`Матрица адаптации ${matrixLabel.replace(" x ", " на ")} с клетками роста ткани`}
+        aria-label={`Матрица адаптации: ${activeCellCount} доступных клеток`}
       >
         {Array.from({ length: BOARD_ROWS }).flatMap((_, y) =>
           Array.from({ length: BOARD_COLS }).map((__, x) => {
@@ -669,7 +658,7 @@ function PatchStash({
             />
           ))
         ) : (
-          <div className="organizm-stash__empty">Новых патчей нет. Запусти следующую волну.</div>
+          <div className="organizm-stash__empty" aria-label="Новых патчей нет" />
         )}
       </div>
     </div>
@@ -985,6 +974,7 @@ export function OrganizmGame() {
   const maxHealthRef = useRef(BASE_HEALTH);
   const previousMaxHealthRef = useRef(BASE_HEALTH);
   const healthRef = useRef(BASE_HEALTH);
+  const healthRatioRef = useRef(1);
   const cooldownsRef = useRef<Partial<Record<string, number>>>({});
   const dragRef = useRef<DragState | null>(drag);
   const lastFrameRef = useRef(0);
@@ -1120,11 +1110,10 @@ export function OrganizmGame() {
   }, []);
 
   useEffect(() => {
-    const oldMaxHp = previousMaxHealthRef.current;
-    const oldCurrentHp = healthRef.current;
     maxHealthRef.current = maxHealth;
 
-    setHealthValue(oldCurrentHp === oldMaxHp && maxHealth > oldMaxHp ? maxHealth : Math.min(oldCurrentHp, maxHealth));
+    const nextHealth = Math.max(0, Math.min(maxHealth, Math.round(maxHealth * healthRatioRef.current)));
+    setHealthValue(nextHealth, { syncRatio: false });
     previousMaxHealthRef.current = maxHealth;
   }, [maxHealth]);
 
@@ -1327,11 +1316,22 @@ export function OrganizmGame() {
     return () => cancelAnimationFrame(animationFrame);
   }, [mode]);
 
-  function setHealthValue(next: number | ((current: number) => number)) {
+  function syncHealthRatio(currentHp = healthRef.current, currentMaxHealth = maxHealthRef.current) {
+    healthRatioRef.current = currentMaxHealth > 0 ? Math.max(0, Math.min(1, currentHp / currentMaxHealth)) : 0;
+  }
+
+  function setHealthValue(next: number | ((current: number) => number), options: { syncRatio?: boolean } = {}) {
+    const shouldSyncRatio = options.syncRatio ?? true;
+
     setHealth((current) => {
       const value = typeof next === "function" ? next(current) : next;
       const clamped = Math.max(0, Math.min(maxHealthRef.current, Math.round(value)));
       healthRef.current = clamped;
+
+      if (shouldSyncRatio) {
+        syncHealthRatio(clamped);
+      }
+
       return clamped;
     });
   }
@@ -1358,6 +1358,7 @@ export function OrganizmGame() {
     lastFrameRef.current = frameNow;
     cooldownsRef.current = result.cooldowns;
     healthRef.current = result.health;
+    syncHealthRatio(result.health);
     setHealth(result.health);
     if (result.mutagensEarned > 0) {
       setMutagens((current) => current + result.mutagensEarned);
@@ -1527,6 +1528,7 @@ export function OrganizmGame() {
     previousMaxHealthRef.current = targetMaxHealth;
     maxHealthRef.current = targetMaxHealth;
     healthRef.current = targetMaxHealth;
+    healthRatioRef.current = 1;
     setHealth(targetMaxHealth);
     battleRef.current = nextBattle;
     setBattle(nextBattle);
@@ -1572,7 +1574,7 @@ export function OrganizmGame() {
       setSelectedItem(null);
     }
     setTooltipItem(null);
-    setHealthValue((current) => Math.min(current, maxHealth));
+    setHealthValue((current) => Math.min(current, maxHealth), { syncRatio: false });
     setFeedback(`Волна ${currentWave.waveNumber}: ${currentWave.title}. Новые патчи очищены из буфера.`);
     setMode("battle");
     window.requestAnimationFrame(() => {
@@ -1723,7 +1725,7 @@ export function OrganizmGame() {
     }
 
     const pointedPatch =
-      getPatchAtElementPoint(event.clientX, event.clientY) ??
+      getPatchAtElementPoint(event.clientX, event.clientY, { uid: activeDrag.item.uid, zone: activeDrag.origin }) ??
       (!activeDrag.hasMoved ? { uid: activeDrag.item.uid, zone: activeDrag.origin } : null);
 
     if (!activeDrag.hasMoved && pointedPatch?.uid === activeDrag.item.uid && pointedPatch.zone === activeDrag.origin) {
@@ -1976,7 +1978,7 @@ export function OrganizmGame() {
                   <Crosshair aria-hidden="true" />
                   <span>{sectorTitle}</span>
                   <strong>
-                    {battle.spawnedCount}/{currentWave.enemyCount} вирусов
+                    {battle.killedCount}/{currentWave.enemyCount} уничтожено
                   </strong>
                 </div>
                 <Battlefield
@@ -2018,7 +2020,7 @@ export function OrganizmGame() {
                   <strong>{currentWave.title}</strong>
                 </div>
                 <div className="organizm-command-panel__mini">
-                  <span>Очищено</span>
+                  <span>Уничтожено</span>
                   <strong>{battle.killedCount}</strong>
                 </div>
                 <div className="organizm-command-panel__mini">
