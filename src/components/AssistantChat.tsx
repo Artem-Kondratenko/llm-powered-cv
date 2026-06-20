@@ -15,6 +15,7 @@ type Message = {
   text: string;
   suggestedCta?: AssistantSuggestedCta;
   usedFallback?: boolean;
+  isIntro?: boolean;
 };
 
 type AssistantChatProps = {
@@ -33,10 +34,10 @@ function normalize(value: string) {
   return value.trim().toLowerCase().replace(/\s+/g, " ");
 }
 
-function toApiHistory(messages: Message[]): AssistantChatMessage[] {
+function toApiHistory(messages: Message[], assistantIntroText: string): AssistantChatMessage[] {
   return messages.map((message) => ({
     role: message.role,
-    content: message.text,
+    content: message.isIntro ? assistantIntroText : message.text,
   }));
 }
 
@@ -69,14 +70,18 @@ function getCtaHref(suggestedCta: AssistantSuggestedCta, contacts: ContactLinks)
 const telegramCtaQuestionIds = new Set(["contact", "mobile-f2p", "salary", "work-format"]);
 
 export function AssistantChat({ data, contacts }: AssistantChatProps) {
+  const apiEnabled = isAssistantApiEnabled();
+  const isDevMode = import.meta.env.DEV;
+  const initialAssistantMode: AssistantMode = apiEnabled ? "idle" : "fallback";
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [fallbackNotice, setFallbackNotice] = useState("");
-  const [assistantMode, setAssistantMode] = useState<AssistantMode>("idle");
+  const [assistantMode, setAssistantMode] = useState<AssistantMode>(initialAssistantMode);
   const [messages, setMessages] = useState<Message[]>([
     {
       role: "assistant",
       text: data.identity,
+      isIntro: true,
     },
   ]);
 
@@ -84,8 +89,8 @@ export function AssistantChat({ data, contacts }: AssistantChatProps) {
     return new Map(data.quickQuestions.map((question) => [normalize(question.label), question]));
   }, [data.quickQuestions]);
 
-  const apiEnabled = isAssistantApiEnabled();
-  const isDevMode = import.meta.env.DEV;
+  const isBasicMode = assistantMode === "fallback";
+  const assistantIntroText = isBasicMode ? data.basicIdentity : data.identity;
 
   function getScriptedAnswer(question: string, questionId?: string): ScriptedAnswer {
     const fallbackAnswer = findAssistantFallbackAnswer(question);
@@ -123,7 +128,7 @@ export function AssistantChat({ data, contacts }: AssistantChatProps) {
       return;
     }
 
-    const history = toApiHistory(messages);
+    const history = toApiHistory(messages, assistantIntroText);
     const userMessage: Message = { role: "user", text: trimmedQuestion };
 
     setMessages((current) => [...current, userMessage]);
@@ -151,7 +156,7 @@ export function AssistantChat({ data, contacts }: AssistantChatProps) {
       setAssistantMode("fallback");
 
       setFallbackNotice(
-        "Сейчас отвечаю в базовом режиме по CV. Для деталей лучше написать Артёму напрямую.",
+        data.basicIdentity,
       );
       setMessages((current) => [
         ...current,
@@ -252,6 +257,7 @@ export function AssistantChat({ data, contacts }: AssistantChatProps) {
           {messages.map((message, index) => {
             const ctaLabel = getCtaLabel(message.suggestedCta ?? null);
             const ctaHref = getCtaHref(message.suggestedCta ?? null, contacts);
+            const messageText = message.isIntro ? assistantIntroText : message.text;
 
             return (
               <div
@@ -270,7 +276,9 @@ export function AssistantChat({ data, contacts }: AssistantChatProps) {
                       : "border border-white/10 bg-white/5 text-slate-300"
                   }`}
                 >
-                  <p>{message.text}</p>
+                  <p className={message.isIntro && isBasicMode ? "text-[#f2c46d]" : undefined}>
+                    {messageText}
+                  </p>
                   {message.usedFallback ? (
                     <p className="mt-2 text-sm leading-6 text-slate-500">Базовый ответ по CV</p>
                   ) : null}

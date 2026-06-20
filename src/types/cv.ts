@@ -70,6 +70,7 @@ export type QuickQuestion = {
 
 export type AssistantData = {
   identity: string;
+  basicIdentity: string;
   quickQuestions: QuickQuestion[];
   answers: Record<string, string>;
   fallbackAnswer: string;

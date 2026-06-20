@@ -3,6 +3,8 @@ import type { AssistantData } from "../types/cv";
 export const assistantData: AssistantData = {
   identity:
     "Я CV-ассистент Артёма. Отвечаю по его опыту, проектам, стеку и pet-проектам. Если вопрос лучше обсудить лично — предложу написать ему в Telegram или LinkedIn.",
+  basicIdentity:
+    "Сейчас отвечаю в сокращённом режиме: часть данных временно недоступна из-за связи с сервером. Для деталей лучше написать Артёму в Telegram.",
   quickQuestions: [
     {
       id: "value",
