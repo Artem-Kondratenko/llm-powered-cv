@@ -10,6 +10,47 @@ export type AssistantCandidateType =
   | "type2_related_or_general"
   | "type3_no_verified_data";
 
+export type DeterministicIntent =
+  | "age"
+  | "birth_date"
+  | "location"
+  | "contacts"
+  | "telegram"
+  | "linkedin"
+  | "email"
+  | "pdf"
+  | "salary"
+  | "work_format"
+  | "english"
+  | "status"
+  | "availability"
+  | "relocation"
+  | "programming"
+  | "exact_metrics"
+  | "nda_details"
+  | "experience_years"
+  | "years_ago"
+  | "topic_experience"
+  | null;
+
+export type DerivedFacts = {
+  birthDate: string;
+  currentDate: string;
+  currentAge: number;
+  location: string;
+  status: string;
+  salaryRange: string;
+  workFormats: string[];
+  english: string;
+  contacts: typeof CONTACTS;
+  protectedTopics: string[];
+  documentedExperience: {
+    firstCommercialYear: number;
+    calendarYearsSinceFirstCommercialExperience: number;
+    note: string;
+  };
+};
+
 export type KnownFactMatch = {
   topic: string;
   title: string;
@@ -20,6 +61,8 @@ export type AssistantContextResult = {
   normalizedQuestion: string;
   candidateType: AssistantCandidateType;
   matchedTopics: string[];
+  deterministicIntent: DeterministicIntent;
+  derivedFacts: DerivedFacts;
   relevantContext: string;
   deterministicAnswer: DeterministicAssistantAnswer | null;
   isRiskyProfessionalQuestion: boolean;
@@ -37,6 +80,41 @@ const CONTACTS = {
   email: "Anderson892311@gmail.com",
   pdf: "/files/Artem_Kondratenko_GameDesigner_CV.pdf",
 };
+
+const FIRST_COMMERCIAL_EXPERIENCE_YEAR = 2022;
+
+const EVENT_YEARS = [
+  {
+    aliases: ["chameleon", "хамелеон", "42"],
+    label: "Chameleon 42",
+    year: 2025,
+  },
+  {
+    aliases: ["nerve games", "нерв", "catch the candy", "game to think"],
+    label: "Nerve Games",
+    year: 2024,
+  },
+  {
+    aliases: ["hamster", "хамстер", "kombat", "combat", "game dev masters", "gamedev masters", "gamedev heroes", "playducky"],
+    label: "Hamster Kombat / GameDev Masters / Playducky",
+    year: 2024,
+  },
+  {
+    aliases: ["tobee", "to bee", "lifebalance", "life balance"],
+    label: "ToBee Live",
+    year: 2022,
+  },
+  {
+    aliases: ["meowmeals", "meow meals", "meow", "мяу"],
+    label: "MeowMeals",
+    year: 2025,
+  },
+  {
+    aliases: ["combuchai", "комбуч"],
+    label: "CombuchAI",
+    year: 2025,
+  },
+];
 
 type TopicDefinition = {
   topic: string;
@@ -81,6 +159,10 @@ function calculateAge(now = new Date()) {
   return age;
 }
 
+function calculateCalendarYearsSince(year: number, now = new Date()) {
+  return Math.max(0, now.getFullYear() - year);
+}
+
 function formatDate(value: Date) {
   return new Intl.DateTimeFormat("ru-RU", {
     day: "2-digit",
@@ -89,10 +171,53 @@ function formatDate(value: Date) {
   }).format(value);
 }
 
+function formatIsoDate(value: Date) {
+  const year = value.getFullYear();
+  const month = String(value.getMonth() + 1).padStart(2, "0");
+  const day = String(value.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+}
+
+export function buildDerivedFacts(now = new Date()): DerivedFacts {
+  const calendarYearsSinceFirstCommercialExperience = calculateCalendarYearsSince(
+    FIRST_COMMERCIAL_EXPERIENCE_YEAR,
+    now,
+  );
+
+  return {
+    birthDate: "1989-11-23",
+    currentDate: formatIsoDate(now),
+    currentAge: calculateAge(now),
+    location: "Минск, Беларусь",
+    status: "Открыт к предложениям, если роль и проект подходят по задачам; точную доступность нужно уточнять напрямую.",
+    salaryRange: "Ориентир от $2000 в месяц; зависит от формата, задач и уровня ответственности.",
+    workFormats: ["remote", "full-time", "project-based/contract", "офис в Минске обсуждаемо"],
+    english:
+      "Уверенно читает документацию и профессиональные статьи; разговорный английский базовый, не приукрашивать до fluent/intermediate speaking.",
+    contacts: CONTACTS,
+    protectedTopics: [
+      "NDA-детали Chameleon 42",
+      "точные внутренние метрики и отчёты",
+      "точная availability / дата выхода",
+      "финальные условия и зарплата как фиксированное требование",
+      "уверенное программирование на Python/C#/SQL",
+    ],
+    documentedExperience: {
+      firstCommercialYear: FIRST_COMMERCIAL_EXPERIENCE_YEAR,
+      calendarYearsSinceFirstCommercialExperience,
+      note:
+        "В базе подтвержден коммерческий/проектный опыт с 2022 года. Месяцы не указаны, поэтому длительность можно формулировать как календарный период, а не точный стаж до месяца.",
+    },
+  };
+}
+
 function ageContext() {
+  const derivedFacts = buildDerivedFacts();
+
   return [
     "Дата рождения: 23.11.1989.",
-    `Безопасный производный факт: на ${formatDate(new Date())} Артему ${calculateAge()} лет.`,
+    `Безопасный производный факт: на ${formatDate(new Date())} Артему ${derivedFacts.currentAge} лет.`,
     "Возраст нужно считать динамически от даты рождения, а не хранить как статичное число.",
   ].join(" ");
 }
@@ -119,11 +244,25 @@ const topicDefinitions: TopicDefinition[] = [
       "Английский: Артем уверенно читает документацию и профессиональные статьи. Разговорный английский слабее, базовый; не приукрашивать до fluent или уверенного intermediate speaking.",
   },
   {
+    topic: "status",
+    title: "Актуальный статус",
+    aliases: ["статус", "актуальн", "ищет работу", "открыт", "available", "open to", "рассматривает предложения"],
+    context: () =>
+      "Актуальный статус: Артем открыт к предложениям, если роль и проект подходят по задачам. Точную availability и дату выхода нельзя обещать от его лица.",
+  },
+  {
     topic: "work_format",
     title: "Форматы работы",
     aliases: ["формат", "full time", "full-time", "контракт", "contract", "project based", "project-based", "remote", "удален", "удаленка", "офис"],
     context: () =>
       "Форматы работы: Артем открыт к full-time, project-based/contract и remote. Офис в Минске обсуждаемо. Релокация и остальные условия - только через личное обсуждение.",
+  },
+  {
+    topic: "relocation",
+    title: "Релокация",
+    aliases: ["релокац", "relocation", "переезд", "переехать", "relocate"],
+    context: () =>
+      "Релокация: только личное обсуждение с Артемом. Подтвержденные форматы из базы: remote, full-time, project-based/contract, офис в Минске обсуждаемо.",
   },
   {
     topic: "salary",
@@ -148,9 +287,23 @@ const topicDefinitions: TopicDefinition[] = [
   {
     topic: "programming",
     title: "Программирование, Unity и Cocos",
-    aliases: ["python", "c#", "sql", "программ", "код", "developer", "разработчик", "unity", "cocos", "движок"],
+    aliases: ["python", "c#", "sql", "программ", "код", "developer", "разработчик"],
     context: () =>
       "Unity и Cocos - базовый уровень: может читать и понимать структуру проекта, делать простые правки и прототипы через AI. Нельзя утверждать, что Артем является уверенным Python/C#/SQL developer. Корректная формулировка: AI-assisted prototyping / vibe-coding, а не classic software engineering. NerveEngine - глубокий production experience.",
+  },
+  {
+    topic: "tools",
+    title: "Инструменты",
+    aliases: ["tools", "инструмент", "confluence", "notion", "asana", "trello", "figma", "miro", "google docs", "google sheets", "excel"],
+    context: () =>
+      "Инструменты: Confluence, Notion, Asana, Trello, Figma, Miro, Google Docs, Google Sheets, Excel. Также есть работа с AppMetrica, devtodev и внутренними дашбордами.",
+  },
+  {
+    topic: "engines",
+    title: "Движки",
+    aliases: ["engine", "движк", "unity", "cocos", "nerveengine", "nerve engine"],
+    context: () =>
+      "Движки и конфиги: Unity basic, Cocos basic, NerveEngine deep production experience. В NerveEngine занимался разработкой и улучшением движка, создавал уровни и настраивал игровые сущности.",
   },
   {
     topic: "mobile_f2p",
@@ -179,6 +332,13 @@ const topicDefinitions: TopicDefinition[] = [
     aliases: ["аналитик", "a b", "ab", "a/b", "тест", "метрик", "retention", "ретенш", "time spent", "dau", "arpdau", "appmetrica", "devtodev", "воронк"],
     context: () =>
       "Аналитика: AppMetrica, devtodev, внутренние дашборды, Google Sheets/Excel, воронки, retention, time spent, DAU, ARPDAU. В Nerve Games провел около 10 итераций после запуска с A/B-тестами. Публично можно говорить только о разрешенных метриках из базы и не выдумывать дополнительные проценты или внутренние отчеты.",
+  },
+  {
+    topic: "ai_prototyping",
+    title: "AI prototyping",
+    aliases: ["llm", "gemini", "openai", "прототип", "prototype", "prototyping", "vibe", "вайб", "mvp", "ai assisted", "artificial intelligence", "искусственн"],
+    context: () =>
+      "AI/prototyping: Артем использует AI-assisted prototyping и vibe-coding для быстрых MVP, Telegram-ботов и AI-инструментов. Примеры: MeowMeals, CombuchAI, LLM-аналитика и продуктовая сборка прототипов. Не позиционировать как classic software engineering.",
   },
   {
     topic: "chameleon_42",
@@ -317,8 +477,21 @@ function asksAboutInternalOrExactMetrics(question: string) {
   );
 }
 
+function asksAboutNdaDetails(question: string) {
+  return hasAny(question, ["nda", "ндаг", "под nda", "детал", "секрет", "раскрой", "закрыт"]) &&
+    hasAny(question, ["chameleon", "хамелеон", "42", "liveops", "reward", "награ", "метрик", "meowmeals"]);
+}
+
 function asksAboutAvailability(question: string) {
   return hasAny(question, ["готов выйти", "выйти завтра", "завтра", "availability", "доступен", "доступность", "когда может выйти", "дата выхода"]);
+}
+
+function asksAboutStatus(question: string) {
+  return hasAny(question, ["статус", "актуальн", "ищет работу", "открыт", "available", "open to", "рассматривает предложения"]);
+}
+
+function asksAboutRelocation(question: string) {
+  return hasAny(question, ["релокац", "relocation", "переезд", "переехать", "relocate"]);
 }
 
 function asksAboutVacancyDiscussion(question: string) {
@@ -336,6 +509,19 @@ function asksAboutContacts(question: string) {
   );
 }
 
+function asksForTelegram(question: string) {
+  return hasAny(question, ["telegram", "телеграм"]) &&
+    !hasAny(question, ["telegram games", "telegram game", "telegram products", "игр", "продукт", "bot", "бот"]);
+}
+
+function asksForLinkedIn(question: string) {
+  return hasAny(question, ["linkedin", "линкедин", "linked in"]);
+}
+
+function asksForEmail(question: string) {
+  return hasAny(question, ["email", "почт", "e mail", "mail"]);
+}
+
 function asksAboutAge(question: string) {
   return hasAny(question, ["сколько лет", "возраст", "age"]);
 }
@@ -347,16 +533,145 @@ function asksAboutBirthDate(question: string) {
 function asksAboutRetentionPercent(question: string) {
   return (
     hasAny(question, ["процент", "%", "точн", "retention", "ретенш", "рост"]) &&
-    hasAny(question, ["ab", "a b", "a/b", "тест", "метрик", "dau", "arpdau", "time spent"])
+    hasAny(question, ["ab", "a b", "a/b", "тест", "retention", "ретенш", "dau", "arpdau", "time spent"])
   );
+}
+
+function asksAboutExperienceYears(question: string) {
+  return hasAny(question, [
+    "стаж",
+    "лет опыта",
+    "years of experience",
+    "experience years",
+    "сколько опыта",
+    "как давно в геймдизайне",
+    "какой опыт по годам",
+    "длительность работы",
+  ]);
+}
+
+function asksHowManyYearsAgo(question: string) {
+  return hasAny(question, ["сколько лет назад", "как давно", "когда было", "в каком году", "years ago"]);
+}
+
+function findEventYearMatch(question: string) {
+  return EVENT_YEARS.find((event) => hasAny(question, event.aliases)) ?? null;
+}
+
+function isTopicExperienceQuestion(question: string, matches: KnownFactMatch[]) {
+  return (
+    matches.some((match) =>
+      [
+        "mobile_f2p",
+        "ftue_tutorials",
+        "monetization",
+        "analytics_ab_tests",
+        "liveops",
+        "telegram_games",
+        "ai_prototyping",
+        "tools",
+        "engines",
+        "generalist_value",
+      ].includes(match.topic),
+    ) || hasAny(question, ["есть ли опыт", "работал ли", "подходит ли", "умеет ли", "чем полезен"])
+  );
+}
+
+export function detectDeterministicIntent(message: string): DeterministicIntent {
+  const question = normalizeQuestion(message);
+  const matches = detectKnownFacts(question);
+
+  if (asksHowManyYearsAgo(question) && findEventYearMatch(question)) {
+    return "years_ago";
+  }
+
+  if (asksAboutExperienceYears(question)) {
+    return "experience_years";
+  }
+
+  if (asksAboutAge(question)) {
+    return "age";
+  }
+
+  if (asksAboutBirthDate(question)) {
+    return "birth_date";
+  }
+
+  if (asksAboutAvailability(question)) {
+    return "availability";
+  }
+
+  if (asksAboutNdaDetails(question)) {
+    return "nda_details";
+  }
+
+  if (asksAboutInternalOrExactMetrics(question) || asksAboutRetentionPercent(question)) {
+    return "exact_metrics";
+  }
+
+  if (asksForTelegram(question)) {
+    return "telegram";
+  }
+
+  if (asksForLinkedIn(question)) {
+    return "linkedin";
+  }
+
+  if (asksForEmail(question)) {
+    return "email";
+  }
+
+  if (includesTopic(matches, "pdf")) {
+    return "pdf";
+  }
+
+  if (includesTopic(matches, "english")) {
+    return "english";
+  }
+
+  if (includesTopic(matches, "salary")) {
+    return "salary";
+  }
+
+  if (asksAboutRelocation(question) || includesTopic(matches, "relocation")) {
+    return "relocation";
+  }
+
+  if (includesTopic(matches, "location")) {
+    return "location";
+  }
+
+  if (includesTopic(matches, "work_format")) {
+    return "work_format";
+  }
+
+  if (asksAboutStatus(question) || includesTopic(matches, "status")) {
+    return "status";
+  }
+
+  if (includesTopic(matches, "programming")) {
+    return "programming";
+  }
+
+  if (asksAboutVacancyDiscussion(question) || (includesTopic(matches, "contacts") && asksAboutContacts(question))) {
+    return "contacts";
+  }
+
+  if (isTopicExperienceQuestion(question, matches)) {
+    return "topic_experience";
+  }
+
+  return null;
 }
 
 function getDeterministicAnswer(
   question: string,
   matches: KnownFactMatch[],
+  deterministicIntent: DeterministicIntent,
+  derivedFacts: DerivedFacts,
   isRiskyProfessionalQuestion: boolean,
 ): DeterministicAssistantAnswer | null {
-  if (asksAboutAvailability(question)) {
+  if (deterministicIntent === "availability") {
     return {
       answer:
         "В CV-базе нет подтверждённой даты доступности или обещания, что Артём готов выйти завтра. Такие условия лучше уточнить у Артёма напрямую в Telegram.",
@@ -364,8 +679,45 @@ function getDeterministicAnswer(
     };
   }
 
-  if (asksAboutInternalOrExactMetrics(question)) {
+  if (deterministicIntent === "nda_details") {
+    return {
+      answer:
+        "NDA-детали Chameleon 42, LiveOps-событий, reward-систем и части пользовательской статистики публично не раскрываются. В базе можно говорить только о роли Артёма, зоне ответственности и общих типах задач; конкретику лучше уточнить у Артёма напрямую.",
+      suggestedCta: "telegram",
+    };
+  }
+
+  if (deterministicIntent === "years_ago") {
+    const event = findEventYearMatch(question);
+
+    if (event) {
+      const yearsAgo = calculateCalendarYearsSince(event.year);
+
+      return {
+        answer: `В базе CV для ${event.label} указан ${event.year} год. На ${derivedFacts.currentDate} это примерно ${yearsAgo} ${yearsAgo === 1 ? "год" : yearsAgo >= 2 && yearsAgo <= 4 ? "года" : "лет"} назад; точный месяц в базе не указан.`,
+        suggestedCta: null,
+      };
+    }
+  }
+
+  if (deterministicIntent === "experience_years") {
+    return {
+      answer: `В базе подтверждён коммерческий и project-based опыт Артёма с ${derivedFacts.documentedExperience.firstCommercialYear} года. На ${derivedFacts.currentDate} это около ${derivedFacts.documentedExperience.calendarYearsSinceFirstCommercialExperience} лет календарного периода, но месяцы и пересечения проектов в базе не детализированы, поэтому точный стаж до месяца лучше не додумывать.`,
+      suggestedCta: null,
+    };
+  }
+
+  if (deterministicIntent === "exact_metrics") {
     const isChameleon = includesTopic(matches, "chameleon_42");
+
+    if (asksAboutRetentionPercent(question)) {
+      return {
+        answer:
+          "В CV-базе по Nerve Games разрешено говорить об улучшении retention и DAU примерно на 10-15% по удачным итерациям, а также о retention 40/20/10 для Short/Mid/Long по итогам тестов туториала и кривой сложности. Дополнительные точные проценты, абсолютные значения и внутренние отчёты не раскрываются.",
+        suggestedCta: "telegram",
+      };
+    }
+
     return {
       answer: isChameleon
         ? "Точные внутренние метрики Chameleon 42 в публичной CV-базе не раскрываются: часть деталей проекта под NDA. Лучше уточнить у Артёма напрямую, что можно обсуждать в рамках конкретной вакансии."
@@ -374,78 +726,135 @@ function getDeterministicAnswer(
     };
   }
 
-  if (asksAboutRetentionPercent(question)) {
+  if (deterministicIntent === "age") {
     return {
-      answer:
-        "В CV-базе по Nerve Games разрешено говорить об улучшении retention и DAU примерно на 10-15% по удачным итерациям, а также о retention 40/20/10 для Short/Mid/Long по итогам тестов туториала и кривой сложности. Дополнительные точные проценты, абсолютные значения и внутренние отчёты не раскрываются.",
-      suggestedCta: "telegram",
-    };
-  }
-
-  if (asksAboutAge(question)) {
-    return {
-      answer: `В базе CV указана дата рождения Артёма: 23.11.1989. Сейчас ему ${calculateAge()} лет.`,
+      answer: `В базе CV указана дата рождения Артёма: 23.11.1989. На ${derivedFacts.currentDate} ему ${derivedFacts.currentAge} лет.`,
       suggestedCta: null,
     };
   }
 
-  if (asksAboutBirthDate(question)) {
+  if (deterministicIntent === "birth_date") {
     return {
       answer: "В базе CV указана дата рождения Артёма: 23.11.1989.",
       suggestedCta: null,
     };
   }
 
-  if (includesTopic(matches, "location")) {
+  if (deterministicIntent === "telegram") {
+    return {
+      answer: `Telegram Артёма: ${derivedFacts.contacts.telegram}`,
+      suggestedCta: "telegram",
+    };
+  }
+
+  if (deterministicIntent === "linkedin") {
+    return {
+      answer: `LinkedIn Артёма: ${derivedFacts.contacts.linkedIn}`,
+      suggestedCta: "linkedin",
+    };
+  }
+
+  if (deterministicIntent === "email") {
+    return {
+      answer: `Email для связи с Артёмом: ${derivedFacts.contacts.email}`,
+      suggestedCta: "email",
+    };
+  }
+
+  if (deterministicIntent === "location") {
     return {
       answer: "Артём находится в Минске, Беларусь. Приоритетные рынки — СНГ/русскоязычные команды и Европа/remote.",
       suggestedCta: null,
     };
   }
 
-  if (includesTopic(matches, "english")) {
+  if (deterministicIntent === "english") {
     return {
-      answer:
-        "По CV-базе Артём уверенно читает документацию и профессиональные статьи на английском. Разговорный английский слабее: его корректно описывать как базовый, без приукрашивания до fluent или уверенного intermediate speaking.",
+      answer: `По CV-базе: ${derivedFacts.english}`,
       suggestedCta: null,
     };
   }
 
-  if (includesTopic(matches, "salary")) {
+  if (deterministicIntent === "status") {
+    return {
+      answer: derivedFacts.status,
+      suggestedCta: "telegram",
+    };
+  }
+
+  if (deterministicIntent === "salary") {
+    return {
+      answer: `${derivedFacts.salaryRange} Это не финальные условия от лица Артёма — детали лучше обсудить напрямую.`,
+      suggestedCta: "telegram",
+    };
+  }
+
+  if (deterministicIntent === "relocation") {
     return {
       answer:
-        "Зарплата зависит от формата, задач и уровня ответственности. В CV-базе указан ориентир от $2000 в месяц, но это не финальные условия от лица Артёма — детали лучше обсудить напрямую.",
+        "По CV-базе релокация обсуждается только лично с Артёмом. Подтверждённые форматы: remote, full-time, project-based/contract и офис в Минске как обсуждаемый вариант.",
       suggestedCta: "telegram",
     };
   }
 
-  if (includesTopic(matches, "work_format")) {
+  if (deterministicIntent === "work_format") {
     return {
-      answer:
-        "Артём открыт к full-time, project-based/contract и remote. Также можно обсуждать работу в офисе Минска; остальные условия лучше согласовать напрямую.",
+      answer: `Форматы работы: ${derivedFacts.workFormats.join(", ")}. Остальные условия лучше согласовать напрямую.`,
       suggestedCta: "telegram",
     };
   }
 
-  if (asksAboutVacancyDiscussion(question) || (includesTopic(matches, "contacts") && asksAboutContacts(question))) {
+  if (deterministicIntent === "contacts") {
     return {
-      answer: `Да, вакансию лучше обсудить напрямую с Артёмом в Telegram: ${CONTACTS.telegram}. Также доступны LinkedIn ${CONTACTS.linkedIn} и email ${CONTACTS.email}.`,
+      answer: `Да, вакансию лучше обсудить напрямую с Артёмом в Telegram: ${derivedFacts.contacts.telegram}. Также доступны LinkedIn ${derivedFacts.contacts.linkedIn} и email ${derivedFacts.contacts.email}.`,
       suggestedCta: "telegram",
     };
   }
 
-  if (includesTopic(matches, "pdf")) {
+  if (deterministicIntent === "pdf") {
     return {
-      answer: `PDF CV доступен по пути ${CONTACTS.pdf}. На сайте его лучше открывать через кнопку «Скачать PDF».`,
+      answer: `PDF CV доступен по пути ${derivedFacts.contacts.pdf}. На сайте его лучше открывать через кнопку «Скачать PDF».`,
       suggestedCta: null,
     };
   }
 
-  if (includesTopic(matches, "programming")) {
+  if (deterministicIntent === "programming") {
     return {
       answer:
         "В CV-базе нет подтверждения, что Артём является уверенным Python/C#/SQL developer. Unity и Cocos у него на базовом уровне: он может читать структуру проекта и делать простые правки или прототипы через AI. Корректная формулировка — AI-assisted prototyping / vibe-coding, а не classic software engineering.",
       suggestedCta: "telegram",
+    };
+  }
+
+  if (includesTopic(matches, "analytics_ab_tests")) {
+    return {
+      answer:
+        "Да. В CV-базе есть опыт с аналитикой и A/B-тестами: AppMetrica, devtodev, внутренние дашборды, воронки, retention, time spent, DAU и ARPDAU. В Nerve Games Артём провёл около 10 post-launch итераций с A/B-тестами; дополнительные внутренние отчёты и точные цифры не раскрываются.",
+      suggestedCta: null,
+    };
+  }
+
+  if (includesTopic(matches, "ai_prototyping")) {
+    return {
+      answer:
+        "Да. Артём использует AI-assisted prototyping и vibe-coding для быстрых MVP, Telegram-ботов и AI-инструментов. Примеры из базы: MeowMeals, CombuchAI, LLM-аналитика и продуктовая сборка прототипов; это не нужно позиционировать как classic software engineering.",
+      suggestedCta: null,
+    };
+  }
+
+  if (includesTopic(matches, "tools")) {
+    return {
+      answer:
+        "В базе указаны Confluence, Notion, Asana, Trello, Figma, Miro, Google Docs, Google Sheets и Excel. Также есть опыт с AppMetrica, devtodev и внутренними дашбордами.",
+      suggestedCta: null,
+    };
+  }
+
+  if (includesTopic(matches, "engines")) {
+    return {
+      answer:
+        "По движкам: Unity и Cocos — базовый уровень, NerveEngine — глубокий production experience. В NerveEngine Артём занимался разработкой и улучшением движка, создавал уровни и настраивал игровые сущности.",
+      suggestedCta: null,
     };
   }
 
@@ -559,8 +968,16 @@ function getDeterministicAnswer(
 export function buildRelevantContext(message: string): AssistantContextResult {
   const normalizedQuestion = normalizeQuestion(message);
   const knownFacts = detectKnownFacts(message);
+  const deterministicIntent = detectDeterministicIntent(message);
+  const derivedFacts = buildDerivedFacts();
   const isRiskyProfessionalQuestion = detectRiskyProfessionalQuestion(message);
-  const deterministicAnswer = getDeterministicAnswer(normalizedQuestion, knownFacts, isRiskyProfessionalQuestion);
+  const deterministicAnswer = getDeterministicAnswer(
+    normalizedQuestion,
+    knownFacts,
+    deterministicIntent,
+    derivedFacts,
+    isRiskyProfessionalQuestion,
+  );
   const candidateType: AssistantCandidateType = knownFacts.length
     ? "type1_known_or_derived_fact"
     : isRiskyProfessionalQuestion
@@ -569,9 +986,23 @@ export function buildRelevantContext(message: string): AssistantContextResult {
   const relevantContext = [
     "## Server-side retrieval context",
     `normalizedQuestion: ${normalizedQuestion || "(empty)"}`,
+    `deterministicIntent: ${deterministicIntent ?? "none"}`,
     `candidateType: ${candidateType}`,
     `matchedTopics: ${knownFacts.map((match) => match.topic).join(", ") || "none"}`,
     `riskyProfessionalQuestion: ${isRiskyProfessionalQuestion ? "yes" : "no"}`,
+    "",
+    "### Backend-derived facts - source of truth for calculations",
+    `- birthDate: ${derivedFacts.birthDate}`,
+    `- currentDate: ${derivedFacts.currentDate}`,
+    `- currentAge: ${derivedFacts.currentAge}`,
+    `- location: ${derivedFacts.location}`,
+    `- status: ${derivedFacts.status}`,
+    `- salaryRange: ${derivedFacts.salaryRange}`,
+    `- workFormats: ${derivedFacts.workFormats.join(", ")}`,
+    `- english: ${derivedFacts.english}`,
+    `- contacts: Telegram ${derivedFacts.contacts.telegram}; LinkedIn ${derivedFacts.contacts.linkedIn}; Email ${derivedFacts.contacts.email}; PDF ${derivedFacts.contacts.pdf}`,
+    `- documentedExperience: since ${derivedFacts.documentedExperience.firstCommercialYear}, about ${derivedFacts.documentedExperience.calendarYearsSinceFirstCommercialExperience} calendar years as of ${derivedFacts.currentDate}; ${derivedFacts.documentedExperience.note}`,
+    `- protectedTopics: ${derivedFacts.protectedTopics.join("; ")}`,
     "",
     "### Relevant facts and safe derived facts",
     knownFacts.length
@@ -582,12 +1013,15 @@ export function buildRelevantContext(message: string): AssistantContextResult {
     "- Type 1: if the relevant facts answer the question, answer from them and do not say that the CV database has no data.",
     "- Type 2: if the question is broad but related, answer generally using the relevant facts and suggest Telegram only when personal details are needed.",
     "- Type 3: if there is no verified data and the question is professionally important, do not invent; say that the CV base has no confirmed data and suggest Telegram.",
+    "- Do not calculate age, years of experience, years ago, dates or percentages yourself. Use backend-derived facts only.",
   ].join("\n");
 
   return {
     normalizedQuestion,
     candidateType,
     matchedTopics: knownFacts.map((match) => match.topic),
+    deterministicIntent,
+    derivedFacts,
     relevantContext,
     deterministicAnswer,
     isRiskyProfessionalQuestion,

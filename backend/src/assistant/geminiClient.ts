@@ -72,7 +72,7 @@ function buildSystemPrompt(context: AssistantContextResult | null) {
     "",
     context.relevantContext,
     "",
-    "Priority instruction: the server-side retrieval context above is high-priority extracted context from the same CV base. Use it to connect synonyms, safe derived facts and related formulations to the CV facts. If candidateType is type1_known_or_derived_fact, do not answer that the CV base has no data when the relevant context contains the answer.",
+    "Priority instruction: the server-side retrieval context above is high-priority extracted context from the same CV base. Use it to connect synonyms, safe derived facts and related formulations to the CV facts. If candidateType is type1_known_or_derived_fact, do not answer that the CV base has no data when the relevant context contains the answer. Do not calculate age, years of experience, years ago, dates or percentages yourself; use backend-derived facts only.",
   ].join("\n");
 }
 
