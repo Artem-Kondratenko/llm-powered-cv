@@ -141,7 +141,7 @@ function Invoke-RemoteDeploy {
   Write-Host "$ServerSsh -> $RemoteDeployCommand"
   Write-Host ""
 
-  Invoke-Native ssh $ServerSsh $RemoteDeployCommand
+  Invoke-Native ssh -tt $ServerSsh $RemoteDeployCommand
 
   Write-Host ""
 }
