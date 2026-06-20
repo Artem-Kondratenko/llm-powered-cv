@@ -87,12 +87,19 @@ function Sync-CurrentBranch {
     throw "Deploy stopped: repository is in detached HEAD state."
   }
 
-  $upstream = (& git rev-parse --abbrev-ref --symbolic-full-name "@{u}" 2>$null | Select-Object -First 1)
+  $upstreamRef = "HEAD@{upstream}"
+  $upstreamOutput = & git rev-parse --abbrev-ref $upstreamRef 2>$null
+  $upstreamExitCode = $LASTEXITCODE
+  $upstreamLines = @($upstreamOutput | Where-Object { $_ })
+  $upstream = if ($upstreamLines.Count -gt 0) { [string]$upstreamLines[0] } else { "" }
 
-  if ($LASTEXITCODE -ne 0 -or -not $upstream) {
+  if ($upstreamExitCode -ne 0 -or -not $upstream) {
     Write-Host "Branch '$branch' has no upstream configured."
     Write-Host "Run this once, then start deploy again:"
     Write-Host "git push -u origin $branch"
+    Write-Host ""
+    Write-Host "Debug info:"
+    git branch -vv
     throw "Deploy stopped: upstream is not configured."
   }
 
