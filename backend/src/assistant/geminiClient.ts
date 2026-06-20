@@ -1,5 +1,6 @@
 import { config } from "../config.js";
 import { assistantSystemPrompt } from "./systemPrompt.js";
+import type { AssistantContextResult } from "./context.js";
 
 export type AssistantRole = "user" | "assistant";
 export type AssistantSuggestedCta = "telegram" | "linkedin" | "email" | null;
@@ -61,6 +62,20 @@ function isSuggestedCta(value: unknown): value is AssistantSuggestedCta {
   return value === "telegram" || value === "linkedin" || value === "email" || value === null;
 }
 
+function buildSystemPrompt(context: AssistantContextResult | null) {
+  if (!context) {
+    return assistantSystemPrompt;
+  }
+
+  return [
+    assistantSystemPrompt,
+    "",
+    context.relevantContext,
+    "",
+    "Priority instruction: the server-side retrieval context above is high-priority extracted context from the same CV base. Use it to connect synonyms, safe derived facts and related formulations to the CV facts. If candidateType is type1_known_or_derived_fact, do not answer that the CV base has no data when the relevant context contains the answer.",
+  ].join("\n");
+}
+
 function validateAssistantAnswer(value: unknown): AssistantAnswer {
   if (!value || typeof value !== "object") {
     throw new AssistantHttpError(502, "Gemini returned an invalid response.");
@@ -81,6 +96,7 @@ function validateAssistantAnswer(value: unknown): AssistantAnswer {
 export async function generateAssistantAnswer(
   message: string,
   history: AssistantHistoryMessage[],
+  context: AssistantContextResult | null = null,
 ): Promise<AssistantAnswer> {
   if (!config.geminiApiKey) {
     throw new AssistantHttpError(503, "GEMINI_API_KEY is not configured.");
@@ -97,7 +113,7 @@ export async function generateAssistantAnswer(
     },
     body: JSON.stringify({
       systemInstruction: {
-        parts: [{ text: assistantSystemPrompt }],
+        parts: [{ text: buildSystemPrompt(context) }],
       },
       contents: [
         ...history.map((historyMessage) => ({

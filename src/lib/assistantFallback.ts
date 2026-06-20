@@ -7,8 +7,14 @@ export type AssistantFallbackAnswer = {
 
 type FallbackRule = {
   match: (normalizedQuestion: string) => boolean;
-  answer: string;
+  answer: string | (() => string);
   suggestedCta: AssistantSuggestedCta;
+};
+
+const birthDate = {
+  day: 23,
+  monthIndex: 10,
+  year: 1989,
 };
 
 function normalize(value: string) {
@@ -24,7 +30,42 @@ function hasAny(value: string, keywords: string[]) {
   return keywords.some((keyword) => value.includes(keyword));
 }
 
+function calculateAge(now = new Date()) {
+  let age = now.getFullYear() - birthDate.year;
+  const birthdayThisYear = new Date(now.getFullYear(), birthDate.monthIndex, birthDate.day);
+
+  if (now < birthdayThisYear) {
+    age -= 1;
+  }
+
+  return age;
+}
+
 const fallbackRules: FallbackRule[] = [
+  {
+    match: (question) => hasAny(question, ["готов выйти", "выйти завтра", "завтра", "availability", "доступен", "доступность", "дата выхода"]),
+    answer:
+      "В CV-базе нет подтверждённой даты доступности или обещания, что Артём готов выйти завтра. Такие условия лучше уточнить у Артёма напрямую в Telegram.",
+    suggestedCta: "telegram",
+  },
+  {
+    match: (question) =>
+      hasAny(question, ["точн", "внутрен", "абсолютн", "отчет", "отчеты", "разбивк", "nda", "секрет"]) &&
+      hasAny(question, ["метрик", "цифр", "retention", "ретенш", "dau", "arpdau", "chameleon", "хамелеон", "процент"]),
+    answer:
+      "Точные внутренние метрики Chameleon 42 и дополнительные проектные цифры в публичной CV-базе не раскрываются: часть деталей под NDA. Лучше уточнить у Артёма напрямую, что можно обсуждать в рамках конкретной вакансии.",
+    suggestedCta: "telegram",
+  },
+  {
+    match: (question) => hasAny(question, ["сколько лет", "возраст", "age"]),
+    answer: () => `В базе CV указана дата рождения Артёма: 23.11.1989. Сейчас ему ${calculateAge()} лет.`,
+    suggestedCta: null,
+  },
+  {
+    match: (question) => hasAny(question, ["когда родился", "дата рождения", "день рождения", "родился"]),
+    answer: "В базе CV указана дата рождения Артёма: 23.11.1989.",
+    suggestedCta: null,
+  },
   {
     match: (question) => hasAny(question, ["chameleon", "хамелеон", "42"]),
     answer:
@@ -40,11 +81,17 @@ const fallbackRules: FallbackRule[] = [
     suggestedCta: null,
   },
   {
+    match: (question) => hasAny(question, ["nerve games", "нерв", "catch the candy", "game to think"]),
+    answer:
+      "В Nerve Games Артём работал Game Designer / Level Designer в 2024–2025 над Catch The Candy и Game To Think. Он создал и настроил около 100 уровней для Game To Think, собрал кривую сложности для soft launch, создал около 50 уровней для Catch The Candy, провёл около 10 post-launch итераций с A/B-тестами, работал с FTUE, туториалами, магазином и внедрил босс- и бонусные уровни.",
+    suggestedCta: null,
+  },
+  {
     match: (question) =>
       hasAny(question, ["процент", "%", "точн", "retention", "ретенш", "рост"]) &&
       hasAny(question, ["retention", "ретенш", "time spent", "dau", "arpdau", "a/b", "ab", "метрик"]),
     answer:
-      "Точные проценты роста в CV-базе не указаны. Есть только подтвержденный факт, что после A/B-итераций улучшались retention, time spent, DAU и ARPDAU, поэтому проценты лучше не додумывать и уточнить у Артема напрямую.",
+      "В CV-базе по Nerve Games разрешено говорить об улучшении retention и DAU примерно на 10-15% по удачным итерациям, а также о retention 40/20/10 для Short/Mid/Long по итогам тестов туториала и кривой сложности. Дополнительные точные проценты, абсолютные значения и внутренние отчёты не раскрываются.",
     suggestedCta: "telegram",
   },
   {
@@ -72,12 +119,25 @@ const fallbackRules: FallbackRule[] = [
     suggestedCta: null,
   },
   {
+    match: (question) => hasAny(question, ["ftue", "tutorial", "туториал", "онбординг", "onboarding", "первые сесс", "first session", "первый запуск"]),
+    answer:
+      "Да. У Артёма есть опыт с FTUE, туториалами, onboarding и первыми сессиями: в Nerve Games он работал с туториалами и кривой сложности, в Chameleon 42 — с tutorial/onboarding, а в ToBee Live проектировал UX-путь от первого запуска до регулярного использования.",
+    suggestedCta: null,
+  },
+  {
+    match: (question) =>
+      hasAny(question, ["монетизац", "economy", "эконом", "offer", "оффер", "battle pass", "магазин", "shop", "rewarded", "ads", "реклам", "stars", "telegram stars"]),
+    answer:
+      "Да. В CV-базе есть опыт с F2P-монетизацией: офферы, rewards, progression, магазин, battle pass, базовая экономика, interstitial ads и rewarded video. В MeowMeals также заложена монетизация через Telegram Stars.",
+    suggestedCta: null,
+  },
+  {
     match: (question) =>
       hasAny(question, ["mobile f2p", "f2p", "мобил", "mobile"]) &&
       hasAny(question, ["подходит", "роль", "ваканси", "позици", "найм"]),
     answer:
-      "Опыт Артема хорошо сопоставляется с mobile F2P задачами: mobile games, FTUE, первые сессии, уровни, LiveOps, offers, rewards, progression, analytics и A/B tests. Я бы не говорил за работодателя, что он точно подходит, но вакансию стоит обсудить напрямую в Telegram.",
-    suggestedCta: "telegram",
+      "Да, по CV-базе Артём релевантен для mobile F2P-задач: у него есть опыт с Nerve Games, Catch The Candy и Game To Think, FTUE, первыми сессиями, level design, кривой сложности, LiveOps, офферами, наградами, прогрессией, рекламной монетизацией, аналитикой и A/B-тестами.",
+    suggestedCta: null,
   },
   {
     match: (question) => hasAny(question, ["generalist", "полез", "закрывает", "сильн", "чем артем полезен"]),
@@ -117,7 +177,7 @@ export function findAssistantFallbackAnswer(question: string): AssistantFallback
 
   return rule
     ? {
-        answer: rule.answer,
+        answer: typeof rule.answer === "function" ? rule.answer() : rule.answer,
         suggestedCta: rule.suggestedCta,
       }
     : null;

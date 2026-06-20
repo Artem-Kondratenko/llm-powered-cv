@@ -6,6 +6,7 @@ import {
   AssistantRole,
   generateAssistantAnswer,
 } from "./geminiClient.js";
+import { buildRelevantContext } from "./context.js";
 
 const router = Router();
 
@@ -68,7 +69,14 @@ router.post("/cv-assistant/chat", async (request, response, next) => {
   try {
     const message = readMessage(request.body);
     const history = readHistory(request.body);
-    const answer = await generateAssistantAnswer(message, history);
+    const assistantContext = buildRelevantContext(message);
+
+    if (assistantContext.deterministicAnswer) {
+      response.json(assistantContext.deterministicAnswer);
+      return;
+    }
+
+    const answer = await generateAssistantAnswer(message, history, assistantContext);
 
     response.json(answer);
   } catch (error) {

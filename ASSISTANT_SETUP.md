@@ -11,7 +11,7 @@
 - Gemini API key хранится только в backend env.
 - Frontend знает только публичный URL endpoint через `VITE_CV_ASSISTANT_API_URL`.
 - Production endpoint сейчас: `https://cv-api-209-38-212-226.sslip.io/api/cv-assistant/chat`.
-- Flow: `Frontend AssistantChat -> VITE_CV_ASSISTANT_API_URL -> backend /api/cv-assistant/chat -> Gemini`.
+- Flow: `Frontend AssistantChat -> VITE_CV_ASSISTANT_API_URL -> backend /api/cv-assistant/chat -> server-side retrieval -> deterministic CV answer or Gemini`.
 - Если backend не настроен или недоступен, `AssistantChat` использует scripted fallback из `src/data/assistantData.ts` и `src/lib/assistantFallback.ts`.
 - В production fallback выглядит нейтрально для HR: “Сейчас отвечаю в базовом режиме по CV. Для деталей лучше написать Артёму напрямую.” Ответы помечаются как “Базовый ответ по CV”.
 
@@ -130,8 +130,10 @@ Response:
 ## Knowledge base and prompt
 
 - Knowledge base: `backend/src/assistant/knowledgeBase.ts`.
+- Server-side retrieval and derived facts: `backend/src/assistant/context.ts`.
 - System prompt: `backend/src/assistant/systemPrompt.ts`.
-- При изменении CV-контента в `src/data/cvData.ts` нужно синхронно обновлять backend knowledge base, `src/data/assistantData.ts` и `src/lib/assistantFallback.ts`.
+- При изменении CV-контента в `src/data/cvData.ts` нужно синхронно обновлять backend knowledge base, `backend/src/assistant/context.ts`, `src/data/assistantData.ts` и `src/lib/assistantFallback.ts`.
+- `context.ts` нормализует вопрос, ищет темы по алиасам, добавляет безопасные производные факты и отвечает детерминированно на частые HR-вопросы: возраст, дата рождения, локация, контакты, PDF, зарплатный ориентир, форматы работы, английский, программирование, NDA-метрики и ключевые проекты.
 - Prompt запрещает выдумывать проценты роста метрик, уверенное программирование на Python/C#/SQL, неуказанный коммерческий опыт, доступность, сроки выхода, NDA-детали и уровень английского сверх базы.
 - По условиям работы можно говорить только факты из базы: full-time/project-based/contract/remote/офис Минск, ориентир от $2000/мес. с зависимостью от формата и задач. Нельзя обещать финальные условия от лица Артёма.
 
@@ -212,13 +214,15 @@ Health:
 curl http://localhost:8080/health
 ```
 
-POST без `GEMINI_API_KEY` должен вернуть контролируемую ошибку:
+POST с известным фактом без `GEMINI_API_KEY` должен ответить через deterministic CV layer:
 
 ```bash
 curl -X POST http://localhost:8080/api/cv-assistant/chat \
   -H "Content-Type: application/json" \
-  -d "{\"message\":\"Что умеет Артем?\",\"history\":[]}"
+  -d "{\"message\":\"Сколько лет Артёму?\",\"history\":[]}"
 ```
+
+Если вопрос не закрывается deterministic CV layer и `GEMINI_API_KEY` не задан, backend вернет контролируемую ошибку `GEMINI_API_KEY is not configured.`.
 
 Production:
 
