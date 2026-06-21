@@ -1,6 +1,7 @@
 import { config } from "../config.js";
 import { assistantSystemPrompt } from "./systemPrompt.js";
 import type { AssistantContextResult } from "./context.js";
+import { sanitizePublicAnswer } from "./publicAnswer.js";
 
 export type AssistantRole = "user" | "assistant";
 export type AssistantSuggestedCta = "telegram" | "linkedin" | "email" | null;
@@ -88,7 +89,7 @@ function validateAssistantAnswer(value: unknown): AssistantAnswer {
   }
 
   return {
-    answer: response.answer.trim(),
+    answer: sanitizePublicAnswer(response.answer.trim()),
     suggestedCta: isSuggestedCta(response.suggestedCta) ? response.suggestedCta : null,
   };
 }

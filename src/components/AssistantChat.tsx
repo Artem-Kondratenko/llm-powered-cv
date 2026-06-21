@@ -2,6 +2,7 @@ import { Bot, Download, Linkedin, Mail, Send, UserRound } from "lucide-react";
 import { FormEvent, useMemo, useState } from "react";
 import { isAssistantApiEnabled, sendAssistantMessage } from "../lib/assistantApi";
 import { findAssistantFallbackAnswer } from "../lib/assistantFallback";
+import { sanitizeAssistantAnswer } from "../lib/assistantPublicAnswer";
 import type {
   AssistantChatMessage,
   AssistantData,
@@ -100,25 +101,25 @@ export function AssistantChat({ data, contacts }: AssistantChatProps) {
     }
 
     if (questionId) {
-      return {
+      return sanitizeAssistantAnswer({
         answer: data.answers[questionId] ?? data.fallbackAnswer,
         suggestedCta: telegramCtaQuestionIds.has(questionId) ? "telegram" : null,
-      };
+      });
     }
 
     const quickQuestion = questionByLabel.get(normalize(question));
 
     if (quickQuestion) {
-      return {
+      return sanitizeAssistantAnswer({
         answer: data.answers[quickQuestion.id] ?? data.fallbackAnswer,
         suggestedCta: telegramCtaQuestionIds.has(quickQuestion.id) ? "telegram" : null,
-      };
+      });
     }
 
-    return {
+    return sanitizeAssistantAnswer({
       answer: data.fallbackAnswer,
       suggestedCta: "telegram",
-    };
+    });
   }
 
   async function askAssistant(question: string, questionId?: string) {

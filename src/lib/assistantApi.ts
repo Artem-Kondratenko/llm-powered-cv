@@ -1,4 +1,5 @@
 import type { AssistantChatMessage, AssistantChatResponse, AssistantSuggestedCta } from "../types/cv";
+import { sanitizeAssistantAnswer } from "./assistantPublicAnswer";
 
 const REQUEST_TIMEOUT_MS = 15000;
 const ALLOWED_CTA_VALUES: AssistantSuggestedCta[] = ["telegram", "linkedin", "email", null];
@@ -37,10 +38,10 @@ function validateAssistantResponse(value: unknown): AssistantChatResponse {
     throw new AssistantApiError("Assistant API returned an invalid CTA.");
   }
 
-  return {
+  return sanitizeAssistantAnswer({
     answer: response.answer,
     suggestedCta: response.suggestedCta,
-  };
+  });
 }
 
 export async function sendAssistantMessage(

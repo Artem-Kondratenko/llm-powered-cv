@@ -31,6 +31,7 @@ export type DeterministicIntent =
   | "experience_years"
   | "years_ago"
   | "topic_experience"
+  | "assistant_mode"
   | null;
 
 export type DerivedFacts = {
@@ -194,7 +195,7 @@ export function buildDerivedFacts(now = new Date()): DerivedFacts {
     salaryRange: "Ориентир от $2000 в месяц; зависит от формата, задач и уровня ответственности.",
     workFormats: ["remote", "full-time", "project-based/contract", "офис в Минске обсуждаемо"],
     english:
-      "Уверенно читает документацию и профессиональные статьи; разговорный английский базовый, не приукрашивать до fluent/intermediate speaking.",
+      "Артём уверенно читает документацию и профессиональные материалы на английском. Разговорный английский у него базовый; для роли с активными созвонами лучше уточнить детали напрямую.",
     contacts: CONTACTS,
     protectedTopics: [
       "NDA-детали Chameleon 42",
@@ -241,7 +242,7 @@ const topicDefinitions: TopicDefinition[] = [
     title: "Английский",
     aliases: ["англий", "english", "язык", "speaking", "fluent", "intermediate"],
     context: () =>
-      "Английский: Артем уверенно читает документацию и профессиональные статьи. Разговорный английский слабее, базовый; не приукрашивать до fluent или уверенного intermediate speaking.",
+      "Английский: Артем уверенно читает документацию и профессиональные материалы. Разговорный английский базовый; для роли с активными созвонами лучше уточнить детали напрямую.",
   },
   {
     topic: "status",
@@ -494,6 +495,13 @@ function asksAboutRelocation(question: string) {
   return hasAny(question, ["релокац", "relocation", "переезд", "переехать", "relocate"]);
 }
 
+function asksAboutAssistantMode(question: string) {
+  return (
+    hasAny(question, ["fallback", "фолбек", "базовый режим", "режим ассистента", "режим ответов", "работает ли ассистент"]) ||
+    hasAll(question, ["ассистент", "работает"])
+  );
+}
+
 function asksAboutVacancyDiscussion(question: string) {
   return (
     (hasAny(question, ["обсудить", "нанять", "найм", "интервью", "связаться", "контакт"]) ||
@@ -580,6 +588,10 @@ function isTopicExperienceQuestion(question: string, matches: KnownFactMatch[]) 
 export function detectDeterministicIntent(message: string): DeterministicIntent {
   const question = normalizeQuestion(message);
   const matches = detectKnownFacts(question);
+
+  if (asksAboutAssistantMode(question)) {
+    return "assistant_mode";
+  }
 
   if (asksHowManyYearsAgo(question) && findEventYearMatch(question)) {
     return "years_ago";
@@ -671,6 +683,13 @@ function getDeterministicAnswer(
   derivedFacts: DerivedFacts,
   isRiskyProfessionalQuestion: boolean,
 ): DeterministicAssistantAnswer | null {
+  if (deterministicIntent === "assistant_mode") {
+    return {
+      answer: "Сейчас доступен базовый режим ответов. Для деталей лучше написать Артёму напрямую.",
+      suggestedCta: "telegram",
+    };
+  }
+
   if (deterministicIntent === "availability") {
     return {
       answer:
@@ -682,7 +701,7 @@ function getDeterministicAnswer(
   if (deterministicIntent === "nda_details") {
     return {
       answer:
-        "NDA-детали Chameleon 42, LiveOps-событий, reward-систем и части пользовательской статистики публично не раскрываются. В базе можно говорить только о роли Артёма, зоне ответственности и общих типах задач; конкретику лучше уточнить у Артёма напрямую.",
+        "Часть деталей Chameleon 42, LiveOps-событий, reward-систем и пользовательской статистики не раскрывается публично. Можно говорить о роли Артёма, зоне ответственности и общих типах задач; конкретику лучше обсудить с Артёмом напрямую.",
       suggestedCta: "telegram",
     };
   }
@@ -713,15 +732,15 @@ function getDeterministicAnswer(
     if (asksAboutRetentionPercent(question)) {
       return {
         answer:
-          "В CV-базе по Nerve Games разрешено говорить об улучшении retention и DAU примерно на 10-15% по удачным итерациям, а также о retention 40/20/10 для Short/Mid/Long по итогам тестов туториала и кривой сложности. Дополнительные точные проценты, абсолютные значения и внутренние отчёты не раскрываются.",
+          "Публично можно говорить об улучшении retention и DAU примерно на 10–15% по успешным итерациям. Также указан ориентир retention 40/20/10 для Short/Mid/Long по итогам тестов туториала и кривой сложности; внутренние детали лучше обсудить напрямую.",
         suggestedCta: "telegram",
       };
     }
 
     return {
       answer: isChameleon
-        ? "Точные внутренние метрики Chameleon 42 в публичной CV-базе не раскрываются: часть деталей проекта под NDA. Лучше уточнить у Артёма напрямую, что можно обсуждать в рамках конкретной вакансии."
-        : "Публично можно говорить только о разрешённых метриках из CV-базы. Дополнительные точные проценты, абсолютные значения, внутренние отчёты и разбивку лучше не додумывать и уточнять у Артёма напрямую.",
+        ? "Точные внутренние метрики Chameleon 42 публично не раскрываются. Часть деталей проекта закрыта, поэтому лучше уточнить у Артёма напрямую, что можно обсуждать в рамках конкретной вакансии."
+        : "Публично можно говорить только о подтверждённых метриках: улучшении retention и DAU примерно на 10–15% по успешным итерациям. Внутренние отчёты, абсолютные значения и детальную разбивку лучше обсудить напрямую.",
       suggestedCta: "telegram",
     };
   }
@@ -770,7 +789,7 @@ function getDeterministicAnswer(
 
   if (deterministicIntent === "english") {
     return {
-      answer: `По CV-базе: ${derivedFacts.english}`,
+      answer: derivedFacts.english,
       suggestedCta: null,
     };
   }
@@ -821,7 +840,7 @@ function getDeterministicAnswer(
   if (deterministicIntent === "programming") {
     return {
       answer:
-        "В CV-базе нет подтверждения, что Артём является уверенным Python/C#/SQL developer. Unity и Cocos у него на базовом уровне: он может читать структуру проекта и делать простые правки или прототипы через AI. Корректная формулировка — AI-assisted prototyping / vibe-coding, а не classic software engineering.",
+        "Артём использует AI-инструменты для прототипирования и может работать с простыми техническими задачами, но не позиционируется как классический разработчик. Unity и Cocos у него на базовом уровне; Python/C#/SQL не стоит рассматривать как его основную специализацию.",
       suggestedCta: "telegram",
     };
   }
@@ -861,7 +880,7 @@ function getDeterministicAnswer(
   if (includesTopic(matches, "mobile_f2p")) {
     return {
       answer:
-        "Да, по CV-базе Артём релевантен для mobile F2P-задач: у него есть опыт с Nerve Games, Catch The Candy и Game To Think, FTUE, первыми сессиями, level design, кривой сложности, LiveOps, офферами, наградами, прогрессией, рекламной монетизацией, аналитикой и A/B-тестами.",
+        "Да. Артём релевантен для mobile F2P-задач: у него есть опыт с Nerve Games, Catch The Candy и Game To Think, FTUE, первыми сессиями, level design, кривой сложности, LiveOps, офферами, наградами, прогрессией, рекламной монетизацией, аналитикой и A/B-тестами.",
       suggestedCta: null,
     };
   }

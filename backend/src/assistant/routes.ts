@@ -7,6 +7,7 @@ import {
   generateAssistantAnswer,
 } from "./geminiClient.js";
 import { buildRelevantContext } from "./context.js";
+import { sanitizeAssistantAnswer } from "./publicAnswer.js";
 
 const router = Router();
 
@@ -72,13 +73,13 @@ router.post("/cv-assistant/chat", async (request, response, next) => {
     const assistantContext = buildRelevantContext(message);
 
     if (assistantContext.deterministicAnswer) {
-      response.json(assistantContext.deterministicAnswer);
+      response.json(sanitizeAssistantAnswer(assistantContext.deterministicAnswer));
       return;
     }
 
     const answer = await generateAssistantAnswer(message, history, assistantContext);
 
-    response.json(answer);
+    response.json(sanitizeAssistantAnswer(answer));
   } catch (error) {
     next(error);
   }

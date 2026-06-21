@@ -1,4 +1,5 @@
 import type { AssistantSuggestedCta } from "../types/cv";
+import { sanitizeAssistantAnswer } from "./assistantPublicAnswer";
 
 export type AssistantFallbackAnswer = {
   answer: string;
@@ -70,6 +71,11 @@ function findEventYear(question: string) {
 
 const fallbackRules: FallbackRule[] = [
   {
+    match: (question) => hasAny(question, ["fallback", "фолбек", "базовый режим", "режим ассистента", "режим ответов", "работает ли ассистент"]),
+    answer: "Сейчас доступен базовый режим ответов. Для деталей лучше написать Артёму напрямую.",
+    suggestedCta: "telegram",
+  },
+  {
     match: (question) => hasAny(question, ["сколько лет назад", "как давно", "когда было", "в каком году", "years ago"]) && Boolean(findEventYear(question)),
     answer: (question) => {
       const event = findEventYear(question);
@@ -105,7 +111,7 @@ const fallbackRules: FallbackRule[] = [
       hasAny(question, ["nda", "детал", "секрет", "раскрой", "закрыт"]) &&
       hasAny(question, ["chameleon", "хамелеон", "42", "liveops", "reward", "награ", "метрик", "meowmeals"]),
     answer:
-      "NDA-детали Chameleon 42, LiveOps-событий, reward-систем и части пользовательской статистики публично не раскрываются. В базе можно говорить только о роли Артёма, зоне ответственности и общих типах задач; конкретику лучше уточнить напрямую.",
+      "Часть деталей Chameleon 42, LiveOps-событий, reward-систем и пользовательской статистики не раскрывается публично. Можно говорить о роли Артёма, зоне ответственности и общих типах задач; конкретику лучше обсудить с Артёмом напрямую.",
     suggestedCta: "telegram",
   },
   {
@@ -183,13 +189,13 @@ const fallbackRules: FallbackRule[] = [
   {
     match: (question) => hasAny(question, ["python", "c#", "c sharp", "csharp", "sql", "программ"]),
     answer:
-      "В CV-базе нет подтверждения, что Артем является уверенным Python/C#/SQL developer. Unity и Cocos у него на базовом уровне: он может читать структуру проекта и делать простые правки или прототипы через AI. Корректная формулировка — AI-assisted prototyping / vibe-coding, а не classic software engineering.",
+      "Артём использует AI-инструменты для прототипирования и может работать с простыми техническими задачами, но не позиционируется как классический разработчик. Unity и Cocos у него на базовом уровне; Python/C#/SQL не стоит рассматривать как его основную специализацию.",
     suggestedCta: "telegram",
   },
   {
     match: (question) => hasAny(question, ["англий", "english", "язык"]),
     answer:
-      "По CV-базе Артем уверенно читает документацию и статьи по теме. Разговорный английский — базовый; не стоит приукрашивать его до fluent или intermediate speaking.",
+      "Артём уверенно читает документацию и профессиональные материалы на английском. Разговорный английский у него базовый; для роли с активными созвонами лучше уточнить детали напрямую.",
     suggestedCta: null,
   },
   {
@@ -246,7 +252,7 @@ const fallbackRules: FallbackRule[] = [
       hasAny(question, ["mobile f2p", "f2p", "мобил", "mobile"]) &&
       hasAny(question, ["подходит", "роль", "ваканси", "позици", "найм"]),
     answer:
-      "Да, по CV-базе Артём релевантен для mobile F2P-задач: у него есть опыт с Nerve Games, Catch The Candy и Game To Think, FTUE, первыми сессиями, level design, кривой сложности, LiveOps, офферами, наградами, прогрессией, рекламной монетизацией, аналитикой и A/B-тестами.",
+      "Да. Артём релевантен для mobile F2P-задач: у него есть опыт с Nerve Games, Catch The Candy и Game To Think, FTUE, первыми сессиями, level design, кривой сложности, LiveOps, офферами, наградами, прогрессией, рекламной монетизацией, аналитикой и A/B-тестами.",
     suggestedCta: null,
   },
   {
@@ -292,9 +298,9 @@ export function findAssistantFallbackAnswer(question: string): AssistantFallback
   const rule = fallbackRules.find((candidate) => candidate.match(normalizedQuestion));
 
   return rule
-    ? {
+    ? sanitizeAssistantAnswer({
         answer: typeof rule.answer === "function" ? rule.answer(normalizedQuestion) : rule.answer,
         suggestedCta: rule.suggestedCta,
-      }
+      })
     : null;
 }
