@@ -91,7 +91,7 @@ export const cvData: CvData = {
   },
   contacts: {
     telegram: "https://t.me/Artem_Kondratenko",
-    linkedIn: "https://www.linkedin.com/in/artem-kondratenko231189/",
+    linkedIn: "https://www.linkedin.com/in/artem-kondratenko-game-designer/",
     email: "Anderson892311@gmail.com",
     pdfPath: "/files/Artem_Kondratenko_GameDesigner_CV.pdf",
   },

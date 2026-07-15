@@ -77,7 +77,7 @@ const BIRTH_DATE = {
 
 const CONTACTS = {
   telegram: "https://t.me/Artem_Kondratenko",
-  linkedIn: "https://www.linkedin.com/in/artem-kondratenko231189/",
+  linkedIn: "https://www.linkedin.com/in/artem-kondratenko-game-designer/",
   email: "Anderson892311@gmail.com",
   pdf: "/files/Artem_Kondratenko_GameDesigner_CV.pdf",
 };
