@@ -56,6 +56,6 @@ const errorHandler: ErrorRequestHandler = (error, _request, response, _next) => 
 
 app.use(errorHandler);
 
-app.listen(config.port, () => {
+app.listen(config.port, "127.0.0.1", () => {
   console.log(`CV assistant API listening on port ${config.port}`);
 });
