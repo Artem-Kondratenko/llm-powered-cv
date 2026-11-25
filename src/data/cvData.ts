@@ -89,7 +89,7 @@ const hamsterCombatImages = [
 export const cvData: CvData = {
   profile: {
     name: "Артём Кондратенко",
-    role: "Independent Game Designer",
+    role: "Generalist Game Designer",
     photoPath: "/images/artem-photo.jpg",
     tags: [
       "Mobile Games",
