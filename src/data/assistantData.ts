@@ -1,11 +1,22 @@
 import type { AssistantData } from "../types/cv";
+import { cvData } from "./cvData";
+
+export const currentProjectAnswer =
+  "Артём работает как Independent Game Designer и с помощью ИИ-инструментов разрабатывает собственную игру ORGANIZM — автобатлер с merge-механикой. Игрок размещает и объединяет одинаковые патчи в Матрице адаптации. Организм автоматически отражает волны вирусов, а мутации усиливают его перед следующими секторами. В раннюю мету входят органеллы (артефакты) и ядра (типы героев со своими способностями). За подробностями лучше написать Артёму в Telegram.";
+
+export const aiPrototypingAnswer =
+  "Артём использует ИИ-инструменты для разработки ORGANIZM и быстрой проверки гипотез. Среди других его проектов — MeowMeals (Telegram-бот с AI-оценкой еды) и CombuchAI (инструмент для поиска и анализа органического трафика).";
 
 export const assistantData: AssistantData = {
   identity:
-    "Я CV-ассистент Артёма. Отвечаю по его опыту, проектам, стеку и pet-проектам. Если вопрос лучше обсудить лично — предложу написать ему в Telegram или LinkedIn.",
+    "Я CV-ассистент Артёма. Отвечаю по его опыту, проектам и стеку. Если нужны подробности, предложу написать ему в Telegram.",
   basicIdentity:
     "Сейчас отвечаю в сокращённом режиме: часть данных временно недоступна из-за связи с сервером. Для деталей лучше написать Артёму в Telegram.",
   quickQuestions: [
+    {
+      id: "current-project",
+      label: "Над чем сейчас работает Артём?",
+    },
     {
       id: "value",
       label: "Чем Артём полезен как Game Designer Generalist?",
@@ -68,6 +79,7 @@ export const assistantData: AssistantData = {
     },
   ],
   answers: {
+    "current-project": currentProjectAnswer,
     value:
       "Артём закрывает широкий стек задач Game Designer Generalist для mobile F2P и Telegram games: документация, FTUE, first sessions, level design, core/meta loop, LiveOps, F2P systems, аналитика, A/B tests и AI-assisted prototyping. Его сильная сторона — доводить идеи до работающих фич через документацию, постановку задач, настройку и итерации по метрикам.",
     ftue:
@@ -80,9 +92,9 @@ export const assistantData: AssistantData = {
       "Да, в рамках F2P-дизайна он работал с офферами, наградами, прогрессией, магазином и базовой экономикой. В MeowMeals также заложена монетизация через Telegram Stars.",
     "ab-tests":
       "Да. В Nerve Games Артём провёл около 10 итераций после запуска с A/B-тестами: менял туториалы, магазин, кривую сложности и систему босс/бонусных уровней. Публично можно говорить об улучшении retention и DAU примерно на 10-15% по удачным итерациям, а также о retention 40/20/10 для Short/Mid/Long по итогам тестов туториала и кривой сложности; дополнительные внутренние цифры не раскрываются.",
-    ai: "Артём активно использует AI-инструменты для быстрых MVP и продуктовых проверок. Среди pet-проектов — MeowMeals, Telegram-бот с AI-оценкой еды и аналитикой на базе AI, а также CombuchAI — SaaS-like AI tool для поиска и анализа органического трафика.",
+    ai: aiPrototypingAnswer,
     projects:
-      "Можно посмотреть Catch The Candy и Game To Think в Google Play, GameDev Masters / Gamedev Heroes в экосистеме Hamster Kombat, а также pet-проект MeowMeals: https://t.me/meow_meals_bot. CombuchAI пока описан как AI-инструмент для organic traffic research.",
+      "В разделе «Проекты» есть карточка ORGANIZM с визуальными макетами, а в Proof-of-work можно открыть игровой прототип. Также можно посмотреть Catch The Candy и Game To Think в Google Play, GameDev Masters / Gamedev Heroes в экосистеме Hamster Kombat и Telegram-бот MeowMeals: https://t.me/meow_meals_bot.",
     "mobile-f2p":
       "Да. Его опыт хорошо ложится на mobile F2P: level design, FTUE, первые сессии, LiveOps, прогрессия, награды, офферы, магазин, A/B-тесты и итерации по retention, time spent, DAU и ARPDAU.",
     english:
@@ -95,9 +107,8 @@ export const assistantData: AssistantData = {
       "MeowMeals — pet-проект Артёма: Telegram-бот для контроля веса с быстрым логом еды, шагов и тренировок, AI-оценкой еды по тексту/фото, ежедневными рекомендациями и недельными отчётами. Артём проектировал продуктовую логику, onboarding, уведомления, Pro-функции, монетизацию через Telegram Stars и AI-аналитику проекта.",
     combuchai:
       "CombuchAI — pet-проект / AI tool для поиска и анализа органического трафика для SaaS-проектов. В нём есть AI workflows, поиск organic traffic entry points, LLM-assisted content generation и работа с контекстом площадок, болями аудитории и нативными CTA.",
-    contact:
-      "Лучше всего написать Артёму в Telegram: https://t.me/Artem_Kondratenko. Также можно открыть LinkedIn: https://www.linkedin.com/in/artem-kondratenko231189/ или написать на email: Anderson892311@gmail.com.",
+    contact: `Лучше всего написать Артёму в Telegram: ${cvData.contacts.telegram}`,
   },
   fallbackAnswer:
-    "В базовой CV-базе нет точного ответа на этот вопрос. Чтобы не додумывать опыт, метрики или условия, лучше уточнить у Артёма напрямую в Telegram или LinkedIn.",
+    "За подробностями по этому вопросу лучше написать Артёму в Telegram.",
 };

@@ -1,5 +1,22 @@
 import type { CvData } from "../types/cv";
 
+const telegramUrl = "https://t.me/Artem_Kondratenko";
+
+const organizmImages = [
+  { number: "01", alt: "Визуальный макет ORGANIZM: главный экран" },
+  { number: "02", alt: "Визуальный макет ORGANIZM: список органелл" },
+  { number: "03", alt: "Визуальный макет ORGANIZM: окно подробностей об органелле" },
+  { number: "04", alt: "Визуальный макет ORGANIZM: экран выбора ядра" },
+  { number: "05", alt: "Визуальный макет ORGANIZM: экран мутаций" },
+  { number: "06", alt: "Визуальный макет ORGANIZM: подготовка к бою и Матрица адаптации" },
+  { number: "07", alt: "Визуальный макет ORGANIZM: бой с волной вирусов" },
+].map(({ number, alt }) => ({
+  src: `/images/projects/organizm/${number}.webp`,
+  thumbSrc: `/images/projects/organizm/thumbs/${number}.webp`,
+  alt,
+  orientation: "portrait" as const,
+}));
+
 const catchTheCandyImages = [
   {
     src: "/images/projects/catch-the-candy/01.webp",
@@ -72,7 +89,7 @@ const hamsterCombatImages = [
 export const cvData: CvData = {
   profile: {
     name: "Артём Кондратенко",
-    role: "Game Designer Generalist",
+    role: "Independent Game Designer",
     photoPath: "/images/artem-photo.jpg",
     tags: [
       "Mobile Games",
@@ -84,13 +101,14 @@ export const cvData: CvData = {
       "AI Prototyping",
     ],
     pitch: [
-      "Game Designer Generalist для mobile F2P и Telegram games, который умеет не только описывать идеи, но и доводить их до работающей фичи. Основной опыт - мобильные и Telegram-игры: геймдизайн документация полного цикла, lvl-design, FTUE, core/meta loop, PvP/PvE, LiveOps, офферы, награды, прогрессия и, как результат, монетизация.",
+      "Сейчас я разрабатываю собственную игру ORGANIZM — автобатлер с механикой объединения (merge). В разработке использую ИИ-инструменты.",
+      "Мой основной опыт — мобильные F2P и Telegram-игры. Довожу идеи до работающих фич: веду геймдизайн-документацию полного цикла, проектирую уровни, FTUE, core и meta loop, PvP и PvE, LiveOps, офферы, награды, прогрессию и монетизацию.",
       "Работал с A/B-тестами, аналитикой и доработками на пост-релизе: усиливал туториалы, менял кривую сложности уровней, модернизировал магазин, создавал дополнительные системы для увеличения вовлечения и удержания игрока.",
       "Активно использую AI-инструменты для прототипирования и быстрой проверки гипотез. Самостоятельно сделал и развиваю умного TG-бота MeowMeals и разрабатываю CombuchAI для поиска точек органического трафика.",
     ],
   },
   contacts: {
-    telegram: "https://t.me/Artem_Kondratenko",
+    telegram: telegramUrl,
     linkedIn: "https://www.linkedin.com/in/artem-kondratenko-game-designer/",
     email: "Anderson892311@gmail.com",
     pdfPath: "/files/Artem_Kondratenko_GameDesigner_CV.pdf",
@@ -207,6 +225,18 @@ export const cvData: CvData = {
     },
   ],
   projects: [
+    {
+      title: "ORGANIZM",
+      type: "Indie autobattler · Merge mechanics",
+      focus: "core loop, тактическое размещение, прогрессия через мутации, ранняя мета.",
+      description:
+        "Разрабатываю ORGANIZM как независимый геймдизайнер с помощью ИИ-инструментов. Игрок размещает патчи в Матрице адаптации и объединяет одинаковые, чтобы усилить защиту цифрового организма. Организм автоматически отражает волны вирусов, а мутации усиливают его перед следующими секторами. В раннюю мету входят органеллы (артефакты) и ядра (типы героев со своими способностями).",
+      link: {
+        label: "Обсудить проект",
+        href: telegramUrl,
+      },
+      images: organizmImages,
+    },
     {
       title: "Catch The Candy",
       type: "Mobile 2D platformer-puzzle",

@@ -18,11 +18,11 @@ export type GamePrototypeSlot = {
 export const gamePrototypeSlots: GamePrototypeSlot[] = [
   {
     id: "organizm",
-    title: "Organizm",
+    title: "ORGANIZM",
     status: "prototype",
     statusLabel: "MVP",
     description:
-      "Размещай патчи в матрице, объединяй их в сильные версии, отбивай волны вирусов и усиливай Organizm мутациями.",
+      "Автобатлер с merge-механикой: размещай патчи в матрице, объединяй их, отбивай волны вирусов и усиливай организм мутациями.",
     ctaLabel: "Играть",
     previewKind: "organizm",
     previewImage: organizmPreview,

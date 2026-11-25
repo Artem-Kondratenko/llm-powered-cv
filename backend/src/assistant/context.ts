@@ -1,3 +1,5 @@
+import { organizmFacts } from "./knowledgeBase.js";
+
 export type AssistantSuggestedCta = "telegram" | "linkedin" | "email" | null;
 
 export type DeterministicAssistantAnswer = {
@@ -32,6 +34,7 @@ export type DeterministicIntent =
   | "years_ago"
   | "topic_experience"
   | "assistant_mode"
+  | "current_project"
   | null;
 
 export type DerivedFacts = {
@@ -195,7 +198,7 @@ export function buildDerivedFacts(now = new Date()): DerivedFacts {
     salaryRange: "Ориентир от $2000 в месяц; зависит от формата, задач и уровня ответственности.",
     workFormats: ["remote", "full-time", "project-based/contract", "офис в Минске обсуждаемо"],
     english:
-      "Артём уверенно читает документацию и профессиональные материалы на английском. Разговорный английский у него базовый; для роли с активными созвонами лучше уточнить детали напрямую.",
+      "Артём уверенно читает документацию и профессиональные материалы на английском. Разговорный английский у него базовый. Для роли с активными созвонами детали лучше обсудить с Артёмом в Telegram.",
     contacts: CONTACTS,
     protectedTopics: [
       "NDA-детали Chameleon 42",
@@ -277,7 +280,7 @@ const topicDefinitions: TopicDefinition[] = [
     title: "Контакты",
     aliases: ["telegram", "телеграм", "linkedin", "линкедин", "email", "почт", "контакт", "связаться", "написать", "обсудить вакансию", "можно обсудить"],
     context: () =>
-      `Контакты: Telegram ${CONTACTS.telegram}; LinkedIn ${CONTACTS.linkedIn}; Email ${CONTACTS.email}. Telegram - главный CTA, LinkedIn - дополнительный.`,
+      `Для уточнения деталей: Telegram ${CONTACTS.telegram}. По прямому запросу: LinkedIn ${CONTACTS.linkedIn}, email ${CONTACTS.email}.`,
   },
   {
     topic: "pdf",
@@ -339,7 +342,18 @@ const topicDefinitions: TopicDefinition[] = [
     title: "AI prototyping",
     aliases: ["llm", "gemini", "openai", "прототип", "prototype", "prototyping", "vibe", "вайб", "mvp", "ai assisted", "artificial intelligence", "искусственн"],
     context: () =>
-      "AI/prototyping: Артем использует AI-assisted prototyping и vibe-coding для быстрых MVP, Telegram-ботов и AI-инструментов. Примеры: MeowMeals, CombuchAI, LLM-аналитика и продуктовая сборка прототипов. Не позиционировать как classic software engineering.",
+      "Артём использует ИИ-инструменты для разработки ORGANIZM и быстрой проверки гипотез. Другие примеры: MeowMeals, CombuchAI, LLM-аналитика и продуктовая сборка прототипов. Не позиционировать как classic software engineering.",
+  },
+  {
+    topic: "organizm",
+    title: "ORGANIZM и текущая роль",
+    aliases: [
+      "organizm", "организм", "органелл", "organelle", "типы ядер", "игровые ядра", "ранняя мета", "ранней мет", "раннюю мет",
+      "над чем сейчас", "чем сейчас занима", "чем он сейчас занима", "что сейчас разрабатыва", "где сейчас работает", "кем сейчас работает",
+      "текущая роль", "текущий проект", "актуальная роль", "собственная игра", "собственную игру",
+      "independent game designer", "независимый геймдизайнер", "current role", "current project", "working on now",
+    ],
+    context: () => organizmFacts.join(" "),
   },
   {
     topic: "chameleon_42",
@@ -593,6 +607,10 @@ export function detectDeterministicIntent(message: string): DeterministicIntent 
     return "assistant_mode";
   }
 
+  if (includesTopic(matches, "organizm")) {
+    return "current_project";
+  }
+
   if (asksHowManyYearsAgo(question) && findEventYearMatch(question)) {
     return "years_ago";
   }
@@ -759,6 +777,13 @@ function getDeterministicAnswer(
     };
   }
 
+  if (deterministicIntent === "current_project") {
+    return {
+      answer: `${organizmFacts.join(" ")} За подробностями лучше написать Артёму в Telegram.`,
+      suggestedCta: "telegram",
+    };
+  }
+
   if (deterministicIntent === "telegram") {
     return {
       answer: `Telegram Артёма: ${derivedFacts.contacts.telegram}`,
@@ -790,7 +815,7 @@ function getDeterministicAnswer(
   if (deterministicIntent === "english") {
     return {
       answer: derivedFacts.english,
-      suggestedCta: null,
+      suggestedCta: "telegram",
     };
   }
 
@@ -825,7 +850,7 @@ function getDeterministicAnswer(
 
   if (deterministicIntent === "contacts") {
     return {
-      answer: `Да, вакансию лучше обсудить напрямую с Артёмом в Telegram: ${derivedFacts.contacts.telegram}. Также доступны LinkedIn ${derivedFacts.contacts.linkedIn} и email ${derivedFacts.contacts.email}.`,
+      answer: `Лучше всего написать Артёму в Telegram: ${derivedFacts.contacts.telegram}`,
       suggestedCta: "telegram",
     };
   }
@@ -856,7 +881,7 @@ function getDeterministicAnswer(
   if (includesTopic(matches, "ai_prototyping")) {
     return {
       answer:
-        "Да. Артём использует AI-assisted prototyping и vibe-coding для быстрых MVP, Telegram-ботов и AI-инструментов. Примеры из базы: MeowMeals, CombuchAI, LLM-аналитика и продуктовая сборка прототипов; это не нужно позиционировать как classic software engineering.",
+        "Артём использует ИИ-инструменты для разработки ORGANIZM и быстрой проверки гипотез. Среди других его проектов — MeowMeals (Telegram-бот с AI-оценкой еды) и CombuchAI (инструмент для поиска и анализа органического трафика).",
       suggestedCta: null,
     };
   }

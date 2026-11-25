@@ -1,4 +1,6 @@
 import type { AssistantSuggestedCta } from "../types/cv";
+import { aiPrototypingAnswer, currentProjectAnswer } from "../data/assistantData";
+import { cvData } from "../data/cvData";
 import { sanitizeAssistantAnswer } from "./assistantPublicAnswer";
 
 export type AssistantFallbackAnswer = {
@@ -19,6 +21,13 @@ const birthDate = {
 };
 
 const firstCommercialExperienceYear = 2022;
+
+const currentProjectAliases = [
+  "organizm", "организм", "органелл", "organelle", "типы ядер", "игровые ядра", "ранняя мета", "ранней мет", "раннюю мет",
+  "над чем сейчас", "чем сейчас занима", "чем он сейчас занима", "что сейчас разрабатыва", "где сейчас работает", "кем сейчас работает",
+  "текущая роль", "текущий проект", "актуальная роль", "собственная игра", "собственную игру",
+  "independent game designer", "независимый геймдизайнер", "current role", "current project", "working on now",
+];
 
 const eventYears = [
   { aliases: ["chameleon", "хамелеон", "42"], label: "Chameleon 42", year: 2025 },
@@ -73,6 +82,11 @@ const fallbackRules: FallbackRule[] = [
   {
     match: (question) => hasAny(question, ["fallback", "фолбек", "базовый режим", "режим ассистента", "режим ответов", "работает ли ассистент"]),
     answer: "Сейчас доступен базовый режим ответов. Для деталей лучше написать Артёму напрямую.",
+    suggestedCta: "telegram",
+  },
+  {
+    match: (question) => hasAny(question, currentProjectAliases),
+    answer: currentProjectAnswer,
     suggestedCta: "telegram",
   },
   {
@@ -134,12 +148,12 @@ const fallbackRules: FallbackRule[] = [
   },
   {
     match: (question) => hasAny(question, ["telegram", "телеграм"]) && !hasAny(question, ["telegram games", "telegram game", "telegram products", "игр", "продукт", "bot", "бот"]),
-    answer: "Telegram Артёма: https://t.me/Artem_Kondratenko",
+    answer: `Telegram Артёма: ${cvData.contacts.telegram}`,
     suggestedCta: "telegram",
   },
   {
     match: (question) => hasAny(question, ["linkedin", "линкедин", "linked in"]),
-    answer: "LinkedIn Артёма: https://www.linkedin.com/in/artem-kondratenko231189/",
+    answer: `LinkedIn Артёма: ${cvData.contacts.linkedIn}`,
     suggestedCta: "linkedin",
   },
   {
@@ -195,8 +209,8 @@ const fallbackRules: FallbackRule[] = [
   {
     match: (question) => hasAny(question, ["англий", "english", "язык"]),
     answer:
-      "Артём уверенно читает документацию и профессиональные материалы на английском. Разговорный английский у него базовый; для роли с активными созвонами лучше уточнить детали напрямую.",
-    suggestedCta: null,
+      "Артём уверенно читает документацию и профессиональные материалы на английском. Разговорный английский у него базовый. Для роли с активными созвонами детали лучше обсудить с Артёмом в Telegram.",
+    suggestedCta: "telegram",
   },
   {
     match: (question) => hasAny(question, ["meowmeals", "meow meals", "meow", "мяу", "бот для контроля веса"]),
@@ -231,8 +245,7 @@ const fallbackRules: FallbackRule[] = [
   },
   {
     match: (question) => hasAny(question, ["ai", "llm", "gemini", "openai", "прототип", "prototype", "vibe", "вайб", "mvp", "ai assisted", "искусственн"]),
-    answer:
-      "Да. Артём использует AI-assisted prototyping и vibe-coding для быстрых MVP, Telegram-ботов и AI-инструментов. Примеры из базы: MeowMeals, CombuchAI, LLM-аналитика и продуктовая сборка прототипов; это не нужно позиционировать как classic software engineering.",
+    answer: aiPrototypingAnswer,
     suggestedCta: null,
   },
   {
@@ -259,7 +272,7 @@ const fallbackRules: FallbackRule[] = [
     match: (question) => hasAny(question, ["generalist", "полез", "закрывает", "сильн", "чем артем полезен"]),
     answer:
       "Как Game Designer Generalist Артем закрывает документацию, FTUE, first sessions, level design, LiveOps, F2P systems, аналитику, A/B tests и AI-assisted prototyping. Если нужно быстро сопоставить его опыт с ролью, лучше написать Артему в Telegram.",
-    suggestedCta: null,
+    suggestedCta: "telegram",
   },
   {
     match: (question) => hasAny(question, ["зарплат", "salary", "ставк", "rate", "$", "2000", "деньг", "гонорар"]),
@@ -288,7 +301,7 @@ const fallbackRules: FallbackRule[] = [
   },
   {
     match: (question) => hasAny(question, ["обсудить", "ваканси", "нанять", "найм", "интервью", "связаться", "контакт"]),
-    answer: "Да, вакансию лучше обсудить напрямую с Артемом в Telegram: https://t.me/Artem_Kondratenko",
+    answer: `Лучше всего написать Артёму в Telegram: ${cvData.contacts.telegram}`,
     suggestedCta: "telegram",
   },
 ];

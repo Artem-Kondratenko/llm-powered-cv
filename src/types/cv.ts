@@ -22,6 +22,7 @@ export type ProjectImage = {
   src: string;
   thumbSrc: string;
   alt: string;
+  orientation?: "portrait" | "landscape";
 };
 
 export type Skill = {

@@ -1,9 +1,15 @@
+export const organizmFacts = [
+  "Артём работает как Independent Game Designer и с помощью ИИ-инструментов разрабатывает собственную игру ORGANIZM — автобатлер с merge-механикой.",
+  "Игрок размещает и объединяет одинаковые патчи в Матрице адаптации. Организм автоматически отражает волны вирусов, а мутации усиливают его перед следующими секторами.",
+  "В раннюю мету входят органеллы (артефакты) и ядра (типы героев со своими способностями).",
+];
+
 export const cvKnowledgeBase = `
 # Артём Кондратенко CV Knowledge Base
 
 ## Профиль и позиционирование
 - Имя: Артём Кондратенко.
-- Роль: Game Designer Generalist.
+- Текущая роль: Independent Game Designer, разрабатывает собственную игру ORGANIZM с помощью ИИ-инструментов.
 - Локация: Минск, Беларусь.
 - Дата рождения: 23.11.1989 г.
 - Статус: открыт к предложениям, если роль и проект подходят по задачам.
@@ -23,12 +29,12 @@ export const cvKnowledgeBase = `
 
 ## Контакты и CTA
 - Telegram: https://t.me/Artem_Kondratenko
-- LinkedIn: https://www.linkedin.com/in/artem-kondratenko231189/
+- LinkedIn: https://www.linkedin.com/in/artem-kondratenko-game-designer/
 - Email: Anderson892311@gmail.com
 - Portfolio / интерактивное CV: https://artem-kondratenko.github.io/llm-powered-cv/
 - PDF CV: /files/Artem_Kondratenko_GameDesigner_CV.pdf
-- Telegram - главный CTA.
-- LinkedIn - дополнительный CTA.
+- Все подробности лучше уточнять в личном Telegram Артёма.
+- LinkedIn и email можно дать по прямому запросу.
 - PDF - для скачивания CV.
 - Номер телефона не указывать и не предлагать.
 - Если вопрос касается вакансии, релевантности, условий, зарплаты, доступности, релокации, точных метрик, NDA-деталей или конкретного проекта, мягко предложить Telegram.
@@ -132,6 +138,11 @@ export const cvKnowledgeBase = `
 - Сделал: участвовал в разработке общей концепции; прорабатывал core loop и meta loop; описывал систему LifeBalance - как действия игрока в реальной жизни конвертируются в игровой прогресс; готовил GDD и мокапы экранов; участвовал в проектировании UX-пути от первого запуска до регулярного использования.
 
 ## Проекты
+### ORGANIZM
+${organizmFacts.map((fact) => `- ${fact}`).join("\n")}
+- В разделе «Проекты» на лендинге есть карточка с визуальными макетами. Игровой прототип доступен в Proof-of-work.
+- За подробностями об игре лучше написать Артёму в Telegram.
+
 ### Catch The Candy
 - Тип: Mobile 2D platformer-puzzle.
 - Фокус: level design, post-launch iterations, A/B tests, retention.

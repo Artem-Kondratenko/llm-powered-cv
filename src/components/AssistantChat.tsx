@@ -68,7 +68,7 @@ function getCtaHref(suggestedCta: AssistantSuggestedCta, contacts: ContactLinks)
   }
 }
 
-const telegramCtaQuestionIds = new Set(["contact", "mobile-f2p", "salary", "work-format"]);
+const telegramCtaQuestionIds = new Set(["current-project", "contact", "mobile-f2p", "salary", "work-format"]);
 
 export function AssistantChat({ data, contacts }: AssistantChatProps) {
   const apiEnabled = isAssistantApiEnabled();
