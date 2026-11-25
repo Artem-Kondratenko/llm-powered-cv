@@ -67,6 +67,7 @@ export type CvData = {
 export type QuickQuestion = {
   id: string;
   label: string;
+  isExample?: boolean;
 };
 
 export type AssistantData = {

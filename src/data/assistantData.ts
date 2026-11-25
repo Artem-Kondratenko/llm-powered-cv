@@ -16,6 +16,7 @@ export const assistantData: AssistantData = {
     {
       id: "current-project",
       label: "Над чем сейчас работает Артём?",
+      isExample: true,
     },
     {
       id: "value",
@@ -42,16 +43,19 @@ export const assistantData: AssistantData = {
       label: "Работал ли он с A/B-тестами?",
     },
     {
-      id: "ai",
-      label: "Что он умеет в AI-прототипировании?",
-    },
-    {
       id: "projects",
       label: "Какие проекты можно посмотреть?",
+      isExample: true,
     },
     {
       id: "mobile-f2p",
-      label: "Подходит ли он для mobile F2P?",
+      label: "Какой у него опыт в mobile F2P?",
+      isExample: true,
+    },
+    {
+      id: "ai",
+      label: "Как он использует ИИ в работе?",
+      isExample: true,
     },
     {
       id: "english",
@@ -59,7 +63,8 @@ export const assistantData: AssistantData = {
     },
     {
       id: "work-format",
-      label: "Какие форматы работы рассматривает?",
+      label: "Какие форматы работы он рассматривает?",
+      isExample: true,
     },
     {
       id: "salary",

@@ -31,12 +31,7 @@ export function App() {
           </div>
         </Section>
 
-        <Section
-          id="assistant"
-          eyebrow="Interactive CV"
-          title="CV-ассистент"
-          description="Быстрый чат по опыту, проектам, стеку и pet-проектам."
-        >
+        <Section id="assistant">
           <AssistantChat data={assistantData} contacts={cvData.contacts} />
         </Section>
 

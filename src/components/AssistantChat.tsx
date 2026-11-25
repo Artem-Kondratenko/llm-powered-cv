@@ -1,5 +1,5 @@
-import { Bot, Download, Linkedin, Mail, Send, UserRound } from "lucide-react";
-import { FormEvent, useMemo, useState } from "react";
+import { Bot, ChevronDown, Linkedin, Mail, Send, UserRound } from "lucide-react";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { isAssistantApiEnabled, sendAssistantMessage } from "../lib/assistantApi";
 import { findAssistantFallbackAnswer } from "../lib/assistantFallback";
 import { sanitizeAssistantAnswer } from "../lib/assistantPublicAnswer";
@@ -9,14 +9,12 @@ import type {
   AssistantSuggestedCta,
   ContactLinks,
 } from "../types/cv";
-import { publicAsset } from "../utils/assets";
 
 type Message = {
   role: "assistant" | "user";
   text: string;
   suggestedCta?: AssistantSuggestedCta;
   usedFallback?: boolean;
-  isIntro?: boolean;
 };
 
 type AssistantChatProps = {
@@ -32,14 +30,7 @@ type ScriptedAnswer = {
 };
 
 function normalize(value: string) {
-  return value.trim().toLowerCase().replace(/\s+/g, " ");
-}
-
-function toApiHistory(messages: Message[], assistantIntroText: string): AssistantChatMessage[] {
-  return messages.map((message) => ({
-    role: message.role,
-    content: message.isIntro ? assistantIntroText : message.text,
-  }));
+  return value.trim().toLowerCase().replace(/[?!.…]+$/, "").trim().replace(/\s+/g, " ");
 }
 
 function getCtaLabel(suggestedCta: AssistantSuggestedCta) {
@@ -76,35 +67,35 @@ export function AssistantChat({ data, contacts }: AssistantChatProps) {
   const initialAssistantMode: AssistantMode = apiEnabled ? "idle" : "fallback";
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [fallbackNotice, setFallbackNotice] = useState("");
+  const [showExamples, setShowExamples] = useState(true);
   const [assistantMode, setAssistantMode] = useState<AssistantMode>(initialAssistantMode);
   const [messages, setMessages] = useState<Message[]>([
     {
       role: "assistant",
       text: data.identity,
-      isIntro: true,
     },
   ]);
+  const messageLogRef = useRef<HTMLDivElement>(null);
+  const examplesToggleRef = useRef<HTMLButtonElement>(null);
 
   const questionByLabel = useMemo(() => {
     return new Map(data.quickQuestions.map((question) => [normalize(question.label), question]));
   }, [data.quickQuestions]);
+  const exampleQuestions = data.quickQuestions.filter((question) => question.isExample);
+  const showFallbackNotice = assistantMode === "fallback" && !isLoading && messages.length > 1;
 
-  const isBasicMode = assistantMode === "fallback";
-  const assistantIntroText = isBasicMode ? data.basicIdentity : data.identity;
+  useEffect(() => {
+    const messageLog = messageLogRef.current;
+    if (messageLog) {
+      messageLog.scrollTop = messageLog.scrollHeight;
+    }
+  }, [messages, isLoading]);
 
-  function getScriptedAnswer(question: string, questionId?: string): ScriptedAnswer {
+  function getScriptedAnswer(question: string): ScriptedAnswer {
     const fallbackAnswer = findAssistantFallbackAnswer(question);
 
     if (fallbackAnswer) {
       return fallbackAnswer;
-    }
-
-    if (questionId) {
-      return sanitizeAssistantAnswer({
-        answer: data.answers[questionId] ?? data.fallbackAnswer,
-        suggestedCta: telegramCtaQuestionIds.has(questionId) ? "telegram" : null,
-      });
     }
 
     const quickQuestion = questionByLabel.get(normalize(question));
@@ -122,18 +113,20 @@ export function AssistantChat({ data, contacts }: AssistantChatProps) {
     });
   }
 
-  async function askAssistant(question: string, questionId?: string) {
+  async function askAssistant(question: string) {
     const trimmedQuestion = question.trim();
 
     if (!trimmedQuestion || isLoading) {
       return;
     }
 
-    const history = toApiHistory(messages, assistantIntroText);
+    const history: AssistantChatMessage[] = messages.map(({ role, text }) => ({ role, content: text }));
     const userMessage: Message = { role: "user", text: trimmedQuestion };
 
+    if (messages.length === 1) {
+      setShowExamples(false);
+    }
     setMessages((current) => [...current, userMessage]);
-    setFallbackNotice("");
     setIsLoading(true);
 
     try {
@@ -153,12 +146,9 @@ export function AssistantChat({ data, contacts }: AssistantChatProps) {
         },
       ]);
     } catch {
-      const scriptedAnswer = getScriptedAnswer(trimmedQuestion, questionId);
+      const scriptedAnswer = getScriptedAnswer(trimmedQuestion);
       setAssistantMode("fallback");
 
-      setFallbackNotice(
-        data.basicIdentity,
-      );
       setMessages((current) => [
         ...current,
         {
@@ -177,7 +167,7 @@ export function AssistantChat({ data, contacts }: AssistantChatProps) {
     event.preventDefault();
 
     const question = input.trim();
-    if (!question) {
+    if (!question || isLoading) {
       return;
     }
 
@@ -186,79 +176,27 @@ export function AssistantChat({ data, contacts }: AssistantChatProps) {
   }
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
-      <div className="rounded-lg border border-white/10 bg-slate-900/70 p-6 shadow-soft sm:p-7">
-        <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-lg border border-teal-300/20 bg-teal-300/10 text-teal-200">
-            <Bot className="h-5 w-5" aria-hidden="true" />
-          </div>
-          <div>
-            <h3 className="text-xl font-semibold text-slate-50">CV-ассистент</h3>
-            <p className="text-sm text-slate-400">
-              Отвечает по базе CV: опыт, проекты, стек и контакты
-            </p>
-          </div>
+    <div
+      id="assistant-chat"
+      className="mx-auto w-full max-w-3xl scroll-mt-40 rounded-2xl border border-white/10 bg-slate-900/70 shadow-soft lg:scroll-mt-32"
+    >
+      <header className="flex items-center gap-3 border-b border-white/10 px-3 py-4 sm:px-6">
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-teal-300/20 bg-teal-300/10 text-teal-200">
+          <Bot className="h-5 w-5" aria-hidden="true" />
         </div>
+        <h2 className="text-xl font-semibold text-slate-50">CV-ассистент</h2>
+      </header>
 
-        <div className="mt-6 flex flex-wrap gap-2.5">
-          {data.quickQuestions.map((question) => (
-            <button
-              key={question.id}
-              type="button"
-              onClick={() => void askAssistant(question.label, question.id)}
-              disabled={isLoading}
-              className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-left text-sm font-medium leading-6 text-slate-300 transition hover:border-teal-300/40 hover:bg-teal-300/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {question.label}
-            </button>
-          ))}
-        </div>
-
-        <div className="mt-6 flex flex-wrap gap-2.5 border-t border-white/10 pt-5">
-          <a
-            href={contacts.telegram}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm font-semibold text-slate-100 transition hover:border-teal-300/40 hover:bg-teal-300/10 hover:text-white"
-          >
-            <Send className="h-4 w-4" aria-hidden="true" />
-            Telegram
-          </a>
-          <a
-            href={contacts.linkedIn}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm font-semibold text-slate-100 transition hover:border-teal-300/40 hover:bg-teal-300/10 hover:text-white"
-          >
-            <Linkedin className="h-4 w-4" aria-hidden="true" />
-            LinkedIn
-          </a>
-          <a
-            href={publicAsset(contacts.pdfPath)}
-            download
-            className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-teal-200/50 bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-950 transition hover:border-teal-100 hover:bg-teal-100"
-          >
-            <Download className="h-4 w-4" aria-hidden="true" />
-            PDF
-          </a>
-        </div>
-
-        {isDevMode ? (
-          <p className="mt-4 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs leading-5 text-slate-500">
-            dev: endpoint configured: {apiEnabled ? "yes" : "no"}; mode: {assistantMode}
-          </p>
-        ) : null}
-      </div>
-
-      <div
-        id="assistant-chat"
-        className="flex min-h-[560px] scroll-mt-40 flex-col rounded-lg border border-white/10 bg-slate-900/70 shadow-soft lg:scroll-mt-32"
-      >
-        <div className="flex-1 space-y-4 overflow-y-auto p-5 sm:p-6">
+      <div className="space-y-4 px-3 py-4 sm:px-6 sm:py-5">
+        <div
+          ref={messageLogRef}
+          role="log"
+          aria-label="Переписка с CV-ассистентом"
+          className="max-h-[min(36rem,60vh)] space-y-4 overflow-y-auto"
+        >
           {messages.map((message, index) => {
             const ctaLabel = getCtaLabel(message.suggestedCta ?? null);
             const ctaHref = getCtaHref(message.suggestedCta ?? null, contacts);
-            const messageText = message.isIntro ? assistantIntroText : message.text;
 
             return (
               <div
@@ -271,15 +209,13 @@ export function AssistantChat({ data, contacts }: AssistantChatProps) {
                   </div>
                 ) : null}
                 <div
-                  className={`max-w-[85%] rounded-lg px-4 py-3 text-[16px] leading-7 ${
+                  className={`min-w-0 max-w-[85%] break-words rounded-lg px-3 py-2.5 text-[15px] leading-6 sm:px-4 sm:py-3 sm:text-base sm:leading-7 ${
                     message.role === "user"
                       ? "bg-teal-300 text-slate-950"
                       : "border border-white/10 bg-white/5 text-slate-300"
                   }`}
                 >
-                  <p className={message.isIntro && isBasicMode ? "text-[#f2c46d]" : undefined}>
-                    {messageText}
-                  </p>
+                  <p>{message.text}</p>
                   {message.usedFallback ? (
                     <p className="mt-2 text-sm leading-6 text-slate-500">Базовый ответ по CV</p>
                   ) : null}
@@ -321,30 +257,67 @@ export function AssistantChat({ data, contacts }: AssistantChatProps) {
           ) : null}
         </div>
 
-        <form onSubmit={handleSubmit} className="border-t border-white/10 p-4 sm:p-5">
-          {fallbackNotice ? (
-            <p className="mb-3 rounded-lg border border-amber-300/20 bg-amber-300/10 px-3 py-2 text-sm leading-6 text-amber-100">
-              {fallbackNotice}
-            </p>
-          ) : null}
-          <div className="flex gap-2">
-            <input
-              value={input}
-              onChange={(event) => setInput(event.target.value)}
-              disabled={isLoading}
-              className="min-h-12 min-w-0 flex-1 rounded-lg border border-white/10 bg-slate-950/70 px-4 py-2 text-[16px] text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-teal-300/60 focus:ring-4 focus:ring-teal-300/10"
-              placeholder="Спросите про опыт, проекты или стек"
-            />
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="inline-flex min-h-12 items-center justify-center rounded-lg bg-teal-300 px-4 text-sm font-semibold text-slate-950 transition hover:bg-teal-200 disabled:cursor-not-allowed disabled:opacity-60"
-              aria-label="Отправить вопрос"
-            >
-              <Send className="h-4 w-4" aria-hidden="true" />
-            </button>
-          </div>
+        {showFallbackNotice ? (
+          <p role="status" className="rounded-lg border border-amber-300/20 bg-amber-300/10 px-3 py-2 text-sm leading-6 text-amber-100">
+            {data.basicIdentity}
+          </p>
+        ) : null}
+
+        <form onSubmit={handleSubmit} className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
+          <input
+            value={input}
+            onChange={(event) => setInput(event.target.value)}
+            className="min-h-12 w-full min-w-0 rounded-lg border border-white/20 bg-slate-950/70 px-3 py-2 text-base text-slate-100 outline-none transition placeholder:text-sm placeholder:text-slate-400 focus:border-teal-300/60 focus:ring-4 focus:ring-teal-300/10 sm:px-4 sm:placeholder:text-base"
+            aria-label="Вопрос CV-ассистенту"
+            placeholder="Спросите про опыт, проекты или стек"
+          />
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="inline-flex min-h-12 items-center justify-center gap-2 justify-self-end rounded-lg bg-teal-300 px-4 text-sm font-semibold text-slate-950 transition hover:bg-teal-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-300 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            Отправить
+            <Send className="h-4 w-4" aria-hidden="true" />
+          </button>
         </form>
+
+        <div>
+          <button
+            ref={examplesToggleRef}
+            type="button"
+            onClick={() => setShowExamples((open) => !open)}
+            aria-expanded={showExamples}
+            aria-controls="assistant-example-questions"
+            className="inline-flex min-h-11 items-center gap-1.5 rounded text-sm font-medium text-slate-300 transition hover:text-teal-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-300 sm:min-h-9"
+          >
+            Примеры вопросов
+            <ChevronDown className={`h-4 w-4 ${showExamples ? "rotate-180" : ""}`} aria-hidden="true" />
+          </button>
+          <div id="assistant-example-questions" hidden={!showExamples}>
+            <div className="mt-1 flex flex-wrap gap-2">
+              {exampleQuestions.map((question) => (
+                <button
+                  key={question.id}
+                  type="button"
+                  onClick={() => {
+                    examplesToggleRef.current?.focus({ preventScroll: true });
+                    void askAssistant(question.label);
+                  }}
+                  disabled={isLoading}
+                  className="min-h-11 max-w-full rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-left text-sm leading-5 text-slate-200 transition hover:border-teal-300/40 hover:bg-teal-300/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-300 disabled:cursor-not-allowed disabled:opacity-60 sm:min-h-9"
+                >
+                  {question.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {isDevMode ? (
+          <p className="text-xs leading-5 text-slate-400">
+            dev: endpoint configured: {apiEnabled ? "yes" : "no"}; mode: {assistantMode}
+          </p>
+        ) : null}
       </div>
     </div>
   );
